@@ -10,15 +10,60 @@ class HomeController extends AppController
     /**
      * GET /  albo  GET /home/index
      *
-     * Akcja: pobiera dane z modelu, przekazuje do widoku, zwraca nazwę szablonu.
-     * Żadnego SQL-a i żadnego HTML-a w tym miejscu — patrz docs/MVC.md.
+     * Jeśli użytkownik nie jest zalogowany, wyświetlamy ekran logowania.
+     * Po zalogowaniu wchodzimy do prostego panelu.
      */
     public function actionIndex()
     {
-        $this->outputData['title']   = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
-        $this->outputData['message'] = 'Szkielet działa. Zacznij od docs/MVC.md.';
+        $this->layout = '';
 
-        return 'index';
+        if ($this->isLoggedIn()) {
+            $this->outputData['title'] = 'Panel użytkownika';
+            $this->outputData['user']  = Tools::getSessionVar('app_login') ?: (defined('APP_LOGIN') ? APP_LOGIN : 'użytkownik');
+            return 'dashboard';
+        }
+
+        return $this->actionLogin();
+    }
+
+    /**
+     * GET /home/login
+     * POST /home/login
+     */
+    public function actionLogin()
+    {
+        $this->layout = '';
+        $this->outputData['title']   = 'Zaloguj się';
+        $this->outputData['error']   = '';
+        $this->outputData['login']   = '';
+
+        if (!Tools::isPost()) {
+            return 'login';
+        }
+
+        $this->requireCsrf();
+
+        $login    = trim((string) ($_POST['login'] ?? ''));
+        $password = (string) ($_POST['password'] ?? '');
+
+        if ($login === (defined('APP_LOGIN') ? APP_LOGIN : '') && $password === (defined('APP_PASSWORD') ? APP_PASSWORD : '')) {
+            $this->startUserSession(1, ['app_login' => $login]);
+            App::redirect('home/index');
+        }
+
+        $this->outputData['error'] = 'Nieprawidłowy login lub hasło.';
+        $this->outputData['login'] = $login;
+
+        return 'login';
+    }
+
+    /**
+     * GET /home/logout
+     */
+    public function actionLogout()
+    {
+        $this->endUserSession();
+        App::redirect('home/login');
     }
 
     /**

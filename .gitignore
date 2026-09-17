@@ -4,7 +4,7 @@ program/config/data.php
 # IDE
 .idea/
 .vscode/
-
+1
 # Logi i pliki tymczasowe
 *.log
 robocze/
