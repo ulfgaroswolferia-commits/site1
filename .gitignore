@@ -7,6 +7,9 @@ program/config/data.php
 # IDE
 .idea/
 .vscode/
+.agent/
+.claude/
+.gemini/
 
 # Logi i pliki tymczasowe
 *.log
