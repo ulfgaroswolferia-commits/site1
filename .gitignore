@@ -1,1 +1,23 @@
+<<<<<<< HEAD
 .vscode
+=======
+# Konfiguracja lokalna z sekretami — szablon to program/config/data.sample.php
+program/config/data.php
+
+# IDE
+.idea/
+.vscode/
+
+# Logi i pliki tymczasowe
+*.log
+robocze/
+tmp/
+db/
+
+# Zależności (gdyby projekt jednak sięgnął po Composer / npm)
+vendor/
+node_modules/
+
+# Ustawienia lokalne Claude Code (CLAUDE.md ZOSTAJE w repo — to dokumentacja konwencji)
+.claude/settings.local.json
+>>>>>>> 3a22650b75c5ca1cc473536ba66d91b1a5d64481
