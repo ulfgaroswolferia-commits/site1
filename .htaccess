@@ -1,0 +1,62 @@
+<IfModule mod_rewrite.c>
+
+RewriteEngine On
+
+# -----------------------------------------------------------------------------
+# Blokada botów / skanerów. Lista do przycięcia lub rozszerzenia per projekt.
+# Jeśli serwis MA być indeksowany, usuń z listy bingbot i pokrewne.
+# -----------------------------------------------------------------------------
+RewriteCond %{HTTP_USER_AGENT} ^.*Go-http-client.*$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*Bytespider.*$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*AhrefsBot.*$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*Barkrowler.*$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*DataForSeoBot.*$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*DotBot.*$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*Mail.RU_Bot.*$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*MJ12bot.*$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*SemrushBot.*$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*SeznamBot.*$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*SiteAuditBot.*$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*YandexBot.*$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*PetalBot.*$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*Owler.*$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*BacklinksExtendedBot.*$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*VelenPublicWebCrawler.*$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*Timpibot.*$ [NC,OR]
+RewriteCond %{HTTP_USER_AGENT} ^.*python-requests.*$ [NC]
+RewriteRule .* - [F,L]
+
+# -----------------------------------------------------------------------------
+# Wymuszenie HTTPS i www. ODKOMENTUJ NA PRODUKCJI.
+# Na localhoscie te reguły zapętlą przekierowania — dlatego domyślnie wyłączone.
+# -----------------------------------------------------------------------------
+# RewriteCond %{HTTPS} off
+# RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+#
+# RewriteCond %{HTTP_HOST} !^www\. [NC]
+# RewriteRule (.*) https://www.%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# -----------------------------------------------------------------------------
+# Front controller.
+#
+# USTAW POD SWÓJ PROJEKT:
+#   - aplikacja w katalogu głównym domeny  -> RewriteBase /      i  /index.php
+#   - aplikacja w podkatalogu /mojprojekt/ -> RewriteBase /mojprojekt/  i  /mojprojekt/index.php
+# -----------------------------------------------------------------------------
+RewriteBase /
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-l
+RewriteRule ^(.*)$ /index.php [L,QSA]
+
+</IfModule>
+
+# Konfiguracja z sekretami nigdy nie może być serwowana jako plik.
+# Składnia dla Apache 2.4. Na Apache 2.2 "Require" powoduje błąd konfiguracji (HTTP 500) —
+# tam zamiast niego użyj:
+#     Order allow,deny
+#     Deny from all
+<FilesMatch "^data\.php$">
+    Require all denied
+</FilesMatch>
