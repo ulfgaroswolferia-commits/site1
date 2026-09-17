@@ -9,7 +9,6 @@ program/config/data.php
 *.log
 robocze/
 tmp/
-docs/
 db/
 
 # Zależności (gdyby projekt jednak sięgnął po Composer / npm)
