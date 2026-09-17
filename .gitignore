@@ -13,6 +13,7 @@ program/config/data.php
 robocze/
 tmp/
 db/
+storage/
 
 # Zależności (gdyby projekt jednak sięgnął po Composer / npm)
 vendor/
