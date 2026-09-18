@@ -23,7 +23,7 @@ $clientId = $repo->createClient([
     'email'            => 'ania@example.com',
     'delivery_address' => 'ul. Kwiatowa 5, 00-001 Warszawa',
     'auth_token'       => $token,
-    'login'            => 'warzywniak_ania',
+    'login'            => 'warzywniak_ania_' . bin2hex(random_bytes(4)),
     'password'         => 'tajne123'
 ]);
 

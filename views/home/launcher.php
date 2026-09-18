@@ -148,15 +148,18 @@ $title = $view['title'] ?? 'Panel użytkownika';
 
         <div class="module-list">
             <a class="module-card module-card-primary" href="<?= $base ?>order/index">
-                <span class="module-card-title">Zamówienia z cennika excel</span>
-                <span class="module-card-description">Zarządzaj zamówieniami i generuj dokumenty</span>
+                <span class="module-card-title">Zamawiarka Magdy</span>
+                <span class="module-card-description">Zrób zamówienie z pliku excel</span>
             </a>
 
-            <div class="module-placeholder">Miejsce na następny moduł</div>
+            <a class="module-card" href="<?= $base ?>b2b/admin" style="border-color: rgba(16, 185, 129, 0.45); background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);">
+                <span class="module-card-title" style="color: #065f46;">Hurtownia Magdy — Portal B2B</span>
+                <span class="module-card-description">Panel hurtowni: cennik, inteligentne opakowania, klienci i zamówienia</span>
+            </a>
 
             <a class="module-card dashboard-link" href="<?= $base ?>home/dashboard">
                 <span class="module-card-title">Otwórz pulpit</span>
-                <span class="module-card-description">Przejdź do pulpitu.</span>
+                <span class="module-card-description">Przejdź do pulpitu technicznego.</span>
             </a>
         </div>
     </main>

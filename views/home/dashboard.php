@@ -726,8 +726,20 @@ $routes      = class_exists('Config') ? (Config::get('routes') ?: []) : [];
                             </svg>
                         </div>
                         <div class="action-info">
-                            <h4 style="color: #065f46;">Zamówienie z hurtowni</h4>
-                            <p>Wgraj cennik Excel, edytuj ilości i wygeneruj zamówienie</p>
+                            <h4 style="color: #065f46;">Zamawiarka Magdy</h4>
+                            <p>Wgraj cennik Excel sklepu, edytuj ilości i wyślij zamówienie</p>
+                        </div>
+                    </a>
+
+                    <a href="<?= $base ?>b2b/admin" class="action-tile" style="border-color: rgba(5, 150, 105, 0.4); background: rgba(5, 150, 105, 0.05);">
+                        <div class="action-icon" style="background: rgba(5, 150, 105, 0.2); color: #047857;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="action-info">
+                            <h4 style="color: #047857;">Hurtownia Magdy (B2B)</h4>
+                            <p>Panel hurtownika: cennik, inteligentne opakowania, klienci i spływające zamówienia</p>
                         </div>
                     </a>
 

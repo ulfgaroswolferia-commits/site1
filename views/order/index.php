@@ -2,11 +2,12 @@
 /**
  * Kreator zamówienia warzyw i owoców ze sklepu spożywczego do hurtowni.
  */
-$pageTitle  = Tools::h($view['title'] ?? 'Kreator zamówienia');
-$userName   = Tools::h($view['user'] ?? 'użytkownik');
-$csrfToken  = Tools::h($view['csrf_token'] ?? Tools::csrfToken());
-$base       = App::baseUrl();
-$appName    = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
+$pageTitle     = Tools::h($view['title'] ?? 'Kreator zamówienia');
+$userName      = Tools::h($view['user'] ?? 'użytkownik');
+$csrfToken     = Tools::h($view['csrf_token'] ?? Tools::csrfToken());
+$recentOrders  = $view['recent_orders'] ?? [];
+$base          = App::baseUrl();
+$appName       = 'Zamawiarka Magdy';
 ?>
 <!DOCTYPE html>
 <html lang="pl">
@@ -306,6 +307,30 @@ $appName    = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
             border-color: #cbd5e1;
         }
 
+        .btn-download-order {
+            background: #e0f2fe;
+            border: 1px solid #bae6fd;
+            color: #0284c7;
+            border-radius: 10px;
+            padding: 7px 16px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+
+        .btn-download-order:hover {
+            background: #bae6fd;
+            border-color: #7dd3fc;
+            color: #0369a1;
+            transform: translateY(-1px);
+        }
+
         /* Mapping Preview Table */
         .preview-box {
             overflow-x: auto;
@@ -535,16 +560,382 @@ $appName    = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
 
         .success-icon svg { width: 40px; height: 40px; }
 
+        .divider-or {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 28px 0 20px;
+            color: var(--muted);
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .divider-or::before, .divider-or::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px dashed var(--border);
+        }
+
+        .divider-or:not(:empty)::before {
+            margin-right: 16px;
+        }
+
+        .divider-or:not(:empty)::after {
+            margin-left: 16px;
+        }
+
+        .history-card-box {
+            background: rgba(248, 250, 252, 0.85);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-inner);
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .history-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .history-card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 0.98rem;
+            color: #1e293b;
+            margin: 0;
+        }
+
+        .history-icon-badge {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Tło dekoracyjne z owocami i warzywami */
+        .bg-decorations {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-glow {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(95px);
+            opacity: 0.55;
+            pointer-events: none;
+        }
+
+        .bg-glow-tomato {
+            top: -60px;
+            left: 3%;
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(circle, rgba(239, 68, 68, 0.16) 0%, transparent 70%);
+        }
+
+        .bg-glow-lime {
+            top: 28%;
+            right: -80px;
+            width: 360px;
+            height: 360px;
+            background: radial-gradient(circle, rgba(34, 197, 94, 0.14) 0%, transparent 70%);
+        }
+
+        .bg-glow-amber {
+            bottom: 12%;
+            left: -80px;
+            width: 380px;
+            height: 380px;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.14) 0%, transparent 70%);
+        }
+
+        .bg-glow-purple {
+            bottom: -80px;
+            right: 8%;
+            width: 340px;
+            height: 340px;
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.13) 0%, transparent 70%);
+        }
+
+        .bg-deco-item {
+            position: absolute;
+            pointer-events: none;
+            filter: drop-shadow(0 14px 24px rgba(15, 23, 42, 0.08));
+            opacity: 0.85;
+            transition: opacity 0.3s ease;
+            will-change: transform;
+        }
+
+        /* Pozycje i animacje poszczególnych owoców i warzyw */
+        .deco-tomato {
+            top: 75px;
+            left: 2%;
+            width: 72px;
+            height: 72px;
+            animation: floatSlow1 12s ease-in-out infinite;
+        }
+
+        .deco-carrot {
+            top: 110px;
+            right: 2.5%;
+            width: 80px;
+            height: 80px;
+            animation: floatSlow2 14s ease-in-out infinite;
+        }
+
+        .deco-lemon {
+            top: 38%;
+            left: 1.5%;
+            width: 64px;
+            height: 64px;
+            animation: floatSlow3 11s ease-in-out infinite;
+        }
+
+        .deco-avocado {
+            top: 45%;
+            right: 1.8%;
+            width: 72px;
+            height: 72px;
+            animation: floatSlow1 15s ease-in-out infinite reverse;
+        }
+
+        .deco-eggplant {
+            bottom: 70px;
+            left: 2.5%;
+            width: 76px;
+            height: 76px;
+            animation: floatSlow2 13s ease-in-out infinite;
+        }
+
+        .deco-apple {
+            bottom: 80px;
+            right: 2.2%;
+            width: 68px;
+            height: 68px;
+            animation: floatSlow3 16s ease-in-out infinite reverse;
+        }
+
+        .deco-leaf-1 {
+            top: 24%;
+            left: 4.5%;
+            width: 36px;
+            height: 36px;
+            animation: floatSlow2 9s ease-in-out infinite;
+            opacity: 0.7;
+        }
+
+        .deco-leaf-2 {
+            bottom: 30%;
+            right: 4%;
+            width: 36px;
+            height: 36px;
+            animation: floatSlow1 10s ease-in-out infinite;
+            opacity: 0.7;
+        }
+
+        @keyframes floatSlow1 {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-12px) rotate(5deg); }
+        }
+
+        @keyframes floatSlow2 {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(14px) rotate(-6deg); }
+        }
+
+        @keyframes floatSlow3 {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(-4deg); }
+        }
+
+        @media (max-width: 1400px) {
+            .bg-deco-item { opacity: 0.55; }
+            .deco-leaf-1, .deco-leaf-2 { display: none; }
+        }
+
+        @media (max-width: 1100px) {
+            .bg-deco-item {
+                display: none;
+            }
+            .bg-glow {
+                opacity: 0.35;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .bg-deco-item { animation: none !important; }
+        }
+
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
     <div class="bg-grid"></div>
 
+    <!-- Tło dekoracyjne z owocami i warzywami -->
+    <div class="bg-decorations" aria-hidden="true">
+        <!-- Miękkie poświaty gradientowe -->
+        <div class="bg-glow bg-glow-tomato"></div>
+        <div class="bg-glow bg-glow-lime"></div>
+        <div class="bg-glow bg-glow-amber"></div>
+        <div class="bg-glow bg-glow-purple"></div>
+
+        <!-- 1. Dojrzały pomidor (lewy górny róg) -->
+        <div class="bg-deco-item deco-tomato">
+            <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="36" cy="40" r="28" fill="url(#grad-tomato)"/>
+                <ellipse cx="27" cy="27" rx="8" ry="5" transform="rotate(-30 27 27)" fill="#ffffff" fill-opacity="0.32"/>
+                <path d="M36 18V8C36 8 39 10 42 8" stroke="#15803d" stroke-width="3" stroke-linecap="round"/>
+                <path d="M36 18C33 13 25 15 22 17C26 20 32 20 36 20C40 20 46 20 50 17C47 15 39 13 36 18Z" fill="#16a34a"/>
+                <path d="M36 19C37 24 43 27 46 27C44 24 40 21 36 19Z" fill="#15803d"/>
+                <path d="M36 19C35 24 29 27 26 27C28 24 32 21 36 19Z" fill="#15803d"/>
+                <defs>
+                    <radialGradient id="grad-tomato" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(28 32) rotate(52) scale(34)">
+                        <stop offset="0%" stop-color="#f87171"/>
+                        <stop offset="55%" stop-color="#ef4444"/>
+                        <stop offset="100%" stop-color="#b91c1c"/>
+                    </radialGradient>
+                </defs>
+            </svg>
+        </div>
+
+        <!-- 2. Świeża marchewka (prawy górny róg) -->
+        <div class="bg-deco-item deco-carrot">
+            <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M52 28C56 22 62 16 68 12C63 18 63 24 57 29" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M50 25C52 17 55 10 59 6C56 12 55 18 53 26" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M47 27C42 21 38 15 35 11C39 17 42 22 47 28" stroke="#15803d" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M55 27C58 31 56 35 52 38L22 68C19 71 16 71 14 69C12 67 12 64 15 61L45 31C48 27 52 25 55 27Z" fill="url(#grad-carrot)"/>
+                <path d="M43 36C40 37 38 39 39 40" stroke="#c2410c" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M33 46C30 47 28 49 29 50" stroke="#c2410c" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M25 54C23 55 21 57 22 58" stroke="#c2410c" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M48 30L23 57" stroke="#fdba74" stroke-width="2" stroke-linecap="round" stroke-opacity="0.6"/>
+                <defs>
+                    <linearGradient id="grad-carrot" x1="56" y1="26" x2="14" y2="70" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#fb923c"/>
+                        <stop offset="50%" stop-color="#f97316"/>
+                        <stop offset="100%" stop-color="#ea580c"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+
+        <!-- 3. Plasterek soczystej cytryny (środek z lewej) -->
+        <div class="bg-deco-item deco-lemon">
+            <svg viewBox="0 0 70 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="35" cy="35" r="28" fill="#facc15" stroke="#eab308" stroke-width="2.5"/>
+                <circle cx="35" cy="35" r="24.5" fill="#fef08a"/>
+                <circle cx="35" cy="35" r="22" fill="#eab308" fill-opacity="0.25"/>
+                <path d="M35 35L35 15C39 15 43 17 46 20L35 35Z" fill="#fde047"/>
+                <path d="M35 35L48 22C51 25 53 29 54 33L35 35Z" fill="#facc15"/>
+                <path d="M35 35L54 37C53 41 51 45 48 48L35 35Z" fill="#fde047"/>
+                <path d="M35 35L46 50C43 53 39 55 35 55L35 35Z" fill="#facc15"/>
+                <path d="M35 35L35 55C31 55 27 53 24 50L35 35Z" fill="#fde047"/>
+                <path d="M35 35L22 48C19 45 17 41 16 37L35 35Z" fill="#facc15"/>
+                <path d="M35 35L16 33C17 29 19 25 22 22L35 35Z" fill="#fde047"/>
+                <path d="M35 35L24 20C27 17 31 15 35 15L35 35Z" fill="#facc15"/>
+                <circle cx="35" cy="35" r="3.5" fill="#ffffff"/>
+            </svg>
+        </div>
+
+        <!-- 4. Awokado z pestką (środek z prawej) -->
+        <div class="bg-deco-item deco-avocado">
+            <svg viewBox="0 0 74 74" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M37 10C27 10 23 21 21 31C18 43 20 62 37 62C54 62 56 43 53 31C51 21 47 10 37 10Z" fill="#14532d"/>
+                <path d="M37 14C29 14 26 23 24 32C22 42 23 58 37 58C51 58 52 42 50 32C48 23 45 14 37 14Z" fill="url(#grad-avocado-flesh)"/>
+                <circle cx="37" cy="42" r="10.5" fill="url(#grad-avocado-pit)"/>
+                <ellipse cx="34" cy="39" rx="3" ry="2" transform="rotate(-30 34 39)" fill="#ffffff" fill-opacity="0.25"/>
+                <defs>
+                    <radialGradient id="grad-avocado-flesh" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(37 40) rotate(90) scale(22)">
+                        <stop offset="40%" stop-color="#fef08a"/>
+                        <stop offset="85%" stop-color="#86efac"/>
+                        <stop offset="100%" stop-color="#22c55e"/>
+                    </radialGradient>
+                    <radialGradient id="grad-avocado-pit" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(34 39) rotate(45) scale(12)">
+                        <stop offset="0%" stop-color="#92400e"/>
+                        <stop offset="70%" stop-color="#78350f"/>
+                        <stop offset="100%" stop-color="#451a03"/>
+                    </radialGradient>
+                </defs>
+            </svg>
+        </div>
+
+        <!-- 5. Dojrzały bakłażan (dół po lewej) -->
+        <div class="bg-deco-item deco-eggplant">
+            <svg viewBox="0 0 76 76" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M34 22C28 26 22 36 21 46C20 57 26 66 38 66C50 66 56 57 55 45C54 33 46 25 40 21C38 19 36 20 34 22Z" fill="url(#grad-eggplant)"/>
+                <path d="M28 38C26 44 26 52 28 58" stroke="#c084fc" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.45"/>
+                <path d="M37 20V11C37 11 39 11 41 9" stroke="#15803d" stroke-width="3" stroke-linecap="round"/>
+                <path d="M37 19C33 16 26 19 24 23C27 24 33 22 37 22C41 22 47 24 50 23C48 19 41 16 37 19Z" fill="#16a34a"/>
+                <path d="M37 21C38 25 44 28 47 27C44 24 41 22 37 21Z" fill="#15803d"/>
+                <path d="M37 21C36 25 30 28 27 27C30 24 33 22 37 21Z" fill="#15803d"/>
+                <defs>
+                    <linearGradient id="grad-eggplant" x1="28" y1="21" x2="48" y2="66" gradientUnits="userSpaceOnUse">
+                        <stop offset="0%" stop-color="#9333ea"/>
+                        <stop offset="45%" stop-color="#6b21a8"/>
+                        <stop offset="100%" stop-color="#3b0764"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+
+        <!-- 6. Chrupiące zielone jabłko (dół po prawej) -->
+        <div class="bg-deco-item deco-apple">
+            <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M36 24C32 20 22 20 16 26C10 33 11 49 19 59C24 65 31 66 36 63C41 66 48 65 53 59C61 49 62 33 56 26C50 20 40 20 36 24Z" fill="url(#grad-apple)"/>
+                <ellipse cx="26" cy="33" rx="6" ry="3.5" transform="rotate(-40 26 33)" fill="#ffffff" fill-opacity="0.3"/>
+                <path d="M36 22C36 17 38 12 41 9" stroke="#78350f" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M38 15C44 12 50 14 51 17C46 19 40 18 38 15Z" fill="#16a34a"/>
+                <defs>
+                    <radialGradient id="grad-apple" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(28 32) rotate(45) scale(34)">
+                        <stop offset="0%" stop-color="#86efac"/>
+                        <stop offset="60%" stop-color="#22c55e"/>
+                        <stop offset="100%" stop-color="#15803d"/>
+                    </radialGradient>
+                </defs>
+            </svg>
+        </div>
+
+        <!-- 7. Świeży liść bazylii (akcent górny lewy) -->
+        <div class="bg-deco-item deco-leaf-1">
+            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M9 31C9 31 11 19 23 11C29 7 35 7 35 7C35 7 35 13 31 19C23 31 9 31 9 31Z" fill="#22c55e"/>
+                <path d="M9 31C16 25 24 18 35 7" stroke="#15803d" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M19 22C22 22 25 20 27 18" stroke="#15803d" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+        </div>
+
+        <!-- 8. Świeży liść mięty (akcent dolny prawy) -->
+        <div class="bg-deco-item deco-leaf-2">
+            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M31 31C31 31 29 19 17 11C11 7 5 7 5 7C5 7 5 13 9 19C17 31 31 31 31 31Z" fill="#10b981"/>
+                <path d="M31 31C24 25 16 18 5 7" stroke="#047857" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M21 22C18 22 15 20 13 18" stroke="#047857" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+        </div>
+    </div>
+
     <div class="shell">
         <!-- Top Navigation -->
         <header class="topbar">
-            <a href="<?= $base ?>home/index" class="brand-group">
+            <a href="<?= $base ?>order/index" class="brand-group">
                 <div class="brand-icon" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
@@ -601,6 +992,63 @@ $appName    = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
             </div>
 
             <div id="upload-status" style="font-weight: 600; font-size: 0.9rem; text-align: center;" class="hidden"></div>
+
+            <!-- Opcja wczytania cennika z historii -->
+            <div class="divider-or">LUB WCZYTAJ Z HISTORII ZAMÓWIEŃ</div>
+
+            <div class="history-card-box">
+                <div class="history-card-header">
+                    <h3 class="history-card-title">
+                        <span class="history-icon-badge">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </span>
+                        Wczytaj cennik z historii (ostatnie 10 zamówień)
+                    </h3>
+                    <span style="font-size: 0.82rem; color: var(--muted);">Wczytuje asortyment bez konieczności ponownego uploadu pliku</span>
+                </div>
+
+                <?php if (!empty($recentOrders)): ?>
+                    <div class="form-row" style="align-items: flex-end;">
+                        <div class="form-col" style="flex: 2; min-width: 280px;">
+                            <label class="form-label" for="history-order-select">Wybierz wcześniejsze zamówienie / cennik</label>
+                            <select id="history-order-select" class="form-select">
+                                <?php foreach ($recentOrders as $ro): ?>
+                                    <?php
+                                        $label = Tools::h($ro['order_number']);
+                                        if (!empty($ro['supplier_name'])) {
+                                            $label .= ' — ' . Tools::h($ro['supplier_name']);
+                                        }
+                                        $label .= ' (' . date('d.m.Y', strtotime($ro['created_at'])) . ', ' . (int)$ro['total_items'] . ' poz.)';
+                                    ?>
+                                    <option value="<?= (int)$ro['id'] ?>">
+                                        <?= $label ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+
+                        <div class="form-col" style="flex: 0 0 auto; justify-content: flex-end;">
+                            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.86rem; font-weight: 600; cursor: pointer; color: #334155; margin-bottom: 8px;">
+                                <input id="history-keep-qty" type="checkbox" style="width: 16px; height: 16px; accent-color: var(--blue);">
+                                <span>Zachowaj poprzednie ilości</span>
+                            </label>
+                            <button type="button" id="btn-load-history" class="btn-secondary" style="padding: 11px 20px; font-weight: 700;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                <span>Wczytaj ten cennik</span>
+                            </button>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <p style="margin: 0; font-size: 0.88rem; color: var(--muted);">Brak wcześniejszych zamówień w historii. Wgraj plik Excela powyżej, aby utworzyć pierwsze zamówienie.</p>
+                <?php endif; ?>
+            </div>
         </section>
 
         <!-- KROK 2: Mapowanie kolumn -->
@@ -686,14 +1134,28 @@ $appName    = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
                     </div>
                 </div>
 
-                <button type="button" id="btn-submit-order" class="btn-primary" style="padding: 11px 22px;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                    </svg>
-                    <span>Zatwierdź i pobierz Excel</span>
+                <button type="button" class="btn-secondary" style="padding: 11px 16px; font-size: 0.88rem; font-weight: 600;" onclick="resetToStep1()">
+                    ← Zmień cennik
                 </button>
+
+                <div class="submit-actions-wrap" style="display: flex; flex-direction: column; gap: 6px; align-items: stretch;">
+                    <button type="button" id="btn-submit-send-order" class="btn-primary" style="padding: 11px 22px; background: linear-gradient(135deg, #059669 0%, #10b981 100%); box-shadow: 0 10px 20px -8px rgba(16, 185, 129, 0.6); justify-content: center;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        <span>Zatwierdź i wyślij</span>
+                    </button>
+
+                    <button type="button" id="btn-submit-order" class="btn-download-order">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>Zatwierdź i pobierz Excel</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Products Table -->
@@ -730,7 +1192,13 @@ $appName    = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
                     Czysty plik arkusza Excel dla hurtowni o numerze <strong id="success-order-num" style="color: var(--blue);"></strong> jest gotowy do wysyłki.
                 </p>
 
-                <div style="background: var(--card-inner); border: 1px solid var(--border); border-radius: 16px; padding: 18px 28px; display: flex; gap: 32px;">
+                <!-- Status wysyłki na e-mail -->
+                <div id="email-status-box" class="hidden" style="margin: 4px auto 0; padding: 14px 22px; border-radius: 12px; font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 12px; max-width: 600px; text-align: left; box-sizing: border-box;">
+                    <div id="email-status-icon" style="flex-shrink: 0; display: flex; align-items: center;"></div>
+                    <div id="email-status-text" style="line-height: 1.45;"></div>
+                </div>
+
+                <div style="background: var(--card-inner); border: 1px solid var(--border); border-radius: 16px; padding: 18px 28px; display: flex; gap: 32px; margin-top: 10px;">
                     <div>
                         <span style="font-size: 0.75rem; text-transform: uppercase; color: var(--muted); font-weight: 700; display: block;">Zamówione pozycje</span>
                         <strong id="success-items-count" style="font-size: 1.4rem; color: var(--fg);"></strong>
@@ -865,6 +1333,75 @@ $appName    = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
             step1.classList.remove('hidden');
             uploadStatus.classList.add('hidden');
             fileInput.value = '';
+        }
+
+        // 1b. Obsługa wczytywania cennika z historii
+        const btnLoadHistory = document.getElementById('btn-load-history');
+        if (btnLoadHistory) {
+            btnLoadHistory.addEventListener('click', () => {
+                const select = document.getElementById('history-order-select');
+                const orderId = select ? select.value : null;
+                if (!orderId) {
+                    alert('Proszę wybrać zamówienie z listy.');
+                    return;
+                }
+
+                const keepQty = document.getElementById('history-keep-qty')?.checked || false;
+                const originalText = btnLoadHistory.innerHTML;
+                btnLoadHistory.disabled = true;
+                btnLoadHistory.innerHTML = '<span>Wczytywanie...</span>';
+
+                const formData = new FormData();
+                formData.append('order_id', orderId);
+                formData.append('_csrf', CSRF_TOKEN);
+                formData.append('csrf_token', CSRF_TOKEN);
+
+                apiFetch(BASE_URL + 'order/loadhistory', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(data => {
+                    btnLoadHistory.disabled = false;
+                    btnLoadHistory.innerHTML = originalText;
+
+                    if (!data.ok) {
+                        alert(data.error || 'Nie udało się wczytać cennika z historii.');
+                        return;
+                    }
+
+                    if (!data.products || data.products.length === 0) {
+                        alert('Wybrane zamówienie nie zawiera pozycji asortymentowych.');
+                        return;
+                    }
+
+                    // Ustawienie dostawcy i pliku źródłowego
+                    if (data.supplier_name) {
+                        const supplierInput = document.getElementById('supplier-name');
+                        if (supplierInput) supplierInput.value = data.supplier_name;
+                    }
+                    originalFileName = data.original_filename || 'cennik.xlsx';
+
+                    // Przypisanie listy produktów
+                    productsList = data.products.map(p => ({
+                        name: p.name,
+                        price: parseFloat(p.price) || 0,
+                        unit: p.unit || 'kg',
+                        quantity: keepQty ? (parseFloat(p.prev_quantity) || 0) : 0
+                    }));
+
+                    // Przejście od razu do Kroku 3
+                    step1.classList.add('hidden');
+                    step2.classList.add('hidden');
+                    step4.classList.add('hidden');
+                    step3.classList.remove('hidden');
+                    renderProductsTable();
+                })
+                .catch(err => {
+                    btnLoadHistory.disabled = false;
+                    btnLoadHistory.innerHTML = originalText;
+                    alert('Błąd wczytywania cennika z historii: ' + err.message);
+                });
+            });
         }
 
         // 2. Krok 2: Renderowanie podglądu i selektorów mapowania
@@ -1091,8 +1628,8 @@ $appName    = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
         document.getElementById('product-search').addEventListener('input', renderProductsTable);
         document.getElementById('filter-ordered-only').addEventListener('change', renderProductsTable);
 
-        // 4. Zatwierdzenie i generowanie zamówienia
-        document.getElementById('btn-submit-order').addEventListener('click', () => {
+        // 4. Zatwierdzenie i generowanie zamówienia (oraz opcjonalna wysyłka e-mail)
+        function submitOrder(sendEmail = false) {
             const orderedItems = productsList.filter(p => p.quantity > 0);
             if (orderedItems.length === 0) {
                 alert('Wprowadź ilość dla przynajmniej jednego produktu, aby utworzyć zamówienie.');
@@ -1106,18 +1643,27 @@ $appName    = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
             formData.append('items', JSON.stringify(orderedItems));
             formData.append('_csrf', CSRF_TOKEN);
             formData.append('csrf_token', CSRF_TOKEN);
+            if (sendEmail) {
+                formData.append('send_email', '1');
+            }
 
-            const btn = document.getElementById('btn-submit-order');
-            btn.disabled = true;
-            btn.innerHTML = '<span>Generowanie pliku...</span>';
+            const btnSave = document.getElementById('btn-submit-order');
+            const btnSend = document.getElementById('btn-submit-send-order');
+            btnSave.disabled = true;
+            btnSend.disabled = true;
+
+            const activeBtn = sendEmail ? btnSend : btnSave;
+            const origHtml = activeBtn.innerHTML;
+            activeBtn.innerHTML = sendEmail ? '<span>Wysyłanie e-mail...</span>' : '<span>Generowanie pliku...</span>';
 
             apiFetch(BASE_URL + 'order/save', {
                 method: 'POST',
                 body: formData
             })
             .then(data => {
-                btn.disabled = false;
-                btn.innerHTML = '<span>Zatwierdź i pobierz Excel</span>';
+                btnSave.disabled = false;
+                btnSend.disabled = false;
+                activeBtn.innerHTML = origHtml;
 
                 if (!data.ok) {
                     alert(data.error || 'Błąd podczas zapisu zamówienia.');
@@ -1133,15 +1679,48 @@ $appName    = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
                 document.getElementById('success-total-amount').textContent = Number(data.total_amount).toFixed(2) + ' zł';
                 document.getElementById('btn-download-again').href = data.download_url;
 
+                // Prezentacja statusu wysyłki e-mail
+                const emailBox = document.getElementById('email-status-box');
+                const emailIcon = document.getElementById('email-status-icon');
+                const emailText = document.getElementById('email-status-text');
+
+                if (data.email_status) {
+                    emailBox.classList.remove('hidden');
+                    emailText.textContent = data.email_message || '';
+
+                    if (data.email_status === 'sent') {
+                        emailBox.style.background = '#ecfdf5';
+                        emailBox.style.border = '1px solid #a7f3d0';
+                        emailBox.style.color = '#065f46';
+                        emailIcon.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+                    } else if (data.email_status === 'not_configured') {
+                        emailBox.style.background = '#fffbeb';
+                        emailBox.style.border = '1px solid #fde68a';
+                        emailBox.style.color = '#92400e';
+                        emailIcon.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+                    } else {
+                        emailBox.style.background = '#fef2f2';
+                        emailBox.style.border = '1px solid #fecaca';
+                        emailBox.style.color = '#991b1b';
+                        emailIcon.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
+                    }
+                } else {
+                    emailBox.classList.add('hidden');
+                }
+
                 // Automatyczne pobranie pliku Excela
                 window.location.href = data.download_url;
             })
             .catch(err => {
-                btn.disabled = false;
-                btn.innerHTML = '<span>Zatwierdź i pobierz Excel</span>';
+                btnSave.disabled = false;
+                btnSend.disabled = false;
+                activeBtn.innerHTML = origHtml;
                 alert('Błąd połączenia: ' + err.message);
             });
-        });
+        }
+
+        document.getElementById('btn-submit-order').addEventListener('click', () => submitOrder(false));
+        document.getElementById('btn-submit-send-order').addEventListener('click', () => submitOrder(true));
 
         function escapeHtml(str) {
             if (!str) return '';

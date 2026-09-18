@@ -21,11 +21,61 @@ class OrderController extends AppController
     {
         $this->requireAuth();
 
-        $this->outputData['title']       = 'Nowe zamówienie warzyw i owoców';
-        $this->outputData['user']        = Tools::getSessionVar('app_login') ?: 'użytkownik';
-        $this->outputData['csrf_token']  = Tools::csrfToken();
+        $model = new \App\OrderModel();
+        $recentOrders = $model->getAllOrders(10);
+
+        $this->outputData['title']         = 'Nowe zamówienie warzyw i owoców';
+        $this->outputData['user']          = Tools::getSessionVar('app_login') ?: 'użytkownik';
+        $this->outputData['csrf_token']    = Tools::csrfToken();
+        $this->outputData['recent_orders'] = $recentOrders;
 
         return 'index';
+    }
+
+    /**
+     * POST /order/loadhistory
+     * Pobiera pozycje i dane wskazanego zamówienia z bazy w celu utworzenia nowego zamówienia na bazie historii.
+     */
+    public function actionLoadhistory()
+    {
+        $this->requireAuth();
+        $this->requireCsrf();
+
+        $orderId = (int)($_POST['order_id'] ?? $this->param('id', 0));
+        if ($orderId <= 0) {
+            App::json(['ok' => false, 'error' => 'Nie wybrano zamówienia z historii.'], 400);
+            return;
+        }
+
+        $model = new \App\OrderModel();
+        $order = $model->getOrderById($orderId);
+        if (!$order) {
+            App::json(['ok' => false, 'error' => 'Nie znaleziono wskazanego zamówienia w historii.'], 404);
+            return;
+        }
+
+        $items = $model->getOrderItems($orderId);
+        $products = [];
+        foreach ($items as $item) {
+            $products[] = [
+                'name'          => $item['product_name'],
+                'price'         => (float)$item['unit_price'],
+                'unit'          => $item['unit'],
+                'quantity'      => 0,
+                'prev_quantity' => (float)$item['quantity'],
+            ];
+        }
+
+        App::json([
+            'ok'                => true,
+            'order_id'          => $order['id'],
+            'order_number'      => $order['order_number'],
+            'supplier_name'     => $order['supplier_name'] ?? '',
+            'original_filename' => $order['original_filename'] ?? 'cennik.xlsx',
+            'created_at'        => $order['created_at'],
+            'products'          => $products,
+            'total_products'    => count($products),
+        ]);
     }
 
     /**
@@ -212,14 +262,67 @@ class OrderController extends AppController
                 'export_filename'   => $exportFilename,
             ], $validItems);
 
-            App::json([
+            // 3. Opcjonalna wysyłka e-mail do hurtowni
+            $sendEmail = !empty($_POST['send_email']);
+            $recipientEmail = trim((string)($_POST['recipient_email'] ?? (defined('ORDER_RECIPIENT_EMAIL') ? ORDER_RECIPIENT_EMAIL : '')));
+
+            $emailStatus = null;
+            $emailMessage = null;
+
+            if ($sendEmail) {
+                $isSmtpConfigured = defined('SMTP_HOST') && trim(SMTP_HOST) !== '';
+                $isTransportMail  = defined('MAIL_TRANSPORT') && MAIL_TRANSPORT === 'mail';
+
+                if (!$isSmtpConfigured && !$isTransportMail) {
+                    $emailStatus = 'not_configured';
+                    $emailMessage = 'Zamówienie zostało zapisane. Wysyłka e-mail wymaga uzupełnienia parametrów SMTP w pliku program/config/data.php.';
+                } elseif ($recipientEmail === '') {
+                    $emailStatus = 'not_configured';
+                    $emailMessage = 'Zamówienie zostało zapisane. Brak zdefiniowanego adresu e-mail hurtowni (uzupełnij ORDER_RECIPIENT_EMAIL w pliku program/config/data.php).';
+                } else {
+                    $subject = 'Zamówienie ' . $orderNumber . ($supplierName !== '' ? ' (' . $supplierName . ')' : '');
+                    $orderData = [
+                        'order_number'  => $orderNumber,
+                        'supplier_name' => $supplierName,
+                        'created_at'    => date('Y-m-d H:i'),
+                        'total_amount'  => $totalAmount,
+                    ];
+                    $html = \Mailer::buildOrderEmailHtml($orderData, $validItems);
+                    $attachments = [
+                        [
+                            'path' => $exportPath,
+                            'name' => $exportFilename,
+                        ]
+                    ];
+
+                    $sent = \Mailer::send($html, $recipientEmail, $subject, [], $attachments);
+                    if ($sent) {
+                        $emailStatus = 'sent';
+                        $emailMessage = 'Zamówienie zostało pomyślnie wysłane na adres: ' . $recipientEmail;
+                    } else {
+                        $emailStatus = 'failed';
+                        $err = \Mailer::$lastError ? ' (' . \Mailer::$lastError . ')' : '';
+                        $emailMessage = 'Zamówienie zapisano, lecz wysyłka e-mail nie powiodła się' . $err . '. Sprawdź konfigurację SMTP w data.php.';
+                    }
+                }
+            }
+
+            $response = [
                 'ok'            => true,
                 'order_id'      => $orderId,
                 'order_number'  => $orderNumber,
                 'download_url'  => App::baseUrl() . 'order/download/id/' . $orderId,
                 'total_items'   => count($validItems),
                 'total_amount'  => round($totalAmount, 2),
-            ]);
+            ];
+
+            if ($emailStatus !== null) {
+                $response['email_status'] = $emailStatus;
+                $response['email_message'] = $emailMessage;
+                $response['recipient_email'] = $recipientEmail;
+            }
+
+            App::json($response);
         } catch (\Throwable $e) {
             App::json(['ok' => false, 'error' => 'Błąd zapisu zamówienia: ' . $e->getMessage()], 500);
         }

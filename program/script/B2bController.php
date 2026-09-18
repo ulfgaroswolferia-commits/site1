@@ -79,13 +79,253 @@ class B2bController extends AppController
             return;
         }
 
-        $this->outputData['title']     = 'Hurtownia Magdy — Zamówienia B2B';
-        $this->outputData['client']    = $client;
-        $this->outputData['products']  = $this->repo->getActiveProducts();
-        $this->outputData['csrfToken'] = Tools::csrfToken();
-        $this->outputData['base']      = App::baseUrl();
+        $products = $this->repo->getActiveProducts();
+        $categories = array_values(array_unique(array_filter(array_column($products, 'category'))));
+        sort($categories);
+
+        $this->outputData['title']      = 'Hurtownia Magdy — Zamówienia B2B';
+        $this->outputData['client']     = $client;
+        $this->outputData['products']   = $products;
+        $this->outputData['categories'] = $categories;
+        $this->outputData['csrfToken']  = Tools::csrfToken();
+        $this->outputData['base']       = App::baseUrl();
 
         return 'catalog';
+    }
+
+    /**
+     * POST /b2b/saveorder
+     * Zatwierdzenie zamówienia z poziomu portalu B2B klienta.
+     */
+    public function actionSaveorder()
+    {
+        $clientId = (int)($_SESSION['b2b_client_id'] ?? 0);
+        if ($clientId <= 0) {
+            App::json(['ok' => false, 'error' => 'Brak aktywnej sesji klienta B2B. Zaloguj się ponownie.'], 401);
+            return;
+        }
+
+        $client = $this->repo->getClientById($clientId);
+        if (!$client || (int)$client['is_active'] !== 1) {
+            App::json(['ok' => false, 'error' => 'Konto klienta jest nieaktywne.'], 403);
+            return;
+        }
+
+        $this->requireCsrf();
+
+        $rawItems = $_POST['items'] ?? null;
+        if (is_string($rawItems)) {
+            $items = json_decode($rawItems, true);
+        } elseif (is_array($rawItems)) {
+            $items = $rawItems;
+        } else {
+            $items = [];
+        }
+
+        if (empty($items) || !is_array($items)) {
+            App::json(['ok' => false, 'error' => 'Koszyk zamówienia jest pusty.'], 400);
+            return;
+        }
+
+        $preparedItems = [];
+        $totalAmount = 0.0;
+
+        foreach ($items as $it) {
+            $qty = (float)($it['quantity'] ?? 0);
+            if ($qty <= 0) continue;
+
+            $name        = trim((string)($it['product_name'] ?? $it['name'] ?? 'Towar'));
+            $price       = (float)($it['price'] ?? 0);
+            $unit        = trim((string)($it['unit'] ?? 'kg'));
+            $pkgSize     = (float)($it['package_size'] ?? 1.0);
+            $pkgUnit     = trim((string)($it['package_unit'] ?? 'op.'));
+            $itemTotal   = round($qty * $price, 2);
+            $pkgSummary  = $this->repo->formatPackageSummary($qty, $pkgSize, $pkgUnit, $unit);
+
+            $preparedItems[] = [
+                'product_id'      => isset($it['product_id']) ? (int)$it['product_id'] : null,
+                'product_name'    => $name,
+                'price'           => $price,
+                'quantity'        => $qty,
+                'unit'            => $unit,
+                'package_size'    => $pkgSize,
+                'package_unit'    => $pkgUnit,
+                'package_summary' => $pkgSummary,
+                'item_total'      => $itemTotal
+            ];
+
+            $totalAmount += $itemTotal;
+        }
+
+        if (empty($preparedItems)) {
+            App::json(['ok' => false, 'error' => 'Brak poprawnych pozycji w zamówieniu.'], 400);
+            return;
+        }
+
+        $orderNumber = $this->repo->generateOrderNumber();
+        $notes = trim((string)($_POST['notes'] ?? ''));
+
+        // Generowanie karty kompletacji magazynowej .xlsx
+        $safeNumber = str_replace(['/', '\\'], '_', $orderNumber);
+        $fileName = 'kompletacja_' . $safeNumber . '.xlsx';
+        $filePath = BASE_PATH . '/storage/b2b/orders/' . $fileName;
+
+        $meta = [
+            'order_number'     => $orderNumber,
+            'client_name'      => $client['company_name'],
+            'client_phone'     => $client['phone'] ?? '',
+            'delivery_address' => $client['delivery_address'] ?? '',
+            'created_at'       => date('Y-m-d H:i:s'),
+            'notes'            => $notes,
+        ];
+
+        try {
+            XlsxWriter::savePackingSheetToFile($filePath, $preparedItems, $meta);
+        } catch (\Throwable $e) {
+            error_log('Błąd generowania karty kompletacji Excel: ' . $e->getMessage());
+        }
+
+        $orderId = $this->repo->createOrder([
+            'order_number'              => $orderNumber,
+            'client_id'                 => $clientId,
+            'client_name_snapshot'      => $client['company_name'],
+            'client_phone_snapshot'     => $client['phone'] ?? '',
+            'delivery_address_snapshot' => $client['delivery_address'] ?? '',
+            'status'                    => 'new',
+            'export_filename'           => $fileName,
+            'total_amount'              => $totalAmount,
+            'notes'                     => $notes,
+        ], $preparedItems);
+
+        // Opcjonalne powiadomienie e-mail z załącznikiem
+        try {
+            $toWholesale = defined('MAIL_ORDER_NOTIFICATION') ? MAIL_ORDER_NOTIFICATION : (defined('MAIL_FROM') ? MAIL_FROM : '');
+            if ($toWholesale !== '') {
+                $emailSubject = "Nowe zamówienie B2B: {$orderNumber} — {$client['company_name']}";
+                $emailBody = Mailer::buildOrderEmailHtml([
+                    'order_number'  => $orderNumber,
+                    'supplier_name' => 'Hurtownia Magdy (B2B)',
+                    'created_at'    => date('Y-m-d H:i:s'),
+                    'total_amount'  => $totalAmount
+                ], array_map(function($i) {
+                    return [
+                        'name'       => $i['product_name'] . ' (' . $i['package_summary'] . ')',
+                        'price'      => $i['price'],
+                        'quantity'   => $i['quantity'],
+                        'unit'       => $i['unit'],
+                        'item_total' => $i['item_total']
+                    ];
+                }, $preparedItems));
+
+                $attachments = file_exists($filePath) ? [$filePath] : [];
+                Mailer::send($emailBody, $toWholesale, $emailSubject, [], $attachments);
+            }
+        } catch (\Throwable $e) {
+            error_log('Błąd wysyłki e-maila B2B: ' . $e->getMessage());
+        }
+
+        App::json([
+            'ok'              => true,
+            'order_id'        => $orderId,
+            'order_number'    => $orderNumber,
+            'total_amount'    => $totalAmount,
+            'export_filename' => $fileName
+        ]);
+    }
+
+    /**
+     * GET /b2b/download/id/{id} lub GET /b2b/download?id={id}
+     * Pobranie karty kompletacji .xlsx (dostępne dla admina lub odbiorcy zamówienia).
+     */
+    public function actionDownload()
+    {
+        $id = (int)($_GET['id'] ?? $this->getParam('id', 0));
+        if ($id <= 0) {
+            App::error(404, 'Brak identyfikatora zamówienia.');
+            return;
+        }
+
+        $order = $this->repo->getOrderById($id);
+        if (!$order) {
+            App::error(404, 'Zamówienie nie istnieje.');
+            return;
+        }
+
+        // Sprawdź uprawnienia: admin hurtowni LUB klient właściciel
+        $isAdmin = $this->isLoggedIn();
+        $isOwner = isset($_SESSION['b2b_client_id']) && (int)$_SESSION['b2b_client_id'] === (int)$order['client_id'];
+
+        if (!$isAdmin && !$isOwner) {
+            App::error(403, 'Brak uprawnień do pobrania tego zamówienia.');
+            return;
+        }
+
+        $fileName = $order['export_filename'];
+        if (empty($fileName)) {
+            $safeNumber = str_replace(['/', '\\'], '_', $order['order_number']);
+            $fileName = 'kompletacja_' . $safeNumber . '.xlsx';
+        }
+
+        $filePath = BASE_PATH . '/storage/b2b/orders/' . $fileName;
+
+        // Jeśli pliku nie ma na dysku, wygeneruj go w locie
+        if (!file_exists($filePath)) {
+            $items = $this->repo->getOrderItems($id);
+            $meta = [
+                'order_number'     => $order['order_number'],
+                'client_name'      => $order['client_name_snapshot'],
+                'client_phone'     => $order['client_phone_snapshot'],
+                'delivery_address' => $order['delivery_address_snapshot'],
+                'created_at'       => $order['created_at'],
+                'notes'            => $order['notes'],
+            ];
+            XlsxWriter::savePackingSheetToFile($filePath, $items, $meta);
+        }
+
+        if (file_exists($filePath)) {
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment; filename="' . basename($fileName) . '"');
+            header('Content-Length: ' . filesize($filePath));
+            header('Cache-Control: max-age=0');
+            readfile($filePath);
+            exit;
+        } else {
+            App::error(500, 'Nie udało się odnaleźć ani wygenerować pliku zamówienia.');
+        }
+    }
+
+    /**
+     * GET /b2b/history
+     * Historia zamówień zalogowanego klienta B2B.
+     */
+    public function actionHistory()
+    {
+        $clientId = (int)($_SESSION['b2b_client_id'] ?? 0);
+        if ($clientId <= 0) {
+            $this->redirect(App::baseUrl() . 'b2b/login');
+            return;
+        }
+
+        $client = $this->repo->getClientById($clientId);
+        if (!$client) {
+            $this->redirect(App::baseUrl() . 'b2b/login');
+            return;
+        }
+
+        $orders = $this->repo->getClientOrders($clientId);
+
+        if ($this->isAjax()) {
+            App::json(['ok' => true, 'orders' => $orders]);
+            return;
+        }
+
+        $this->layout = '';
+        $this->outputData['title']   = 'Historia Zamówień — ' . $client['company_name'];
+        $this->outputData['client']  = $client;
+        $this->outputData['orders']  = $orders;
+        $this->outputData['base']    = App::baseUrl();
+
+        return 'history';
     }
 
     /**

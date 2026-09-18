@@ -11,10 +11,10 @@ require_once BASE_PATH . '/program/lib/PaginationHelper.php';
 require_once BASE_PATH . '/program/lib/XlsxParser.php';
 require_once BASE_PATH . '/program/lib/XlsxWriter.php';
 
-// Poczta — odkomentuj, gdy projekt wysyła maile (patrz MAIL_* w data.php).
-// require_once BASE_PATH . '/program/lib/class.phpmailer.php';
-// require_once BASE_PATH . '/program/lib/class.smtp.php';
-// require_once BASE_PATH . '/program/lib/Mailer.php';
+// Poczta (patrz MAIL_* w data.php).
+require_once BASE_PATH . '/program/lib/class.phpmailer.php';
+require_once BASE_PATH . '/program/lib/class.smtp.php';
+require_once BASE_PATH . '/program/lib/Mailer.php';
 
 // Sloty na biblioteki doklejane per projekt:
 // require_once BASE_PATH . '/program/lib/tcpdf/tcpdf.php';      // generowanie PDF
