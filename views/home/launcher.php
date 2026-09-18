@@ -157,6 +157,11 @@ $title = $view['title'] ?? 'Panel użytkownika';
                 <span class="module-card-description">Panel hurtowni: cennik, inteligentne opakowania, klienci i zamówienia</span>
             </a>
 
+            <div class="module-placeholder">
+                <span class="module-card-title" style="font-size: 1.15rem; color: #64748b;">Następny moduł</span>
+                <span class="module-card-description" style="margin-top: 4px; color: #94a3b8;">może Ty masz pomysł co to może być?</span>
+            </div>
+
             <a class="module-card dashboard-link" href="<?= $base ?>home/dashboard">
                 <span class="module-card-title">Otwórz pulpit</span>
                 <span class="module-card-description">Przejdź do pulpitu technicznego.</span>

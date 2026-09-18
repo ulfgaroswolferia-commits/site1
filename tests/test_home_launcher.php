@@ -29,10 +29,14 @@ $res = curl_exec($ch);
 $hasName = strpos($res, 'Zamawiarka Magdy') !== false;
 $hasDesc = strpos($res, 'Zrób zamówienie z pliku excel') !== false;
 $noOldName = strpos($res, 'Zamówienia z cennika excel') === false;
+$hasPlaceholder = strpos($res, 'Następny moduł') !== false;
+$hasPlaceholderSub = strpos($res, 'może Ty masz pomysł co to może być?') !== false;
 
 echo "1. Nowa nazwa modułu ('Zamawiarka Magdy'): " . ($hasName ? "OK" : "BŁĄD") . "\n";
 echo "2. Nowy opis modułu ('Zrób zamówienie z pliku excel'): " . ($hasDesc ? "OK" : "BŁĄD") . "\n";
 echo "3. Stara nazwa usunięta: " . ($noOldName ? "OK" : "BŁĄD") . "\n";
+echo "4. Placeholder 'Następny moduł': " . ($hasPlaceholder ? "OK" : "BŁĄD") . "\n";
+echo "5. Podpis placeholderu ('może Ty masz pomysł...'): " . ($hasPlaceholderSub ? "OK" : "BŁĄD") . "\n";
 
 @unlink($cookieFile);
-exit(($hasName && $hasDesc && $noOldName) ? 0 : 1);
+exit(($hasName && $hasDesc && $noOldName && $hasPlaceholder && $hasPlaceholderSub) ? 0 : 1);
