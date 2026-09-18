@@ -128,11 +128,11 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                         <tr>
                             <th class="py-3 px-4 w-12 text-center">Lp.</th>
                             <th class="py-3 px-4">Towar</th>
-                            <th class="py-3 px-3 w-28">Opakowanie</th>
-                            <th class="py-3 px-3 text-right w-28">Cena</th>
-                            <th class="py-3 px-4 text-center w-48">Ilość do zamówienia</th>
-                            <th class="py-3 px-3 w-40">Rozbicie logistyczne</th>
-                            <th class="py-3 px-4 text-right w-32">Wartość</th>
+                            <th class="py-3 px-3 w-44 whitespace-nowrap">Opakowanie</th>
+                            <th class="py-3 px-3 text-right w-28 whitespace-nowrap">Cena</th>
+                            <th class="py-3 px-4 text-center w-48 whitespace-nowrap">Ilość do zamówienia</th>
+                            <th class="py-3 px-3 w-44 whitespace-nowrap">Rozbicie logistyczne</th>
+                            <th class="py-3 px-4 text-right w-32 whitespace-nowrap">Wartość</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100" id="tableBody">
@@ -174,18 +174,18 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                                     </td>
 
                                     <!-- Opakowanie i asystent -->
-                                    <td class="py-3.5 px-3">
+                                    <td class="py-3.5 px-3 whitespace-nowrap">
                                         <?php if ($pkgSize > 1.0): ?>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold whitespace-nowrap">
                                                 <?= $pkgUnit ?> (<?= $pkgSize ?> <?= $unit ?>)
                                             </span>
                                         <?php else: ?>
-                                            <span class="text-slate-400 text-xs">luzem (<?= $unit ?>)</span>
+                                            <span class="text-slate-400 text-xs whitespace-nowrap">luzem (<?= $unit ?>)</span>
                                         <?php endif; ?>
                                     </td>
 
                                     <!-- Cena -->
-                                    <td class="py-3.5 px-3 text-right">
+                                    <td class="py-3.5 px-3 text-right whitespace-nowrap">
                                         <div class="font-bold text-slate-800">
                                             <?= number_format($price, 2, '.', ' ') ?> <span class="text-xs font-normal text-slate-500">zł</span>
                                         </div>
@@ -216,8 +216,8 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                                     </td>
 
                                     <!-- Rozbicie logistyczne -->
-                                    <td class="py-3.5 px-3">
-                                        <span class="package-summary-label text-xs font-medium text-slate-600">-</span>
+                                    <td class="py-3.5 px-3 whitespace-nowrap">
+                                        <span class="package-summary-label text-xs font-medium text-slate-600 whitespace-nowrap">-</span>
                                     </td>
 
                                     <!-- Wartość -->
