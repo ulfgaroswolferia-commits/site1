@@ -82,7 +82,7 @@ class B2bController extends AppController
         $this->outputData['title']     = 'Hurtownia Magdy — Zamówienia B2B';
         $this->outputData['client']    = $client;
         $this->outputData['products']  = $this->repo->getActiveProducts();
-        $this->outputData['csrfToken'] = Tools::generateCsrf();
+        $this->outputData['csrfToken'] = Tools::csrfToken();
         $this->outputData['base']      = App::baseUrl();
 
         return 'catalog';
@@ -116,7 +116,7 @@ class B2bController extends AppController
             }
         }
 
-        $this->outputData['csrfToken'] = Tools::generateCsrf();
+        $this->outputData['csrfToken'] = Tools::csrfToken();
         return 'login';
     }
 
@@ -146,7 +146,7 @@ class B2bController extends AppController
         $this->outputData['products']     = $this->repo->getAllProductsAdmin();
         $this->outputData['orders']       = $this->repo->getAllOrders(100);
         $this->outputData['clients']      = $this->repo->getAllClients();
-        $this->outputData['csrfToken']    = Tools::generateCsrf();
+        $this->outputData['csrfToken']    = Tools::csrfToken();
         $this->outputData['base']         = App::baseUrl();
         $this->outputData['activeTab']    = $_GET['tab'] ?? 'products';
 
