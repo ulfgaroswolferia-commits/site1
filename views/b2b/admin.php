@@ -9,6 +9,7 @@ $products  = $view['products'] ?? [];
 $orders    = $view['orders'] ?? [];
 $clients   = $view['clients'] ?? [];
 $activeTab = $view['activeTab'] ?? 'products';
+$isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defined('DBLOGIN') && DBLOGIN !== 'CHANGEME' && DBLOGIN !== '';
 ?>
 <!DOCTYPE html>
 <html lang="pl" class="h-full bg-slate-50">
@@ -167,6 +168,40 @@ $activeTab = $view['activeTab'] ?? 'products';
                     </div>
                 </div>
             </section>
+
+            <!-- Mały placeholder: Połącz z bazą danych MySQL -->
+            <div class="bg-white/80 border border-dashed border-slate-300/90 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3 transition">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 text-slate-500 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-extrabold text-slate-800">Połącz z bazą danych MySQL</span>
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full <?= $isMysqlConfigured ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500 border border-slate-200' ?>">
+                                <?= $isMysqlConfigured ? 'Skonfigurowana' : 'Nieaktywny' ?>
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-0.5">
+                            <?= $isMysqlConfigured 
+                                ? 'Parametry połączenia MySQL gotowe w program/config/data.php' 
+                                : 'Póki co nieaktywne — wymaga skonfigurowania danych bazy w program/config/data.php' ?>
+                        </p>
+                    </div>
+                </div>
+                <div>
+                    <button type="button" <?= $isMysqlConfigured ? '' : 'disabled' ?>
+                        class="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition <?= $isMysqlConfigured ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm' : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60' ?>"
+                        title="<?= $isMysqlConfigured ? 'Synchronizuj asortyment z bazy MySQL' : 'Uzupełnij DSN, DBLOGIN i DBPASS w program/config/data.php, aby aktywować tę integrację' ?>">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                        Połącz z bazą danych MySQL
+                    </button>
+                </div>
+            </div>
 
             <!-- Tabela bieżącego asortymentu z szybką edycją na żywo -->
             <section class="bg-white/95 border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
