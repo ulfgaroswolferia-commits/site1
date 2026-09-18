@@ -176,7 +176,7 @@ $activeTab = $view['activeTab'] ?? 'products';
                             <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">2</span>
                             Bieżący Asortyment w Ofercie (Edycja na żywo)
                         </h2>
-                        <p class="text-xs text-slate-500 mt-0.5">Zmieniaj ceny, klatki lub wyłączaj braki jednym klikiem bez ponownego wgrywania pliku.</p>
+                        <p class="text-xs text-slate-500 mt-0.5">Edytuj ceny, kategorie, jednostki i opakowania zbiorcze towarów</p>
                     </div>
 
                     <div class="flex items-center gap-3 w-full sm:w-auto">
