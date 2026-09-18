@@ -91,7 +91,7 @@ $base      = $view['base'] ?? App::baseUrl();
                         </svg>
                         Zamawiaj błyskawicznie bez hasła
                     </p>
-                    Otrzymałeś od hurtowni link z tokenem? Wystarczy kliknąć link (np. w SMS lub e-mailu), aby wejść od razu do swojego spersonalizowanego cennika.
+                    Chcesz dostawać zaufany link z tokenem? Wówczas wystarczy kliknąć link (np. w SMS lub e-mailu), aby wejść od razu do swojego spersonalizowanego cennika. (skontaktuj się z naszym przedstawicielem).
                 </div>
             </div>
         </div>
