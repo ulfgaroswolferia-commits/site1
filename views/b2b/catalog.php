@@ -439,7 +439,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 } else if (fullBoxes > 0) {
                     return `${fullBoxes} ${pkgUnit} (${qty} ${unit})`;
                 } else if (remainder > 0) {
-                    return `${remainder} ${unit} (luzem)`;
+                    return `${remainder} ${unit}`;
                 }
                 return '-';
             }

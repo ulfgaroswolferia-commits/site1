@@ -555,7 +555,7 @@ class B2bRepository
             $parts[] = "{$fullBoxes} {$packageUnit}";
         }
         if ($remainder > 0.001) {
-            $parts[] = "{$remainder} {$unit} luzem";
+            $parts[] = "{$remainder} {$unit}";
         }
 
         return !empty($parts) ? implode(' + ', $parts) : "{$quantity} {$unit}";
