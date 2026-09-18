@@ -20,10 +20,26 @@ class HomeController extends AppController
         if ($this->isLoggedIn()) {
             $this->outputData['title'] = 'Panel użytkownika';
             $this->outputData['user']  = Tools::getSessionVar('app_login') ?: (defined('APP_LOGIN') ? APP_LOGIN : 'użytkownik');
-            return 'dashboard';
+            return 'launcher';
         }
 
         return $this->actionLogin();
+    }
+
+    /**
+     * GET /home/dashboard
+     *
+     * Zachowany, rozbudowany dashboard dostępny po wybraniu go z launchera.
+     */
+    public function actionDashboard()
+    {
+        $this->requireAuth();
+        $this->layout = '';
+
+        $this->outputData['title'] = 'Panel użytkownika';
+        $this->outputData['user']  = Tools::getSessionVar('app_login') ?: (defined('APP_LOGIN') ? APP_LOGIN : 'użytkownik');
+
+        return 'dashboard';
     }
 
     /**
