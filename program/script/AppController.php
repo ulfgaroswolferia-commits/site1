@@ -31,6 +31,9 @@ class AppController extends Controller
     protected function requireAuth(): void
     {
         if (!$this->isLoggedIn()) {
+            if ($this->isAjax()) {
+                App::json(['ok' => false, 'error' => 'Sesja wygasła. Zaloguj się ponownie.'], 401);
+            }
             Tools::setFlashMsg('error', 'Zaloguj się, aby kontynuować.');
             App::redirect(defined('AUTH_LOGIN_ROUTE') ? AUTH_LOGIN_ROUTE : 'home/index');
         }
@@ -103,10 +106,12 @@ class AppController extends Controller
     // Żądanie
     // -------------------------------------------------------------------------
 
-    /** Czy żądanie przyszło przez fetch/XHR (nagłówek ustawia nasz JS). */
+    /** Czy żądanie przyszło przez fetch/XHR (nagłówek X-Requested-With lub Accept/Content-Type JSON). */
     protected function isAjax(): bool
     {
-        return strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest';
+        return strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest'
+            || stripos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false
+            || stripos($_SERVER['CONTENT_TYPE'] ?? '', 'application/json') !== false;
     }
 
     /**

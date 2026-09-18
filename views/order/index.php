@@ -807,6 +807,25 @@ $appName    = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
             uploadStatus.classList.remove('hidden');
         }
 
+        // Pomocniczy wrapper AJAX wymuszający nagłówki i czysty JSON
+        function apiFetch(url, options = {}) {
+            options.headers = Object.assign({
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }, options.headers || {});
+
+            return fetch(url, options).then(async res => {
+                const contentType = res.headers.get('content-type') || '';
+                if (!contentType.includes('application/json')) {
+                    if (res.status === 401 || res.status === 403) {
+                        throw new Error('Sesja wygasła. Odśwież stronę i zaloguj się ponownie.');
+                    }
+                    throw new Error('Serwer zwrócił odpowiedź inną niż JSON (kod ' + res.status + '). Sprawdź uprawnienia.');
+                }
+                return await res.json();
+            });
+        }
+
         // 1. Upload pliku do actionUpload
         function handleFileUpload(file) {
             if (!file.name.toLowerCase().endsWith('.xlsx')) {
@@ -817,13 +836,13 @@ $appName    = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
             showStatus('Wczytywanie i parsowanie arkusza Excel...');
             const formData = new FormData();
             formData.append('price_list', file);
+            formData.append('_csrf', CSRF_TOKEN);
             formData.append('csrf_token', CSRF_TOKEN);
 
-            fetch(BASE_URL + 'order/upload', {
+            apiFetch(BASE_URL + 'order/upload', {
                 method: 'POST',
                 body: formData
             })
-            .then(res => res.json())
             .then(data => {
                 if (!data.ok) {
                     showStatus(data.error || 'Wystąpił błąd przy przetwarzaniu pliku.', true);
@@ -835,7 +854,7 @@ $appName    = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
                 renderStep2(data.preview, data.candidates);
             })
             .catch(err => {
-                showStatus('Błąd połączenia z serwerem: ' + err.message, true);
+                showStatus('Błąd: ' + err.message, true);
             });
         }
 
@@ -944,13 +963,13 @@ $appName    = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
             formData.append('col_product', colProd);
             formData.append('col_price', colPrice);
             formData.append('col_unit', colUnit);
+            formData.append('_csrf', CSRF_TOKEN);
             formData.append('csrf_token', CSRF_TOKEN);
 
-            fetch(BASE_URL + 'order/process', {
+            apiFetch(BASE_URL + 'order/process', {
                 method: 'POST',
                 body: formData
             })
-            .then(res => res.json())
             .then(data => {
                 if (!data.ok) {
                     alert(data.error || 'Błąd przetwarzania produktów.');
@@ -1085,17 +1104,17 @@ $appName    = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
             formData.append('supplier_name', supplierName);
             formData.append('original_filename', originalFileName || 'cennik.xlsx');
             formData.append('items', JSON.stringify(orderedItems));
+            formData.append('_csrf', CSRF_TOKEN);
             formData.append('csrf_token', CSRF_TOKEN);
 
             const btn = document.getElementById('btn-submit-order');
             btn.disabled = true;
             btn.innerHTML = '<span>Generowanie pliku...</span>';
 
-            fetch(BASE_URL + 'order/save', {
+            apiFetch(BASE_URL + 'order/save', {
                 method: 'POST',
                 body: formData
             })
-            .then(res => res.json())
             .then(data => {
                 btn.disabled = false;
                 btn.innerHTML = '<span>Zatwierdź i pobierz Excel</span>';

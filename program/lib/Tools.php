@@ -181,7 +181,13 @@ class Tools
     public static function csrfValidate(?string $submitted = null): bool
     {
         if ($submitted === null) {
-            $submitted = (string) ($_POST[self::CSRF_FIELD] ?? '');
+            $submitted = (string) (
+                $_POST[self::CSRF_FIELD]
+                ?? $_POST['csrf_token']
+                ?? $_SERVER['HTTP_X_CSRF_TOKEN']
+                ?? $_SERVER['HTTP_X_XSRF_TOKEN']
+                ?? ''
+            );
         }
         $expected = (string) ($_SESSION[self::CSRF_SESSION_KEY] ?? '');
 
