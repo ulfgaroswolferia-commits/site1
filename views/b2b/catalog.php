@@ -374,11 +374,18 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    Pobierz specyfikację (Excel .xlsx)
+                    Pobierz plik
                 </a>
                 <button type="button" id="btnNewOrder" class="w-full py-2.5 px-4 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
                     Złóż kolejne zamówienie
                 </button>
+                <a href="<?= $base ?>b2b/logout" id="btnLogoutAfterOrder"
+                    class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-rose-200 bg-rose-50/50 hover:bg-rose-100 text-rose-700 text-xs font-bold transition">
+                    <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    To wszystko, wyloguj
+                </a>
             </div>
         </div>
     </div>
