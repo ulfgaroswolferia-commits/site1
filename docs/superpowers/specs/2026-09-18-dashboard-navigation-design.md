@@ -18,11 +18,15 @@ Obecny dashboard ma pozostać dostępny bez zmiany zawartości.
 
 - `HomeController::actionIndex()`:
   - dla niezalogowanego użytkownika zachowuje obecne przejście do logowania,
-  - dla zalogowanego renderuje nowy ekran wyboru modułów.
+  - dla zalogowanego ustawia dane wymagane przez ekran i zwraca widok
+    `launcher`.
 - `HomeController::actionDashboard()`:
-  - wymaga zalogowania,
+  - zaczyna się od `requireAuth()`,
   - przekazuje dotychczasowe dane użytkownika i tytuł,
-  - renderuje istniejący widok `views/home/dashboard.php`.
+  - zwraca istniejący widok `dashboard`.
+- Obie akcje zachowują dotychczasowy tryb samodzielnego widoku dashboardu
+  (`$this->layout = ''`), tak aby istniejący ekran nie został opakowany
+  dodatkowym layoutem.
 - Nie dodajemy nowej trasy ani kontrolera. Wykorzystujemy istniejącą trasę
   `home` i nową akcję `dashboard`.
 
@@ -34,20 +38,26 @@ Widok zawiera dokładnie trzy główne elementy, w kolejności pionowej:
 
 1. **Order** — wyróżniona karta/przycisk prowadzący do
    `order/index`.
-2. **Miejsce na następny moduł** — nieaktywny, neutralny placeholder bez
-   linku i bez działania.
+2. **Miejsce na następny moduł** — neutralny, nieinteraktywny placeholder.
+   Nie jest elementem `<a>` ani aktywnym `<button>`, nie ma handlera kliknięcia
+   i nie powoduje nawigacji ani żądania sieciowego.
 3. **Otwórz pulpit** — przycisk prowadzący do
    `home/dashboard`, czyli dotychczasowego dashboardu.
 
 Ekran wyboru nie zawiera dodatkowych kafelków, tabel, danych technicznych,
-linków demonstracyjnych ani skrótów do innych funkcji. Jego styl ma być
-czytelny, oszczędny i zgodny z istniejącą paletą aplikacji.
+linków demonstracyjnych ani skrótów do innych funkcji. „Trzy główne elementy”
+oznaczają elementy obszaru wyboru modułu; dopuszczalne są wyłącznie niezbędne
+elementy semantyczne i wizualne strony, takie jak tytuł ekranu, nagłówki,
+tekst pomocniczy i oznaczenia dostępności. Nie dodajemy dodatkowych
+interaktywnych skrótów, np. do wylogowania, dokumentacji lub przykładowych
+tras. Styl ma być czytelny, oszczędny i zgodny z istniejącą paletą aplikacji.
 
 ### Linki powrotne
 
 Linki opisane jako „Pulpit” w widokach modułu Order nadal prowadzą do
-`home/index`, czyli do nowego ekranu wyboru modułów. Dotychczasowy dashboard
-jest dostępny wyłącznie przez przycisk „Otwórz pulpit” na ekranie wyboru.
+`home/index`, czyli do nowego ekranu wyboru modułów. Na ekranie wyboru jedynym
+linkiem do dotychczasowego dashboardu jest przycisk „Otwórz pulpit”; bezpośredni
+adres `/home/dashboard` pozostaje dostępny dla zalogowanych użytkowników.
 
 ## Przepływ użytkownika
 
@@ -71,7 +81,8 @@ logowania.
 - Kliknięcie Order otwiera istniejący moduł `order/index`.
 - Placeholder nie jest klikalny i nie powoduje żądania.
 - Kliknięcie „Otwórz pulpit” otwiera dotychczasowy dashboard bez utraty jego
-  zawartości.
+  zawartości, w tym istniejących linków do Order, przykładów, dokumentacji,
+  ekranu wyboru i wylogowania.
 - Bezpośredni adres `/home/dashboard` wymaga zalogowania.
 - Niezalogowany przepływ logowania pozostaje bez zmian.
 - Linki są budowane przez `App::baseUrl()`, a wartości wyświetlane w widoku
