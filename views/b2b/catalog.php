@@ -458,10 +458,11 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 summaryLabel.textContent = computePackageSummary(qty, pkgSize, pkgUnit, unit);
                 totalLabel.textContent = total.toFixed(2) + ' zł';
 
-                // Asystent zaokrąglenia (Box Optimizer)
+                // Asystent zaokrąglenia (Box Optimizer - min. 65% napełnienia opakowania)
                 if (pkgSize > 1.0 && qty > 0) {
-                    const remainder = qty % pkgSize;
-                    if (remainder > 0.001) {
+                    const remainder = Math.round((qty % pkgSize) * 1000) / 1000;
+                    const fillRatio = remainder / pkgSize;
+                    if (remainder > 0.001 && fillRatio >= 0.6499) {
                         const nextFullQty = Math.ceil(qty / pkgSize) * pkgSize;
                         const btnRound = optimizerHint.querySelector('.btn-round-up');
                         btnRound.textContent = `Zaokrąglij do ${nextFullQty} ${unit} (${Math.ceil(qty / pkgSize)} ${pkgUnit})`;
