@@ -49,6 +49,26 @@ $title = $view['title'] ?? 'Panel użytkownika';
             text-align: center;
         }
 
+        .logout-link {
+            display: inline-block;
+            margin-top: 14px;
+            color: #dc2626;
+            font-size: .9rem;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .logout-link:hover,
+        .logout-link:focus-visible {
+            color: #991b1b;
+            text-decoration: underline;
+        }
+
+        .logout-link:focus-visible {
+            outline: 2px solid #dc2626;
+            outline-offset: 3px;
+        }
+
         .launcher-title {
             margin: 0;
             font-size: clamp(1.75rem, 4vw, 2.4rem);
@@ -123,6 +143,7 @@ $title = $view['title'] ?? 'Panel użytkownika';
         <header class="launcher-header">
             <h1 class="launcher-title">Wybierz moduł</h1>
             <p class="launcher-subtitle">Wybierz obszar, z którym chcesz pracować.</p>
+            <a class="logout-link" href="<?= $base ?>home/logout">Wyloguj</a>
         </header>
 
         <div class="module-list">
