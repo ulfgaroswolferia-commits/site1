@@ -31,7 +31,7 @@ $title  = $view['title'] ?? 'Historia Zamówień — Hurtownia Magdy';
                     </div>
                     <div>
                         <span class="text-lg font-black tracking-tight text-slate-900 block leading-tight">HURTOWNIA MAGDY</span>
-                        <span class="text-[11px] font-bold tracking-wider uppercase text-emerald-600">Portal Zamówień B2B</span>
+                        <span class="text-[11px] font-bold tracking-wider uppercase text-emerald-600">Platforma zamówień B2B</span>
                     </div>
                 </div>
 

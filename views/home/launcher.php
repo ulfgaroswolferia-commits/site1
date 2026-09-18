@@ -153,7 +153,7 @@ $title = $view['title'] ?? 'Panel użytkownika';
             </a>
 
             <a class="module-card" href="<?= $base ?>b2b/admin" style="border-color: rgba(16, 185, 129, 0.45); background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);">
-                <span class="module-card-title" style="color: #065f46;">Hurtownia Magdy — Portal B2B</span>
+                <span class="module-card-title" style="color: #065f46;">Hurtownia Magdy — Platforma zamówień B2B</span>
                 <span class="module-card-description">Panel hurtowni: cennik, inteligentne opakowania, klienci i zamówienia</span>
             </a>
 

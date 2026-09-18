@@ -43,7 +43,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     </div>
                     <div>
                         <span class="text-lg font-black tracking-tight text-slate-900 block leading-tight">HURTOWNIA MAGDY</span>
-                        <span class="text-[11px] font-bold tracking-wider uppercase text-emerald-600">Świeże Warzywa & Owoce &bull; Hurt</span>
+                        <span class="text-[11px] font-bold tracking-wider uppercase text-emerald-600">Platforma zamówień B2B</span>
                     </div>
                 </div>
 

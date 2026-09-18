@@ -27,7 +27,7 @@ $base      = $view['base'] ?? App::baseUrl();
             </div>
             <div class="text-left">
                 <span class="block text-2xl font-black tracking-tight text-slate-900 leading-none">HURTOWNIA MAGDY</span>
-                <span class="text-xs font-bold uppercase tracking-widest text-emerald-600">Portal Zamówień B2B</span>
+                <span class="text-xs font-bold uppercase tracking-widest text-emerald-600">Platforma zamówień B2B</span>
             </div>
         </div>
 

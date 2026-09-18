@@ -738,7 +738,7 @@ $routes      = class_exists('Config') ? (Config::get('routes') ?: []) : [];
                             </svg>
                         </div>
                         <div class="action-info">
-                            <h4 style="color: #047857;">Hurtownia Magdy (B2B)</h4>
+                            <h4 style="color: #047857;">Hurtownia Magdy — Platforma zamówień B2B</h4>
                             <p>Panel hurtownika: cennik, inteligentne opakowania, klienci i spływające zamówienia</p>
                         </div>
                     </a>
