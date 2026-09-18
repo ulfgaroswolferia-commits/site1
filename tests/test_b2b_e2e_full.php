@@ -252,6 +252,17 @@ $resHistory = req($chClient, 'http://localhost/b2b/history', null, [], true);
 assertCondition("Ekran historii zwraca HTTP 200", $resHistory['code'] === 200);
 assertCondition("Zawiera numer zamówienia: $orderNumber", strpos($resHistory['body'], $orderNumber) !== false);
 assertCondition("Zawiera status 'Zrealizowane'", strpos($resHistory['body'], 'Zrealizowane') !== false);
+assertCondition("Zawiera modal szczegółów zamówienia", strpos($resHistory['body'], 'id="clientOrderModal"') !== false);
+
+// -------------------------------------------------------------
+// 11. Klient pobiera szczegóły zamówienia (klik w numer zamówienia)
+// -------------------------------------------------------------
+echo "\n11. Klient pobiera szczegóły zamówienia (/b2b/orderdetails)...\n";
+$resClientDetails = req($chClient, 'http://localhost/b2b/orderdetails?id=' . $orderId);
+$dataClientDetails = json_decode($resClientDetails['body'], true);
+assertCondition("Klient odczytuje szczegóły swojego zamówienia (ok: true)", ($dataClientDetails['ok'] ?? false) === true);
+assertCondition("Zgodność numeru zamówienia", ($dataClientDetails['order']['order_number'] ?? '') === $orderNumber);
+assertCondition("Zwrócono pozycje zamówienia dla klienta", count($dataClientDetails['items'] ?? []) === 2);
 
 // Sprzątanie plików tymczasowych
 @unlink($cookieAdmin);

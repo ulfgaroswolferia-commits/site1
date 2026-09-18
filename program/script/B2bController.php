@@ -611,12 +611,19 @@ class B2bController extends AppController
      */
     public function actionOrderdetails()
     {
-        $this->requireAuth();
-
-        $id = (int)($_REQUEST['id'] ?? 0);
+        $id = (int)($_REQUEST['id'] ?? $this->getParam('id', 0));
         $order = $this->repo->getOrderById($id);
         if (!$order) {
             App::json(['ok' => false, 'error' => 'Zamówienie nie istnieje.'], 404);
+            return;
+        }
+
+        // Sprawdź uprawnienia: admin hurtowni LUB klient właściciel
+        $isAdmin = $this->isLoggedIn();
+        $isOwner = isset($_SESSION['b2b_client_id']) && (int)$_SESSION['b2b_client_id'] === (int)$order['client_id'];
+
+        if (!$isAdmin && !$isOwner) {
+            App::json(['ok' => false, 'error' => 'Brak uprawnień do podglądu tego zamówienia.'], 403);
             return;
         }
 
