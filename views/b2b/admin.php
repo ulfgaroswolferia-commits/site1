@@ -186,15 +186,15 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                         </div>
                         <p class="text-[11px] text-slate-400 mt-0.5">
                             <?= $isMysqlConfigured 
-                                ? 'Parametry połączenia MySQL gotowe w program/config/data.php' 
-                                : 'Póki co nieaktywne — wymaga skonfigurowania danych bazy w program/config/data.php' ?>
+                                ? 'Parametry połączenia MySQL gotowe' 
+                                : 'Póki co nieaktywne — wymaga skonfigurowania danych bazy' ?>
                         </p>
                     </div>
                 </div>
                 <div>
                     <button type="button" <?= $isMysqlConfigured ? '' : 'disabled' ?>
                         class="px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition <?= $isMysqlConfigured ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm' : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-60' ?>"
-                        title="<?= $isMysqlConfigured ? 'Synchronizuj asortyment z bazy MySQL' : 'Uzupełnij DSN, DBLOGIN i DBPASS w program/config/data.php, aby aktywować tę integrację' ?>">
+                        title="<?= $isMysqlConfigured ? 'Synchronizuj asortyment z bazy MySQL' : 'Wymaga skonfigurowania danych dostępowych do bazy, aby aktywować tę integrację' ?>">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                         </svg>
