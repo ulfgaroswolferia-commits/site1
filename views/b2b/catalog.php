@@ -34,18 +34,18 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
     <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
-                <!-- Brand -->
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/20">
+                <!-- Brand Logo Link -->
+                <a href="<?= $base ?>b2b" class="flex items-center gap-3 group focus:outline-none" title="Przejdź do startu zamówienia">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/20 group-hover:bg-emerald-700 transition">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                         </svg>
                     </div>
                     <div>
-                        <span class="text-lg font-black tracking-tight text-slate-900 block leading-tight">HURTOWNIA MAGDY</span>
+                        <span class="text-lg font-black tracking-tight text-slate-900 block leading-tight group-hover:text-emerald-700 transition">HURTOWNIA MAGDY</span>
                         <span class="text-[11px] font-bold tracking-wider uppercase text-emerald-600">Platforma zamówień B2B</span>
                     </div>
-                </div>
+                </a>
 
                 <!-- Client Info & Actions -->
                 <div class="flex items-center gap-3 sm:gap-6">

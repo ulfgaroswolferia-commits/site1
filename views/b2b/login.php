@@ -18,18 +18,18 @@ $base      = $view['base'] ?? App::baseUrl();
 </head>
 <body class="h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gradient-to-br from-emerald-50 via-slate-50 to-teal-50 min-h-screen">
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
-        <!-- Logo & Branding -->
-        <div class="flex justify-center items-center gap-3">
-            <div class="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-600/30">
+        <!-- Logo & Branding Link -->
+        <a href="<?= $base ?>b2b" class="flex justify-center items-center gap-3 group focus:outline-none" title="Przejdź do startu zamówienia">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-600/30 group-hover:bg-emerald-700 transition">
                 <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
             </div>
             <div class="text-left">
-                <span class="block text-2xl font-black tracking-tight text-slate-900 leading-none">HURTOWNIA MAGDY</span>
+                <span class="block text-2xl font-black tracking-tight text-slate-900 leading-none group-hover:text-emerald-700 transition">HURTOWNIA MAGDY</span>
                 <span class="text-xs font-bold uppercase tracking-widest text-emerald-600">Platforma zamówień B2B</span>
             </div>
-        </div>
+        </a>
 
         <h2 class="mt-6 text-center text-xl font-bold tracking-tight text-slate-800">
             Logowanie dla sklepów i odbiorców

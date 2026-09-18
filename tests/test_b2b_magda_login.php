@@ -53,6 +53,9 @@ echo "2. Rozpoznano firmę 'Sklep Magda': " . ($hasClientName ? "OK" : "BŁĄD")
 echo "3. Wyświetlono widok katalogu klienta B2B (tabela i koszyk): " . (($hasCatalogTable && $hasFloatingCart) ? "OK" : "BŁĄD") . "\n";
 echo "4. Brak widoku panelu hurtownika (widok wyłącznie klienta): " . ($isNotAdmin ? "OK" : "BŁĄD") . "\n";
 
+$hasLogoLink = (strpos($resLoginPost['body'], 'b2b" class="flex items-center gap-3 group') !== false || strpos($resLoginPost['body'], 'href="http://localhost/b2b"') !== false);
+echo "4a. Logo zawiera link do startu zamówienia (/b2b): " . ($hasLogoLink ? "OK" : "BŁĄD") . "\n";
+
 // Wylogowanie
 req('http://localhost/b2b/logout', null, true);
 
