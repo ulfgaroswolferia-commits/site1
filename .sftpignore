@@ -1,0 +1,7 @@
+*.md
+.idea/
+.vscode/
+.agent/
+.claude/
+.gemini/
+GEMINI.md
