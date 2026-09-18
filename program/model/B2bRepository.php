@@ -174,7 +174,7 @@ class B2bRepository
 
     public function getClientByLogin(string $login): ?array
     {
-        $stmt = $this->pdo->prepare("SELECT * FROM b2b_clients WHERE login = :login AND is_active = 1 LIMIT 1");
+        $stmt = $this->pdo->prepare("SELECT * FROM b2b_clients WHERE LOWER(login) = LOWER(:login) AND is_active = 1 LIMIT 1");
         $stmt->execute([':login' => trim($login)]);
         $row = $stmt->fetch();
         return $row ?: null;

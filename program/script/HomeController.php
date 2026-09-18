@@ -23,6 +23,10 @@ class HomeController extends AppController
             return 'launcher';
         }
 
+        if (!empty($_SESSION['b2b_client_id'])) {
+            App::redirect('b2b/index');
+        }
+
         return $this->actionLogin();
     }
 
@@ -65,6 +69,16 @@ class HomeController extends AppController
         if ($login === (defined('APP_LOGIN') ? APP_LOGIN : '') && $password === (defined('APP_PASSWORD') ? APP_PASSWORD : '')) {
             $this->startUserSession(1, ['app_login' => $login]);
             App::redirect('home/index');
+        }
+
+        // Sprawdź czy dane logowania należą do odbiorcy B2B
+        $b2bRepo = new \App\B2bRepository();
+        $client  = $b2bRepo->getClientByLogin($login);
+        if ($client && !empty($client['password_hash']) && password_verify($password, $client['password_hash'])) {
+            $_SESSION['b2b_client_id']    = (int)$client['id'];
+            $_SESSION['b2b_client_token'] = $client['auth_token'];
+            $_SESSION['b2b_company_name'] = $client['company_name'];
+            App::redirect('b2b/index');
         }
 
         $this->outputData['error'] = 'Nieprawidłowy login lub hasło.';

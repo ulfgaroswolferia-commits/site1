@@ -39,7 +39,7 @@ class B2bController extends AppController
         }
 
         // Brak autoryzacji — przekieruj do logowania klienta B2B
-        $this->redirect(App::baseUrl() . 'b2b/login');
+        App::redirect('b2b/login');
         exit;
     }
 
@@ -68,14 +68,14 @@ class B2bController extends AppController
 
         $clientId = (int)($_SESSION['b2b_client_id'] ?? 0);
         if ($clientId <= 0) {
-            $this->redirect(App::baseUrl() . 'b2b/login');
+            App::redirect('b2b/login');
             return;
         }
 
         $client = $this->repo->getClientById($clientId);
         if (!$client || (int)$client['is_active'] !== 1) {
             unset($_SESSION['b2b_client_id'], $_SESSION['b2b_client_token'], $_SESSION['b2b_company_name']);
-            $this->redirect(App::baseUrl() . 'b2b/login');
+            App::redirect('b2b/login');
             return;
         }
 
@@ -302,13 +302,13 @@ class B2bController extends AppController
     {
         $clientId = (int)($_SESSION['b2b_client_id'] ?? 0);
         if ($clientId <= 0) {
-            $this->redirect(App::baseUrl() . 'b2b/login');
+            App::redirect('b2b/login');
             return;
         }
 
         $client = $this->repo->getClientById($clientId);
         if (!$client) {
-            $this->redirect(App::baseUrl() . 'b2b/login');
+            App::redirect('b2b/login');
             return;
         }
 
@@ -349,7 +349,7 @@ class B2bController extends AppController
                 $_SESSION['b2b_client_id']    = (int)$client['id'];
                 $_SESSION['b2b_client_token'] = $client['auth_token'];
                 $_SESSION['b2b_company_name'] = $client['company_name'];
-                $this->redirect(App::baseUrl() . 'b2b/index');
+                App::redirect('b2b/index');
                 return;
             } else {
                 $this->outputData['error'] = 'Nieprawidłowy login lub hasło dostępu.';
@@ -366,7 +366,7 @@ class B2bController extends AppController
     public function actionLogout()
     {
         unset($_SESSION['b2b_client_id'], $_SESSION['b2b_client_token'], $_SESSION['b2b_company_name']);
-        $this->redirect(App::baseUrl() . 'b2b/login');
+        App::redirect('b2b/login');
     }
 
     // =========================================================================
