@@ -148,7 +148,7 @@ $title = $view['title'] ?? 'Panel użytkownika';
 
         <div class="module-list">
             <a class="module-card module-card-primary" href="<?= $base ?>order/index">
-                <span class="module-card-title">Order</span>
+                <span class="module-card-title">Zamówienia z cennika excel</span>
                 <span class="module-card-description">Zarządzaj zamówieniami.</span>
             </a>
 
