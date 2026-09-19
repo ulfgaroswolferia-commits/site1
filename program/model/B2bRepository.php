@@ -151,11 +151,13 @@ class B2bRepository
             $this->pdo->exec("ALTER TABLE b2b_orders ADD COLUMN delivery_date DATE DEFAULT NULL");
         } catch (\Throwable $e) {}
 
-        // Domyślne konfiguracje hurtowni (cut-off, dni dostaw, format ERP)
+        // Domyślne konfiguracje hurtowni (cut-off, dni dostaw, format ERP, akcja finalizacji)
         $defaultSettings = [
-            'cutoff_time'        => '21:30',
-            'delivery_days'      => 'mon,tue,wed,thu,fri,sat',
-            'default_erp_format' => 'subiekt'
+            'cutoff_time'         => '21:30',
+            'delivery_days'       => 'mon,tue,wed,thu,fri,sat',
+            'default_erp_format'  => 'subiekt',
+            'finalize_action'     => 'print',
+            'finalize_erp_format' => 'default'
         ];
         foreach ($defaultSettings as $sk => $sv) {
             try {

@@ -481,6 +481,20 @@ class B2bController extends AppController
             }
         }
 
+        if (isset($_POST['finalize_action'])) {
+            $action = strtolower(trim((string)$_POST['finalize_action']));
+            if (in_array($action, ['print', 'excel', 'erp', 'status_only'], true)) {
+                $this->repo->setSetting('finalize_action', $action);
+            }
+        }
+
+        if (isset($_POST['finalize_erp_format'])) {
+            $erpFmt = strtolower(trim((string)$_POST['finalize_erp_format']));
+            if (in_array($erpFmt, ['default', 'subiekt', 'optima', 'symfonia', 'wfmag'], true)) {
+                $this->repo->setSetting('finalize_erp_format', $erpFmt);
+            }
+        }
+
         App::json(['ok' => true, 'message' => 'Ustawienia hurtowni zostały zaktualizowane.']);
     }
 

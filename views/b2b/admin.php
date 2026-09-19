@@ -692,6 +692,8 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             $cutoffVal   = $settings['cutoff_time'] ?? '21:30';
             $daysVal     = explode(',', $settings['delivery_days'] ?? 'mon,tue,wed,thu,fri,sat');
             $defaultFmt  = $settings['default_erp_format'] ?? 'subiekt';
+            $finalizeActionVal = $settings['finalize_action'] ?? 'print';
+            $finalizeErpFormatVal = $settings['finalize_erp_format'] ?? 'default';
             ?>
             <section class="bg-white/95 border border-slate-200 rounded-2xl p-6 shadow-sm">
                 <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-200 flex-wrap gap-2">
@@ -763,6 +765,62 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                             <option value="symfonia" <?= $defaultFmt === 'symfonia' ? 'selected' : '' ?>>Symfonia Handel (.txt)</option>
                             <option value="wfmag" <?= $defaultFmt === 'wfmag' ? 'selected' : '' ?>>Asseco WAPRO / Wf-Mag (.xml)</option>
                         </select>
+                    </div>
+
+                    <!-- 4. Działanie przycisku Finalizacja zamówienia -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                        <label class="block font-bold text-sm text-slate-800 mb-1">
+                            Działanie przycisku „Finalizuj zamówienie”
+                        </label>
+                        <p class="text-xs text-slate-500 mb-3">
+                            Wybierz co system ma wykonać automatycznie po kliknięciu „Finalizuj zamówienie” w oknie zamówienia (oprócz natychmiastowej zmiany statusu na <em>Zrealizowane</em>):
+                        </p>
+                        
+                        <div class="space-y-2.5">
+                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-emerald-400 transition shadow-2xs">
+                                <input type="radio" name="finalize_action" value="print" <?= ($finalizeActionVal === 'print') ? 'checked' : '' ?> onchange="toggleFinalizeErpOptions(this.value)" class="mt-0.5 text-emerald-600 focus:ring-emerald-500">
+                                <div>
+                                    <span class="block font-bold text-xs text-slate-900">Drukuj specyfikację zamówienia (Format A4)</span>
+                                    <span class="block text-[11px] text-slate-500 mt-0.5">Otwiera gotową do druku specyfikację zamówienia dla kierowcy i magazyniera.</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-emerald-400 transition shadow-2xs">
+                                <input type="radio" name="finalize_action" value="excel" <?= ($finalizeActionVal === 'excel') ? 'checked' : '' ?> onchange="toggleFinalizeErpOptions(this.value)" class="mt-0.5 text-emerald-600 focus:ring-emerald-500">
+                                <div>
+                                    <span class="block font-bold text-xs text-slate-900">Pobierz arkusz kompletacji Excel (.xlsx)</span>
+                                    <span class="block text-[11px] text-slate-500 mt-0.5">Automatycznie generuje i pobiera kartę kompletacji magazynowej (.xlsx).</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-emerald-400 transition shadow-2xs">
+                                <input type="radio" name="finalize_action" value="erp" <?= ($finalizeActionVal === 'erp') ? 'checked' : '' ?> onchange="toggleFinalizeErpOptions(this.value)" class="mt-0.5 text-emerald-600 focus:ring-emerald-500">
+                                <div class="flex-1">
+                                    <span class="block font-bold text-xs text-slate-900">Eksportuj do programu magazynowo-handlowego ERP</span>
+                                    <span class="block text-[11px] text-slate-500 mt-0.5">Pobiera plik zamówienia w formacie wybranego systemu ERP.</span>
+                                    
+                                    <!-- Pod-wybór formatu ERP dla finalizacji -->
+                                    <div id="finalize-erp-format-container" class="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center gap-2 <?= ($finalizeActionVal === 'erp') ? '' : 'hidden' ?>">
+                                        <label for="settings-finalize-erp-format" class="text-xs font-semibold text-slate-700 whitespace-nowrap">Format eksportu:</label>
+                                        <select id="settings-finalize-erp-format" name="finalize_erp_format" class="text-xs font-bold bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1.5 text-slate-800 focus:ring-1 focus:ring-indigo-500">
+                                            <option value="default" <?= ($finalizeErpFormatVal === 'default') ? 'selected' : '' ?>>Domyślny system hurtowni (z sekcji powyżej)</option>
+                                            <option value="subiekt" <?= ($finalizeErpFormatVal === 'subiekt') ? 'selected' : '' ?>>InsERT Subiekt GT / Nexo (.epp)</option>
+                                            <option value="optima" <?= ($finalizeErpFormatVal === 'optima') ? 'selected' : '' ?>>Comarch ERP Optima (.xml)</option>
+                                            <option value="symfonia" <?= ($finalizeErpFormatVal === 'symfonia') ? 'selected' : '' ?>>Symfonia Handel (.txt)</option>
+                                            <option value="wfmag" <?= ($finalizeErpFormatVal === 'wfmag') ? 'selected' : '' ?>>Asseco WAPRO / Wf-Mag (.xml)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-emerald-400 transition shadow-2xs">
+                                <input type="radio" name="finalize_action" value="status_only" <?= ($finalizeActionVal === 'status_only') ? 'checked' : '' ?> onchange="toggleFinalizeErpOptions(this.value)" class="mt-0.5 text-emerald-600 focus:ring-emerald-500">
+                                <div>
+                                    <span class="block font-bold text-xs text-slate-900">Tylko zmiana statusu</span>
+                                    <span class="block text-[11px] text-slate-500 mt-0.5">Zmienia status na Zrealizowane bez drukowania i bez pobierania plików.</span>
+                                </div>
+                            </label>
+                        </div>
                     </div>
 
                     <div class="flex items-center gap-3 pt-2">
@@ -876,13 +934,13 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
 
             <!-- Wyróżniona strefa finalizacji zamówienia na samym dole okna modalnego -->
             <div class="px-6 py-4 bg-gradient-to-b from-emerald-50/90 to-emerald-100/50 border-t border-emerald-200 flex flex-col items-center justify-center text-center gap-1.5">
-                <button type="button" id="btn-modal-finalize-order" onclick="finalizeOrderAndPrint()" class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black text-sm rounded-xl shadow-md shadow-emerald-700/25 hover:shadow-lg hover:shadow-emerald-700/35 transform hover:-translate-y-0.5 active:translate-y-0 transition flex items-center justify-center gap-2.5 cursor-pointer">
+                <button type="button" id="btn-modal-finalize-order" onclick="finalizeOrder()" class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black text-sm rounded-xl shadow-md shadow-emerald-700/25 hover:shadow-lg hover:shadow-emerald-700/35 transform hover:-translate-y-0.5 active:translate-y-0 transition flex items-center justify-center gap-2.5 cursor-pointer">
                     <svg class="w-5 h-5 text-emerald-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <span>Finalizuj zamówienie</span>
                 </button>
-                <p class="text-xs font-bold text-emerald-900/80">
+                <p class="text-xs font-bold text-emerald-900/80" id="btn-modal-finalize-subtext">
                     Drukuje specyfikację i zmienia status na Zrealizowane
                 </p>
             </div>
@@ -1046,6 +1104,50 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
         const BASE_URL     = '<?= $base ?>';
         const CLIENTS_DATA = <?= json_encode(!empty($clients) ? array_column($clients, null, 'id') : (object)[], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
         let currentFileId  = null;
+        let FINALIZE_ACTION     = <?= json_encode($settings['finalize_action'] ?? 'print') ?>;
+        let FINALIZE_ERP_FORMAT = <?= json_encode($settings['finalize_erp_format'] ?? 'default') ?>;
+
+        function toggleFinalizeErpOptions(val) {
+            const container = document.getElementById('finalize-erp-format-container');
+            if (!container) return;
+            if (val === 'erp') {
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function getErpFormatLabel(fmt) {
+            const labels = {
+                'subiekt': 'Subiekt GT / Nexo (.epp)',
+                'optima': 'Comarch Optima (.xml)',
+                'symfonia': 'Symfonia (.txt)',
+                'wfmag': 'Wf-Mag (.xml)'
+            };
+            return labels[fmt] || fmt;
+        }
+
+        function updateFinalizeButtonSubtext() {
+            const sub = document.getElementById('btn-modal-finalize-subtext');
+            if (!sub) return;
+            const act = FINALIZE_ACTION || 'print';
+            if (act === 'print') {
+                sub.textContent = 'Drukuje specyfikację zamówienia (A4) i zmienia status na Zrealizowane';
+            } else if (act === 'excel') {
+                sub.textContent = 'Pobiera arkusz kompletacji Excel (.xlsx) i zmienia status na Zrealizowane';
+            } else if (act === 'erp') {
+                let fmt = FINALIZE_ERP_FORMAT || 'default';
+                if (fmt === 'default') {
+                    const sSel = document.getElementById('settings-erp-format');
+                    fmt = localStorage.getItem('b2b_preferred_erp_format') || (sSel ? sSel.value : 'subiekt');
+                }
+                sub.textContent = 'Eksportuje do ERP (' + getErpFormatLabel(fmt) + ') i zmienia status na Zrealizowane';
+            } else if (act === 'status_only') {
+                sub.textContent = 'Zmienia status na Zrealizowane (bez wydruku i plików)';
+            } else {
+                sub.textContent = 'Drukuje specyfikację i zmienia status na Zrealizowane';
+            }
+        }
 
         function showToast(msg) {
             const t = document.getElementById('toast');
@@ -2490,6 +2592,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                             </tr>
                         `;
                     });
+                    updateFinalizeButtonSubtext();
                     document.getElementById('modal-order').classList.remove('hidden');
                 });
         }
@@ -2635,19 +2738,36 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             printWindow.document.close();
         }
 
-        function finalizeOrderAndPrint() {
+        function finalizeOrder() {
             if (!currentModalOrderId) return;
 
             // 1. Zmień status zamówienia na 'completed' (Zrealizowane)
             updateOrderStatus(currentModalOrderId, 'completed');
 
-            // 2. Wydrukuj specyfikację logistyczną
-            printOrderSpecification();
+            // 2. Wykonaj skonfigurowaną akcję
+            const action = FINALIZE_ACTION || 'print';
+            if (action === 'print') {
+                printOrderSpecification();
+            } else if (action === 'excel') {
+                window.location.href = BASE_URL + 'b2b/download?id=' + currentModalOrderId;
+            } else if (action === 'erp') {
+                let fmt = FINALIZE_ERP_FORMAT || 'default';
+                if (fmt === 'default') {
+                    const sSel = document.getElementById('settings-erp-format');
+                    fmt = localStorage.getItem('b2b_preferred_erp_format') || (sSel ? sSel.value : 'subiekt');
+                }
+                window.location.href = BASE_URL + 'b2b/exporterp?id=' + currentModalOrderId + '&format=' + encodeURIComponent(fmt);
+            }
+            // jeśli action === 'status_only', brak dodatkowej akcji oprócz zmiany statusu
 
             // 3. Zamknij okno modalne
             closeOrderModal();
 
             showToast('Zamówienie zostało sfinalizowane i oznaczone jako Zrealizowane!');
+        }
+
+        function finalizeOrderAndPrint() {
+            finalizeOrder();
         }
 
         // =========================================================================
@@ -2724,10 +2844,17 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 `;
             }
 
+            const finActionInput = document.querySelector('input[name="finalize_action"]:checked');
+            const finErpSelect = document.getElementById('settings-finalize-erp-format');
+            const finAction = finActionInput ? finActionInput.value : 'print';
+            const finErp = finErpSelect ? finErpSelect.value : 'default';
+
             const fd = new FormData();
             fd.append('cutoff_time', cutoffInput ? cutoffInput.value : '21:30');
             fd.append('delivery_days', selectedDays);
             fd.append('default_erp_format', erpSelect ? erpSelect.value : 'subiekt');
+            fd.append('finalize_action', finAction);
+            fd.append('finalize_erp_format', finErp);
             fd.append('_csrf', CSRF_TOKEN);
 
             fetch(BASE_URL + 'b2b/savesettings', {
@@ -2738,6 +2865,9 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             .then(r => r.json())
             .then(d => {
                 if (!d.ok) throw new Error(d.error || 'Błąd zapisu ustawień');
+                FINALIZE_ACTION = finAction;
+                FINALIZE_ERP_FORMAT = finErp;
+                updateFinalizeButtonSubtext();
                 savePreferredErp(erpSelect ? erpSelect.value : 'subiekt');
                 showToast('Ustawienia hurtowni i ERP zostały pomyślnie zaktualizowane!');
                 if (statusMsg) {
@@ -2813,6 +2943,9 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             }
             savePreferredErp(pref);
         })();
+
+        // Inicjalizacja opisu przycisku finalizacji
+        updateFinalizeButtonSubtext();
     </script>
 </body>
 </html>
