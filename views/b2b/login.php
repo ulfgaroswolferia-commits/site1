@@ -91,7 +91,8 @@ $base      = $view['base'] ?? App::baseUrl();
                         </svg>
                         Zamawiaj błyskawicznie bez hasła
                     </p>
-                    Chcesz dostawać zaufany link z tokenem? Wówczas wystarczy kliknąć link (np. w SMS lub e-mailu), aby wejść od razu do swojego spersonalizowanego cennika. (skontaktuj się z naszym przedstawicielem).
+                    <p>Chcesz dostawać zaufany link z tokenem? Wówczas wystarczy kliknąć link (np. w SMS lub e-mailu), aby wejść od razu do swojego spersonalizowanego cennika.</p>
+                    <p class="mt-1.5 font-medium text-emerald-800/90">(skontaktuj się z naszym przedstawicielem).</p>
                 </div>
             </div>
         </div>
