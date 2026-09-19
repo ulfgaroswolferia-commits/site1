@@ -323,10 +323,36 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                         <span class="text-slate-700"><?= htmlspecialchars($client['phone'] ?? '-') ?></span>
                     </div>
                     <div>
-                        <span class="text-slate-400 font-semibold block">Data zamówienia:</span>
+                        <span class="text-slate-400 font-semibold block">Data złożenia:</span>
                         <span class="text-slate-700"><?= date('d.m.Y H:i') ?></span>
                     </div>
                 </div>
+
+                <!-- Delivery schedule & cutoff selector -->
+                <?php $sched = $view['deliverySchedule'] ?? null; ?>
+                <?php if (!empty($sched['options'])): ?>
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Termin realizacji dostawy:</h4>
+                    <?php if (!empty($sched['is_cutoff_passed'])): ?>
+                        <div class="mb-3 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2.5 text-xs text-amber-900 shadow-2xs">
+                            <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <div>
+                                <span class="font-bold">Zamówienia na jutrzejszy poranek zostały zamknięte o <?= htmlspecialchars($sched['cutoff_time']) ?>.</span>
+                                <span class="block text-amber-700 mt-0.5">Najbliższy dostępny termin realizacji zamówienia na rampie to <strong><?= htmlspecialchars($sched['options'][0]['short_label'] ?? '') ?></strong>.</span>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="deliveryDateOptions">
+                        <?php foreach ($sched['options'] as $idx => $opt): ?>
+                            <label class="delivery-date-card relative flex flex-col p-3 rounded-xl border-2 cursor-pointer transition select-none <?= $opt['is_default'] ? 'border-emerald-600 bg-emerald-50/60 shadow-2xs' : 'border-slate-200 hover:border-slate-300 bg-white' ?>">
+                                <input type="radio" name="modal_delivery_date" value="<?= $opt['date'] ?>" <?= $opt['is_default'] ? 'checked' : '' ?> class="sr-only input-delivery-date">
+                                <span class="text-xs font-black <?= $opt['is_default'] ? 'text-emerald-900' : 'text-slate-800' ?>"><?= htmlspecialchars($opt['short_label']) ?></span>
+                                <span class="text-[11px] <?= $opt['is_default'] ? 'text-emerald-700 font-semibold' : 'text-slate-500' ?> mt-0.5"><?= htmlspecialchars($opt['sub_label']) ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- Products breakdown list -->
                 <div>
@@ -776,7 +802,28 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
             }
 
             btnCloseModal.addEventListener('click', closeModal);
-            btnCancelModal.addEventListener('click', closeModal);
+            // Przełączanie kafelków daty dostawy
+            const deliveryCards = document.querySelectorAll('.delivery-date-card');
+            deliveryCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    deliveryCards.forEach(c => {
+                        c.classList.remove('border-emerald-600', 'bg-emerald-50/60', 'shadow-2xs');
+                        c.classList.add('border-slate-200', 'bg-white');
+                        const title = c.querySelector('span:first-of-type');
+                        if (title) { title.classList.remove('text-emerald-900'); title.classList.add('text-slate-800'); }
+                        const sub = c.querySelector('span:last-of-type');
+                        if (sub) { sub.classList.remove('text-emerald-700', 'font-semibold'); sub.classList.add('text-slate-500'); }
+                    });
+                    card.classList.add('border-emerald-600', 'bg-emerald-50/60', 'shadow-2xs');
+                    card.classList.remove('border-slate-200', 'bg-white');
+                    const title = card.querySelector('span:first-of-type');
+                    if (title) { title.classList.add('text-emerald-900'); title.classList.remove('text-slate-800'); }
+                    const sub = card.querySelector('span:last-of-type');
+                    if (sub) { sub.classList.add('text-emerald-700', 'font-semibold'); sub.classList.remove('text-slate-500'); }
+                    const radio = card.querySelector('input[type="radio"]');
+                    if (radio) radio.checked = true;
+                });
+            });
 
             // Złożenie zamówienia AJAX
             btnConfirmOrder.addEventListener('click', async () => {
@@ -793,17 +840,30 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     formData.append('notes', orderNotes.value.trim());
                     formData.append('_csrf', CSRF_TOKEN);
 
-                    const res = await fetch(`${BASE_URL}b2b/saveorder`, {
+                    const checkedDelivery = document.querySelector('input[name="modal_delivery_date"]:checked');
+                    if (checkedDelivery && checkedDelivery.value) {
+                        formData.append('delivery_date', checkedDelivery.value);
+                    }
+
+                    // Satysfakcjonujące feedback UX dla Zamawiającego — min. 1 sekunda animacji wysyłania
+                    const minDelayPromise = new Promise(resolve => setTimeout(resolve, 1000));
+
+                    const fetchPromise = fetch(`${BASE_URL}b2b/saveorder`, {
                         method: 'POST',
                         body: formData,
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
                             'Accept': 'application/json'
                         }
+                    }).then(async res => {
+                        const data = await res.json();
+                        return { resOk: res.ok, data };
                     });
 
-                    const data = await res.json();
-                    if (res.ok && data.ok) {
+                    const [_, result] = await Promise.all([minDelayPromise, fetchPromise]);
+                    const { resOk, data } = result;
+
+                    if (resOk && data.ok) {
                         checkoutModal.classList.add('hidden');
                         successOrderNumber.textContent = data.order_number;
                         downloadPackingSheetBtn.href = `${BASE_URL}b2b/download?id=${data.order_id}`;

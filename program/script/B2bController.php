@@ -122,15 +122,21 @@ class B2bController extends AppController
         $categories = array_values(array_unique(array_filter(array_column($products, 'category'))));
         sort($categories);
 
-        $this->outputData['title']      = 'Hurtownia Magdy — Zamówienia B2B';
-        $this->outputData['client']     = $client;
-        $this->outputData['products']   = $products;
-        $this->outputData['categories'] = $categories;
-        $this->outputData['csrfToken']  = Tools::csrfToken();
-        $this->outputData['base']       = App::baseUrl();
-        $this->outputData['isAdmin']    = $this->isLoggedIn();
+        $this->outputData['title']            = 'Hurtownia Magdy — Zamówienia B2B';
+        $this->outputData['client']           = $client;
+        $this->outputData['products']         = $products;
+        $this->outputData['categories']       = $categories;
+        $this->outputData['deliverySchedule'] = $this->getDeliverySchedule();
+        $this->outputData['csrfToken']        = Tools::csrfToken();
+        $this->outputData['base']             = App::baseUrl();
+        $this->outputData['isAdmin']          = $this->isLoggedIn();
 
         return 'catalog';
+    }
+
+    public function getDeliverySchedule(?int $timestamp = null): array
+    {
+        return $this->repo->getDeliverySchedule($timestamp);
     }
 
     /**
@@ -214,6 +220,10 @@ class B2bController extends AppController
         $orderNumber = $this->repo->generateOrderNumber();
         $notes = trim((string)($_POST['notes'] ?? ''));
 
+        $deliverySchedule = $this->getDeliverySchedule();
+        $rawDeliveryDate = trim((string)($_POST['delivery_date'] ?? ''));
+        $deliveryDate = preg_match('/^\d{4}-\d{2}-\d{2}$/', $rawDeliveryDate) ? $rawDeliveryDate : ($deliverySchedule['default_date'] ?? date('Y-m-d', strtotime('+1 day')));
+
         // Generowanie karty kompletacji magazynowej .xlsx
         $safeNumber = str_replace(['/', '\\'], '_', $orderNumber);
         $fileName = 'kompletacja_' . $safeNumber . '.xlsx';
@@ -224,6 +234,7 @@ class B2bController extends AppController
             'client_name'      => $client['company_name'],
             'client_phone'     => $client['phone'] ?? '',
             'delivery_address' => $client['delivery_address'] ?? '',
+            'delivery_date'    => $deliveryDate,
             'created_at'       => date('Y-m-d H:i:s'),
             'notes'            => $notes,
         ];
@@ -240,16 +251,43 @@ class B2bController extends AppController
             'client_name_snapshot'      => $client['company_name'],
             'client_phone_snapshot'     => $client['phone'] ?? '',
             'delivery_address_snapshot' => $client['delivery_address'] ?? '',
+            'delivery_date'             => $deliveryDate,
             'status'                    => 'new',
             'export_filename'           => $fileName,
             'total_amount'              => $totalAmount,
             'notes'                     => $notes,
         ], $preparedItems);
 
-        // Opcjonalne powiadomienie e-mail z załącznikiem
+        $responseData = [
+            'ok'              => true,
+            'order_id'        => $orderId,
+            'order_number'    => $orderNumber,
+            'delivery_date'   => $deliveryDate,
+            'total_amount'    => $totalAmount,
+            'export_filename' => $fileName
+        ];
+
+        // Jeśli PHP działa pod FastCGI (Nginx/Apache), natychmiast odeślij odpowiedź do przeglądarki klienta,
+        // aby modal potwierdzenia pokazał się w kilkanaście milisekund bez oczekiwania na operacje sieciowe.
+        $responseSent = false;
+        if (function_exists('fastcgi_finish_request')) {
+            if (!headers_sent()) {
+                http_response_code(200);
+                header('Content-Type: application/json; charset=utf-8');
+            }
+            echo json_encode($responseData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            flush();
+            fastcgi_finish_request();
+            $responseSent = true;
+        }
+
+        // Opcjonalne powiadomienie e-mail z załącznikiem (wysyłane tylko gdy serwer poczty jest skonfigurowany)
         try {
-            $toWholesale = defined('MAIL_ORDER_NOTIFICATION') ? MAIL_ORDER_NOTIFICATION : (defined('MAIL_FROM') ? MAIL_FROM : '');
-            if ($toWholesale !== '') {
+            $isSmtpConfigured = defined('SMTP_HOST') && trim((string)SMTP_HOST) !== '';
+            $isTransportMail  = defined('MAIL_TRANSPORT') && MAIL_TRANSPORT === 'mail';
+            $toWholesale      = defined('MAIL_ORDER_NOTIFICATION') ? MAIL_ORDER_NOTIFICATION : (defined('MAIL_FROM') ? MAIL_FROM : '');
+
+            if ($toWholesale !== '' && ($isSmtpConfigured || $isTransportMail)) {
                 $emailSubject = "Nowe zamówienie B2B: {$orderNumber} — {$client['company_name']}";
                 $emailBody = Mailer::buildOrderEmailHtml([
                     'order_number'  => $orderNumber,
@@ -273,13 +311,10 @@ class B2bController extends AppController
             error_log('Błąd wysyłki e-maila B2B: ' . $e->getMessage());
         }
 
-        App::json([
-            'ok'              => true,
-            'order_id'        => $orderId,
-            'order_number'    => $orderNumber,
-            'total_amount'    => $totalAmount,
-            'export_filename' => $fileName
-        ]);
+        if (!$responseSent) {
+            App::json($responseData);
+        }
+        exit;
     }
 
     /**
@@ -341,6 +376,112 @@ class B2bController extends AppController
         } else {
             App::error(500, 'Nie udało się odnaleźć ani wygenerować pliku zamówienia.');
         }
+    }
+
+    /**
+     * GET /b2b/exporterp?id={id}&format={subiekt|optima|symfonia|wfmag}
+     * Eksport pojedynczego zamówienia do pliku programu handlowo-magazynowego (ERP).
+     */
+    public function actionExporterp()
+    {
+        $id = (int)($_GET['id'] ?? $this->getParam('id', 0));
+        if ($id <= 0) {
+            App::error(404, 'Brak identyfikatora zamówienia.');
+            return;
+        }
+
+        $order = $this->repo->getOrderForErpExport($id);
+        if (!$order) {
+            App::error(404, 'Zamówienie nie istnieje.');
+            return;
+        }
+
+        $isAdmin = $this->isLoggedIn();
+        $isOwner = isset($_SESSION['b2b_client_id']) && (int)$_SESSION['b2b_client_id'] === (int)$order['client_id'];
+        if (!$isAdmin && !$isOwner) {
+            App::error(403, 'Brak uprawnień do pobrania tego zamówienia.');
+            return;
+        }
+
+        $defaultFmt = $this->repo->getSetting('default_erp_format', 'subiekt');
+        $format = trim((string)($_GET['format'] ?? $defaultFmt));
+
+        try {
+            $exported = ErpExporter::export($format, [$order]);
+            header('Content-Description: File Transfer');
+            header('Content-Type: ' . $exported['mime']);
+            header('Content-Disposition: attachment; filename="' . $exported['filename'] . '"');
+            header('Content-Length: ' . strlen($exported['content']));
+            header('Cache-Control: max-age=0');
+            echo $exported['content'];
+            exit;
+        } catch (\Throwable $e) {
+            App::error(400, 'Błąd generowania eksportu ERP: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * GET /b2b/exportbatch?format={subiekt|optima|symfonia|wfmag}&date={YYYY-MM-DD}&status={new|all...}
+     * Zbiorczy eksport paczki zamówień do wybranego formatu ERP.
+     */
+    public function actionExportbatch()
+    {
+        $this->requireAuth();
+
+        $defaultFmt = $this->repo->getSetting('default_erp_format', 'subiekt');
+        $format = trim((string)($_GET['format'] ?? $defaultFmt));
+        $date   = !empty($_GET['date']) ? trim((string)$_GET['date']) : null;
+        $status = !empty($_GET['status']) ? trim((string)$_GET['status']) : null;
+
+        $orders = $this->repo->getOrdersBatchForErpExport($date, $status);
+        if (empty($orders)) {
+            App::error(404, 'Brak zamówień spełniających kryteria eksportu.');
+            return;
+        }
+
+        try {
+            $exported = ErpExporter::export($format, $orders);
+            header('Content-Description: File Transfer');
+            header('Content-Type: ' . $exported['mime']);
+            header('Content-Disposition: attachment; filename="' . $exported['filename'] . '"');
+            header('Content-Length: ' . strlen($exported['content']));
+            header('Cache-Control: max-age=0');
+            echo $exported['content'];
+            exit;
+        } catch (\Throwable $e) {
+            App::error(400, 'Błąd generowania paczki ERP: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * POST /b2b/savesettings
+     * Zapis konfiguracji hurtowni (cut-off time, dni dostaw, domyślny format ERP).
+     */
+    public function actionSavesettings()
+    {
+        $this->requireAuth();
+        $this->requireCsrf();
+
+        if (isset($_POST['cutoff_time'])) {
+            $cutoff = trim((string)$_POST['cutoff_time']);
+            if (preg_match('/^\d{1,2}:\d{2}$/', $cutoff)) {
+                $this->repo->setSetting('cutoff_time', $cutoff);
+            }
+        }
+
+        if (isset($_POST['delivery_days'])) {
+            $days = trim((string)$_POST['delivery_days']);
+            $this->repo->setSetting('delivery_days', $days);
+        }
+
+        if (isset($_POST['default_erp_format'])) {
+            $fmt = strtolower(trim((string)$_POST['default_erp_format']));
+            if (in_array($fmt, ['subiekt', 'optima', 'symfonia', 'wfmag'], true)) {
+                $this->repo->setSetting('default_erp_format', $fmt);
+            }
+        }
+
+        App::json(['ok' => true, 'message' => 'Ustawienia hurtowni zostały zaktualizowane.']);
     }
 
     /**
@@ -462,6 +603,7 @@ class B2bController extends AppController
         $this->outputData['products']     = $this->repo->getAllProductsAdmin();
         $this->outputData['orders']       = $this->repo->getAllOrders(100);
         $this->outputData['clients']      = $this->repo->getAllClients();
+        $this->outputData['settings']     = $this->repo->getAllSettings();
         $this->outputData['csrfToken']    = Tools::csrfToken();
         $this->outputData['base']         = App::baseUrl();
         $this->outputData['activeTab']    = $_GET['tab'] ?? 'products';
@@ -602,6 +744,7 @@ class B2bController extends AppController
         if (isset($_POST['price']))        $data['price']        = (float)$_POST['price'];
         if (isset($_POST['package_size'])) $data['package_size'] = (float)$_POST['package_size'];
         if (isset($_POST['package_unit'])) $data['package_unit'] = trim($_POST['package_unit']);
+        if (isset($_POST['erp_code']))     $data['erp_code']     = trim($_POST['erp_code']);
 
         $ok = $this->repo->updateProduct($id, $data);
         App::json(['ok' => $ok]);
@@ -644,6 +787,7 @@ class B2bController extends AppController
             if (isset($p['price']))        $data['price']        = (float)$p['price'];
             if (isset($p['package_size'])) $data['package_size'] = (float)$p['package_size'];
             if (isset($p['package_unit'])) $data['package_unit'] = trim((string)$p['package_unit']);
+            if (isset($p['erp_code']))     $data['erp_code']     = trim((string)$p['erp_code']);
 
             if (!empty($data['name'])) {
                 if ($this->repo->updateProduct($id, $data)) {

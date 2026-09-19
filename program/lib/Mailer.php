@@ -33,10 +33,17 @@ class Mailer
         try {
             $mail = new \PHPMailer(true);
             $mail->CharSet = 'utf-8';
+            $mail->Timeout = 3; // Krótki limit czasu na połączenie sieciowe (ochrona przed blokowaniem żądania)
 
             if (defined('MAIL_TRANSPORT') && MAIL_TRANSPORT === 'smtp') {
+                $smtpHost = defined('SMTP_HOST') ? trim((string)SMTP_HOST) : '';
+                if ($smtpHost === '') {
+                    self::$lastError = 'Host SMTP nie został skonfigurowany.';
+                    return false;
+                }
+
                 $mail->IsSMTP();
-                $mail->Host = defined('SMTP_HOST') ? SMTP_HOST : '';
+                $mail->Host = $smtpHost;
                 $mail->Port = defined('SMTP_PORT') ? (int)SMTP_PORT : 587;
                 $smtpUser   = defined('SMTP_USER') ? SMTP_USER : '';
                 $smtpPass   = defined('SMTP_PASS') ? SMTP_PASS : '';

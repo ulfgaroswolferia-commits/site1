@@ -47,6 +47,9 @@ class B2bRepository
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             ]);
             $this->pdo->exec('PRAGMA foreign_keys = ON;');
+            $this->pdo->exec('PRAGMA journal_mode = WAL;');
+            $this->pdo->exec('PRAGMA busy_timeout = 5000;');
+            $this->pdo->exec('PRAGMA synchronous = NORMAL;');
         }
 
         $this->initDatabase();
@@ -131,11 +134,150 @@ class B2bRepository
                 package_summary VARCHAR(100) DEFAULT NULL,
                 item_total REAL NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS b2b_settings (
+                setting_key VARCHAR(50) PRIMARY KEY,
+                setting_value TEXT NOT NULL
+            );
         ");
 
         try {
             $this->pdo->exec("ALTER TABLE b2b_products ADD COLUMN is_new INT NOT NULL DEFAULT 0");
         } catch (\Throwable $e) {}
+        try {
+            $this->pdo->exec("ALTER TABLE b2b_products ADD COLUMN erp_code VARCHAR(50) DEFAULT NULL");
+        } catch (\Throwable $e) {}
+        try {
+            $this->pdo->exec("ALTER TABLE b2b_orders ADD COLUMN delivery_date DATE DEFAULT NULL");
+        } catch (\Throwable $e) {}
+
+        // Domyślne konfiguracje hurtowni (cut-off, dni dostaw, format ERP)
+        $defaultSettings = [
+            'cutoff_time'        => '21:30',
+            'delivery_days'      => 'mon,tue,wed,thu,fri,sat',
+            'default_erp_format' => 'subiekt'
+        ];
+        foreach ($defaultSettings as $sk => $sv) {
+            try {
+                $stmt = $this->pdo->prepare("INSERT OR IGNORE INTO b2b_settings (setting_key, setting_value) VALUES (:k, :v)");
+                $stmt->execute([':k' => $sk, ':v' => $sv]);
+            } catch (\Throwable $e) {}
+        }
+    }
+
+    // =========================================================================
+    // USTAWIENIA HURTOWNI (B2B SETTINGS)
+    // =========================================================================
+
+    public function getSetting(string $key, ?string $default = null): ?string
+    {
+        $stmt = $this->pdo->prepare("SELECT setting_value FROM b2b_settings WHERE setting_key = :k LIMIT 1");
+        $stmt->execute([':k' => trim($key)]);
+        $val = $stmt->fetchColumn();
+        return ($val !== false && $val !== null) ? (string)$val : $default;
+    }
+
+    public function setSetting(string $key, string $value): bool
+    {
+        $stmt = $this->pdo->prepare("
+            INSERT INTO b2b_settings (setting_key, setting_value)
+            VALUES (:k, :v)
+            ON CONFLICT(setting_key) DO UPDATE SET setting_value = :v2
+        ");
+        return $stmt->execute([':k' => trim($key), ':v' => $value, ':v2' => $value]);
+    }
+
+    public function getAllSettings(): array
+    {
+        $rows = $this->pdo->query("SELECT setting_key, setting_value FROM b2b_settings")->fetchAll();
+        $res = [];
+        foreach ($rows as $r) {
+            $res[$r['setting_key']] = $r['setting_value'];
+        }
+        return $res;
+    }
+
+    /**
+     * Oblicza dostępne dni dostawy na podstawie godziny granicznej (cut-off) i aktywnych dni pracy hurtowni.
+     * Zwraca tablicę z flagą is_cutoff_passed, komunikatem oraz opcjami dostawy (np. najbliższe 2-3 dni).
+     */
+    public function getDeliverySchedule(?int $timestamp = null): array
+    {
+        $cutoffStr = $this->getSetting('cutoff_time', '21:30');
+        $daysSetting = $this->getSetting('delivery_days', 'mon,tue,wed,thu,fri,sat');
+        $activeDays = array_map('trim', explode(',', strtolower($daysSetting)));
+
+        $now = new \DateTime();
+        if ($timestamp !== null) {
+            $now->setTimestamp($timestamp);
+        }
+
+        // Sprawdź czy godzina graniczna minęła
+        $parts = explode(':', $cutoffStr);
+        $cHour = (int)($parts[0] ?? 21);
+        $cMinute = (int)($parts[1] ?? 30);
+        $cutoffToday = clone $now;
+        $cutoffToday->setTime($cHour, $cMinute, 0);
+
+        $isCutoffPassed = ($now > $cutoffToday);
+
+        // Mapowanie nazw dni tygodnia po polsku
+        $daysPl = [
+            'mon' => 'Poniedziałek',
+            'tue' => 'Wtorek',
+            'wed' => 'Środa',
+            'thu' => 'Czwartek',
+            'fri' => 'Piątek',
+            'sat' => 'Sobota',
+            'sun' => 'Niedziela'
+        ];
+
+        // Wyznacz kandydata na pierwszy dostępny dzień dostawy:
+        // Jeśli cut-off minął -> zaczynamy poszukiwanie od +2 dni (pojutrze).
+        // Jeśli przed cut-off -> zaczynamy od +1 dnia (jutro).
+        $startOffset = $isCutoffPassed ? 2 : 1;
+
+        $options = [];
+        for ($i = $startOffset; $i <= $startOffset + 7; $i++) {
+            $cand = (clone $now)->modify("+{$i} days");
+            $dayCode = strtolower($cand->format('D'));
+
+            if (in_array($dayCode, $activeDays, true)) {
+                $dateYmd = $cand->format('Y-m-d');
+                $dayName = $daysPl[$dayCode] ?? $cand->format('l');
+
+                // Relatywne określenie dnia
+                $diffDays = (int)$now->diff($cand)->format('%a');
+                if ($diffDays === 1) {
+                    $prefix = 'Jutro';
+                } elseif ($diffDays === 2) {
+                    $prefix = 'Pojutrze';
+                } else {
+                    $prefix = $dayName;
+                }
+
+                $shortLabel = ($prefix === $dayName) ? $dayName : "{$prefix} ({$dayName})";
+                $subLabel = "Dostawa: " . $cand->format('d.m.Y');
+
+                $options[] = [
+                    'date'        => $dateYmd,
+                    'short_label' => $shortLabel,
+                    'sub_label'   => $subLabel,
+                    'is_default'  => count($options) === 0,
+                ];
+
+                if (count($options) >= 2) {
+                    break;
+                }
+            }
+        }
+
+        return [
+            'cutoff_time'      => $cutoffStr,
+            'is_cutoff_passed' => $isCutoffPassed,
+            'options'          => $options,
+            'default_date'     => $options[0]['date'] ?? (clone $now)->modify('+1 day')->format('Y-m-d'),
+        ];
     }
 
     // =========================================================================
@@ -322,8 +464,8 @@ class B2bRepository
             }
 
             $stmt = $this->pdo->prepare("
-                INSERT INTO b2b_products (name, category, unit, price, package_size, package_unit, is_available, is_new, sort_order, updated_at)
-                VALUES (:name, :category, :unit, :price, :package_size, :package_unit, :is_available, :is_new, :sort_order, :updated_at)
+                INSERT INTO b2b_products (name, category, unit, price, package_size, package_unit, is_available, is_new, erp_code, sort_order, updated_at)
+                VALUES (:name, :category, :unit, :price, :package_size, :package_unit, :is_available, :is_new, :erp_code, :sort_order, :updated_at)
             ");
 
             $now = date('Y-m-d H:i:s');
@@ -345,6 +487,7 @@ class B2bRepository
                     $cat = !empty($old['category']) ? $old['category'] : trim($p['category'] ?? $this->detectCategory($name));
                     $price = (float)($p['price'] ?? 0);
                     $isAvail = isset($p['is_available']) ? (int)$p['is_available'] : (int)($old['is_available'] ?? 1);
+                    $erpCode = !empty($p['erp_code']) ? trim($p['erp_code']) : ($old['erp_code'] ?? null);
                     $isNew = 0;
                 } else {
                     // Nowy artykuł, którego wcześniej nie było w bazie
@@ -355,6 +498,7 @@ class B2bRepository
                     $pkgSize = (float)($p['package_size'] ?? 1.0);
                     $pkgUnit = trim($p['package_unit'] ?? 'op.');
                     $isAvail = isset($p['is_available']) ? (int)$p['is_available'] : 1;
+                    $erpCode = !empty($p['erp_code']) ? trim($p['erp_code']) : null;
 
                     // Sprawdź czy pasuje do inteligentnych reguł opakowań
                     $rule = $this->getPackageRule($name);
@@ -378,6 +522,7 @@ class B2bRepository
                     ':package_unit' => $pkgUnit,
                     ':is_available' => $isAvail,
                     ':is_new'       => $isNew,
+                    ':erp_code'     => $erpCode,
                     ':sort_order'   => $idx,
                     ':updated_at'   => $now,
                 ]);
@@ -448,7 +593,7 @@ class B2bRepository
         $fields = [];
         $params = [':id' => $id];
 
-        foreach (['name', 'category', 'unit', 'price', 'package_size', 'package_unit', 'is_available', 'is_new'] as $f) {
+        foreach (['name', 'category', 'unit', 'price', 'package_size', 'package_unit', 'is_available', 'is_new', 'erp_code'] as $f) {
             if (array_key_exists($f, $data)) {
                 $fields[] = "{$f} = :{$f}";
                 $params[":{$f}"] = $data[$f];
@@ -534,10 +679,10 @@ class B2bRepository
             $stmt = $this->pdo->prepare("
                 INSERT INTO b2b_orders (
                     order_number, client_id, client_name_snapshot, client_phone_snapshot,
-                    delivery_address_snapshot, status, export_filename, total_items, total_amount, notes, created_at
+                    delivery_address_snapshot, delivery_date, status, export_filename, total_items, total_amount, notes, created_at
                 ) VALUES (
                     :order_number, :client_id, :client_name_snapshot, :client_phone_snapshot,
-                    :delivery_address_snapshot, :status, :export_filename, :total_items, :total_amount, :notes, :created_at
+                    :delivery_address_snapshot, :delivery_date, :status, :export_filename, :total_items, :total_amount, :notes, :created_at
                 )
             ");
 
@@ -547,6 +692,7 @@ class B2bRepository
                 ':client_name_snapshot'       => trim($orderData['client_name_snapshot'] ?? ''),
                 ':client_phone_snapshot'      => trim($orderData['client_phone_snapshot'] ?? ''),
                 ':delivery_address_snapshot'  => trim($orderData['delivery_address_snapshot'] ?? ''),
+                ':delivery_date'              => !empty($orderData['delivery_date']) ? trim($orderData['delivery_date']) : null,
                 ':status'                     => trim($orderData['status'] ?? 'new'),
                 ':export_filename'            => trim($orderData['export_filename'] ?? ''),
                 ':total_items'                => count($items),
@@ -797,5 +943,71 @@ class B2bRepository
     {
         $stmt = $this->pdo->prepare("UPDATE b2b_orders SET export_filename = :fn WHERE id = :id");
         return $stmt->execute([':fn' => trim($filename), ':id' => $id]);
+    }
+
+    public function getOrderForErpExport(int $orderId): ?array
+    {
+        $stmt = $this->pdo->prepare("
+            SELECT o.*, c.nip as client_nip, c.company_name as client_company, c.phone as client_phone, c.delivery_address as client_address
+            FROM b2b_orders o
+            LEFT JOIN b2b_clients c ON o.client_id = c.id
+            WHERE o.id = :id
+            LIMIT 1
+        ");
+        $stmt->execute([':id' => $orderId]);
+        $order = $stmt->fetch();
+        if (!$order) return null;
+
+        $stmtItems = $this->pdo->prepare("
+            SELECT oi.*, p.erp_code
+            FROM b2b_order_items oi
+            LEFT JOIN b2b_products p ON oi.product_id = p.id
+            WHERE oi.order_id = :oid
+            ORDER BY oi.id ASC
+        ");
+        $stmtItems->execute([':oid' => $orderId]);
+        $order['items'] = $stmtItems->fetchAll();
+
+        return $order;
+    }
+
+    public function getOrdersBatchForErpExport(?string $deliveryDate = null, ?string $status = null, int $limit = 200): array
+    {
+        $sql = "
+            SELECT o.*, c.nip as client_nip, c.company_name as client_company, c.phone as client_phone, c.delivery_address as client_address
+            FROM b2b_orders o
+            LEFT JOIN b2b_clients c ON o.client_id = c.id
+            WHERE 1=1
+        ";
+        $params = [];
+
+        if (!empty($deliveryDate)) {
+            $sql .= " AND o.delivery_date = :deliv_date";
+            $params[':deliv_date'] = $deliveryDate;
+        }
+
+        if (!empty($status) && $status !== 'all') {
+            $sql .= " AND o.status = :status";
+            $params[':status'] = $status;
+        }
+
+        $sql .= " ORDER BY o.id ASC LIMIT " . (int)$limit;
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $orders = $stmt->fetchAll();
+
+        foreach ($orders as &$ord) {
+            $stmtItems = $this->pdo->prepare("
+                SELECT oi.*, p.erp_code
+                FROM b2b_order_items oi
+                LEFT JOIN b2b_products p ON oi.product_id = p.id
+                WHERE oi.order_id = :oid
+                ORDER BY oi.id ASC
+            ");
+            $stmtItems->execute([':oid' => (int)$ord['id']]);
+            $ord['items'] = $stmtItems->fetchAll();
+        }
+
+        return $orders;
     }
 }

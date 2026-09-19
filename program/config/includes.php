@@ -10,6 +10,7 @@ require_once BASE_PATH . '/program/lib/Crypt.php';
 require_once BASE_PATH . '/program/lib/PaginationHelper.php';
 require_once BASE_PATH . '/program/lib/XlsxParser.php';
 require_once BASE_PATH . '/program/lib/XlsxWriter.php';
+require_once BASE_PATH . '/program/lib/ErpExporter.php';
 
 // Poczta (patrz MAIL_* w data.php).
 require_once BASE_PATH . '/program/lib/class.phpmailer.php';

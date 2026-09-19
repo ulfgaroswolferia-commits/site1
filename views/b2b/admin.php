@@ -110,6 +110,11 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 <span>Klienci Hurtowni</span>
                 <span class="ml-1 px-2 py-0.5 text-xs rounded-full bg-slate-200 text-slate-800"><?= count($clients) ?></span>
             </button>
+
+            <button type="button" id="tab-btn-settings" onclick="switchTab('settings')" class="px-5 py-2.5 font-bold text-sm rounded-xl transition flex items-center gap-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <span>Ustawienia & ERP</span>
+            </button>
         </nav>
 
         <!-- =================================================================== -->
@@ -273,6 +278,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                             <tr>
                                 <th class="py-3.5 px-4 font-bold text-center w-24">Dostępny</th>
                                 <th class="py-3.5 px-4 font-bold">Towar</th>
+                                <th class="py-3.5 px-4 font-bold w-32">Kod ERP</th>
                                 <th class="py-3.5 px-4 font-bold">Kategoria</th>
                                 <th class="py-3.5 px-4 font-bold text-right w-36">Cena hurtowa</th>
                                 <th class="py-3.5 px-4 font-bold text-center w-24">Jedn.</th>
@@ -316,6 +322,10 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                                     Edytowano
                                                 </span>
                                             </div>
+                                        </td>
+                                        <!-- Kod ERP -->
+                                        <td class="py-3 px-4">
+                                            <input type="text" id="erp-<?= $p['id'] ?>" data-prod-id="<?= $p['id'] ?>" data-field-name="erp_code" data-initial="<?= Tools::h($p['erp_code'] ?? '') ?>" value="<?= Tools::h($p['erp_code'] ?? '') ?>" placeholder="—" class="prod-field w-28 uppercase text-xs font-mono text-slate-700 bg-slate-50 border border-slate-200 focus:border-indigo-500 focus:bg-white rounded-lg px-2 py-1 transition focus:ring-1 focus:ring-indigo-500" title="Kod artykułu w systemie ERP (Subiekt / Optima / Symfonia / Wf-Mag)">
                                         </td>
                                         <!-- Kategoria -->
                                         <td class="py-3 px-4">
@@ -425,6 +435,24 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                             <span class="px-1.5 py-0.2 text-[10px] rounded-full bg-slate-200 text-slate-700 font-extrabold" id="order-filter-count-all"><?= $countOrdersAll ?></span>
                         </button>
                     </div>
+
+                    <!-- Pobieranie paczki ERP -->
+                    <div class="inline-flex items-center rounded-xl bg-slate-100 border border-slate-200/80 p-1 shadow-2xs gap-1">
+                        <span class="text-xs font-bold text-slate-700 px-2 flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Paczka ERP:
+                        </span>
+                        <select id="batch-erp-format" onchange="savePreferredErp(this.value)" class="text-xs font-bold bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-800 focus:outline-none cursor-pointer">
+                            <option value="subiekt">Subiekt GT / Nexo (.epp)</option>
+                            <option value="optima">Comarch Optima (.xml)</option>
+                            <option value="symfonia">Symfonia (.txt)</option>
+                            <option value="wfmag">Wf-Mag (.xml)</option>
+                        </select>
+                        <button type="button" onclick="downloadBatchErp()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg shadow-2xs transition flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            <span>Pobierz paczkę</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -453,6 +481,12 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                                     <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                                                     <span><?= date('d.m.Y H:i', strtotime($o['created_at'])) ?></span>
                                                 </div>
+                                                <?php if (!empty($o['delivery_date'])): ?>
+                                                    <div class="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/80 mt-0.5" title="Wybrana data dostawy">
+                                                        <svg class="w-3 h-3 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                                        <span>Dostawa: <?= date('d.m.Y', strtotime($o['delivery_date'])) ?></span>
+                                                    </div>
+                                                <?php endif; ?>
                                                 <button type="button" onclick="showOrderModal(<?= $o['id'] ?>)" class="inline-flex items-center gap-1 text-[11px] font-bold text-sky-600 hover:text-sky-800 hover:underline cursor-pointer transition mt-0.5" title="Zobacz pozycje i dane zamówienia">
                                                     <svg class="w-3 h-3 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                                                     <span>Szczegóły zamówienia</span>
@@ -649,6 +683,121 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 </div>
             </section>
         </main>
+
+        <!-- =================================================================== -->
+        <!-- ZAKŁADKA 4: Ustawienia hurtowni & ERP                               -->
+        <!-- =================================================================== -->
+        <main id="tab-settings" class="space-y-6 hidden">
+            <?php
+            $cutoffVal   = $settings['cutoff_time'] ?? '21:30';
+            $daysVal     = explode(',', $settings['delivery_days'] ?? 'mon,tue,wed,thu,fri,sat');
+            $defaultFmt  = $settings['default_erp_format'] ?? 'subiekt';
+            ?>
+            <section class="bg-white/95 border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-200 flex-wrap gap-2">
+                    <div>
+                        <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            Harmonogram Przyjmowania Zamówień & Eksport ERP
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Konfiguruj godzinę graniczną (cut-off time), dni realizacji dostaw oraz domyślny program magazynowo-księgowy.</p>
+                    </div>
+                </div>
+
+                <form id="settings-form" onsubmit="saveWholesaleSettings(event)" class="space-y-6 max-w-2xl">
+                    <!-- 1. Godzina graniczna (Cut-off Time) -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                        <label for="settings-cutoff" class="block font-bold text-sm text-slate-800 mb-1">
+                            Godzina graniczna składania zamówień na kolejny dzień roboczy (Cut-off Time)
+                        </label>
+                        <p class="text-xs text-slate-500 mb-3">
+                            Po tej godzinie system informuje zamawiającego sklep, że dostawy na jutro rano są już zamknięte i automatycznie proponuje dostawę na kolejny dostępny dzień roboczy.
+                        </p>
+                        <div class="flex items-center gap-3">
+                            <input type="time" id="settings-cutoff" name="cutoff_time" value="<?= Tools::h($cutoffVal) ?>" class="text-base font-extrabold text-slate-800 bg-white border border-slate-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-2xs" required>
+                            <span class="text-xs font-semibold text-slate-500">Domyślnie: 21:30</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. Dni dostaw -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                        <label class="block font-bold text-sm text-slate-800 mb-1">
+                            Dni realizacji dostaw towaru do sklepów
+                        </label>
+                        <p class="text-xs text-slate-500 mb-3">
+                            Zaznacz dni tygodnia, w których kierowcy hurtowni rozwożą towar do klientów. W pozostałe dni (np. niedziele) zamówienia nie są realizowane.
+                        </p>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                            <?php
+                            $weekDays = [
+                                'mon' => 'Poniedziałek',
+                                'tue' => 'Wtorek',
+                                'wed' => 'Środa',
+                                'thu' => 'Czwartek',
+                                'fri' => 'Piątek',
+                                'sat' => 'Sobota',
+                                'sun' => 'Niedziela',
+                            ];
+                            foreach ($weekDays as $code => $lbl):
+                                $chk = in_array($code, $daysVal, true) ? 'checked' : '';
+                            ?>
+                                <label class="flex items-center gap-2 p-2.5 rounded-lg border bg-white border-slate-200 cursor-pointer hover:bg-slate-100/80 transition text-xs font-bold text-slate-700">
+                                    <input type="checkbox" name="delivery_day" value="<?= $code ?>" <?= $chk ?> class="settings-day-chk rounded text-indigo-600 focus:ring-indigo-500">
+                                    <span><?= $lbl ?></span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+
+                    <!-- 3. Domyślny format ERP -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                        <label for="settings-erp-format" class="block font-bold text-sm text-slate-800 mb-1">
+                            Główny system handlowo-magazynowy (ERP)
+                        </label>
+                        <p class="text-xs text-slate-500 mb-3">
+                            Wybierz format eksportu, z którego korzysta Twoja hurtownia. Wybór będzie domyślnie podpowiadany przy pobieraniu pojedynczych zamówień i paczek zbiorczych.
+                        </p>
+                        <select id="settings-erp-format" name="default_erp_format" class="w-full sm:w-80 text-sm font-bold bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-2xs cursor-pointer">
+                            <option value="subiekt" <?= $defaultFmt === 'subiekt' ? 'selected' : '' ?>>InsERT Subiekt GT / Nexo (.epp / EDI++)</option>
+                            <option value="optima" <?= $defaultFmt === 'optima' ? 'selected' : '' ?>>Comarch ERP Optima (.xml)</option>
+                            <option value="symfonia" <?= $defaultFmt === 'symfonia' ? 'selected' : '' ?>>Symfonia Handel (.txt)</option>
+                            <option value="wfmag" <?= $defaultFmt === 'wfmag' ? 'selected' : '' ?>>Asseco WAPRO / Wf-Mag (.xml)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center gap-3 pt-2">
+                        <button type="submit" id="btn-save-settings" class="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-md shadow-indigo-600/20 transition flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            <span>Zapisz ustawienia</span>
+                        </button>
+                        <span id="settings-status-msg" class="text-xs font-bold text-emerald-600 hidden">Zapisano pomyślnie!</span>
+                    </div>
+                </form>
+
+                <!-- Instrukcja importu ERP -->
+                <div class="mt-8 pt-6 border-t border-slate-200">
+                    <h3 class="text-xs font-extrabold uppercase text-slate-400 tracking-wider mb-4">Informacje o obsługiwanych formatach importu ERP:</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/70">
+                            <div class="text-xs font-black text-indigo-700 mb-1">Subiekt GT / Nexo</div>
+                            <p class="text-[11px] text-slate-600 leading-relaxed">Format EPP (EDI++ ANSI Windows-1250). W Subiekcie: <em>Operacje -&gt; Dodaj na podstawie... -&gt; Komunikacja EDI++</em>. Automatycznie dopasowuje kontrahenta po NIP i towary po kodzie.</p>
+                        </div>
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/70">
+                            <div class="text-xs font-black text-sky-700 mb-1">Comarch ERP Optima</div>
+                            <p class="text-[11px] text-slate-600 leading-relaxed">Format XML UTF-8 (Optima Offline Document Import). W Optimie: <em>Narzędzia -&gt; Praca rozproszona -&gt; Eksport/Import XML</em>. Tworzy dokument RO (Rezerwacja Odbiorcy).</p>
+                        </div>
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/70">
+                            <div class="text-xs font-black text-purple-700 mb-1">Symfonia Handel</div>
+                            <p class="text-[11px] text-slate-600 leading-relaxed">Format tekstowy TXT (Windows-1250 sekcje <code>#DOKUMENT</code>, <code>#POZYCJA</code>). W Symfonii: <em>Firma -&gt; Import specjalny -&gt; Profile importu</em>. Generuje zamówienie obce ZO.</p>
+                        </div>
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/70">
+                            <div class="text-xs font-black text-emerald-700 mb-1">Asseco WAPRO Mag</div>
+                            <p class="text-[11px] text-slate-600 leading-relaxed">Format XML UTF-8 (Dokumenty Magazynowe WAPRO). W Wf-Mag: <em>Inne -&gt; Wymiana danych -&gt; Import dokumentów XML</em>. Tworzy zamówienie od klienta ZK.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
     </div>
 
     <!-- Modal szczegółów zamówienia -->
@@ -676,6 +825,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             </div>
             <div class="p-5 overflow-y-auto space-y-4 flex-1">
                 <div class="p-3 bg-slate-50 rounded-xl text-xs space-y-1">
+                    <p id="modal-order-delivery-wrap"><strong>Data dostawy:</strong> <span id="modal-order-delivery-date" class="font-extrabold text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded">Standardowa</span></p>
                     <p><strong>Adres dostawy:</strong> <span id="modal-order-address"></span></p>
                     <p><strong>Uwagi dla kierowcy:</strong> <span id="modal-order-notes" class="italic text-slate-600"></span></p>
                 </div>
@@ -696,16 +846,29 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     <span class="text-xs text-slate-500 block">Razem do zapłaty:</span>
                     <strong id="modal-order-total" class="text-lg font-black text-emerald-700"></strong>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button type="button" id="modal-order-print-btn" onclick="printOrderSpecification()" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs rounded-xl shadow-2xs transition" title="Drukuj kartę kompletacji / specyfikację zlecenia dla logistyki i kierowcy">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button type="button" id="modal-order-print-btn" onclick="printOrderSpecification()" class="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs rounded-xl shadow-2xs transition" title="Drukuj kartę kompletacji / specyfikację zlecenia dla logistyki i kierowcy">
                         <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                         <span>Drukuj specyfikację</span>
                     </button>
-                    <a id="modal-order-download-btn" href="#" target="_blank" class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition" title="Pobierz kartę kompletacji zamówienia (.xlsx)">
+                    <!-- Eksport ERP pojedynczego zamówienia -->
+                    <div class="inline-flex items-center rounded-xl shadow-2xs border border-indigo-200 overflow-hidden">
+                        <button type="button" id="modal-order-erp-btn" onclick="exportCurrentOrderErp()" class="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition" title="Eksportuj zamówienie do formatu wybranego programu ERP">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            <span id="modal-erp-btn-label">Eksport ERP</span>
+                        </button>
+                        <select id="modal-erp-format" onchange="savePreferredErp(this.value); updateModalErpBtnLabel(this.value);" class="bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold py-2 px-1.5 border-l border-indigo-500 focus:outline-none cursor-pointer">
+                            <option value="subiekt">Subiekt (.epp)</option>
+                            <option value="optima">Optima (.xml)</option>
+                            <option value="symfonia">Symfonia (.txt)</option>
+                            <option value="wfmag">Wf-Mag (.xml)</option>
+                        </select>
+                    </div>
+                    <a id="modal-order-download-btn" href="#" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition" title="Pobierz kartę kompletacji zamówienia (.xlsx)">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                         <span>Pobierz Excel (.xlsx)</span>
                     </a>
-                    <button type="button" onclick="closeOrderModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 font-bold text-xs text-slate-700 rounded-xl transition">
+                    <button type="button" onclick="closeOrderModal()" class="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 font-bold text-xs text-slate-700 rounded-xl transition">
                         Zamknij
                     </button>
                 </div>
@@ -901,7 +1064,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
         }
 
         function switchTab(tab, saveState = true) {
-            ['products', 'orders', 'clients'].forEach(t => {
+            ['products', 'orders', 'clients', 'settings'].forEach(t => {
                 const el = document.getElementById('tab-' + t);
                 const btn = document.getElementById('tab-btn-' + t);
                 if (t === tab) {
@@ -1385,6 +1548,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             const badge = document.getElementById('dirty-badge-' + id);
 
             const nameInput    = document.getElementById('name-' + id);
+            const erpInput     = document.getElementById('erp-' + id);
             const catSelect    = document.getElementById('cat-' + id);
             const priceInput   = document.getElementById('price-' + id);
             const unitSelect   = document.getElementById('unit-' + id);
@@ -1417,6 +1581,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             const fd = new FormData();
             fd.append('id', id);
             fd.append('name', prodName);
+            fd.append('erp_code', erpInput ? erpInput.value.trim() : '');
             fd.append('category', catSelect ? catSelect.value : 'Warzywa');
             fd.append('price', priceInput.value);
             fd.append('unit', unitSelect ? unitSelect.value : 'kg');
@@ -1431,6 +1596,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
 
                     // 1. Zaktualizuj data-initial dla wszystkich pól w wierszu
                     if (nameInput)    nameInput.setAttribute('data-initial', prodName);
+                    if (erpInput)     erpInput.setAttribute('data-initial', erpInput.value.trim());
                     if (catSelect)    catSelect.setAttribute('data-initial', catSelect.value);
                     if (priceInput)   priceInput.setAttribute('data-initial', parseFloat(priceInput.value).toFixed(2));
                     if (unitSelect)   unitSelect.setAttribute('data-initial', unitSelect.value);
@@ -1541,9 +1707,12 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     return;
                 }
 
+                const erpInput = document.getElementById('erp-' + id);
+
                 productsData.push({
                     id: id,
                     name: prodName,
+                    erp_code: erpInput ? erpInput.value.trim() : '',
                     category: catSelect ? catSelect.value : 'Warzywa',
                     price: priceInput.value,
                     unit: unitSelect ? unitSelect.value : 'kg',
@@ -1555,6 +1724,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     id: id,
                     row: row,
                     nameInput: nameInput,
+                    erpInput: erpInput,
                     catSelect: catSelect,
                     priceInput: priceInput,
                     unitSelect: unitSelect,
@@ -1601,9 +1771,10 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
 
                     // Aktualizacja każdego zapisanego wiersza
                     rowsToUpdate.forEach(item => {
-                        const { id, row, nameInput, catSelect, priceInput, unitSelect, pkgSizeInput, pkgUnitSelect, btn, badge, prodName } = item;
+                        const { id, row, nameInput, erpInput, catSelect, priceInput, unitSelect, pkgSizeInput, pkgUnitSelect, btn, badge, prodName } = item;
 
                         if (nameInput)    nameInput.setAttribute('data-initial', prodName);
+                        if (erpInput)     erpInput.setAttribute('data-initial', erpInput.value.trim());
                         if (catSelect)    catSelect.setAttribute('data-initial', catSelect.value);
                         if (priceInput)   priceInput.setAttribute('data-initial', parseFloat(priceInput.value).toFixed(2));
                         if (unitSelect)   unitSelect.setAttribute('data-initial', unitSelect.value);
@@ -2292,6 +2463,11 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     document.getElementById('modal-order-notes').textContent = d.order.notes || 'Brak uwag';
                     document.getElementById('modal-order-total').textContent = Number(d.order.total_amount).toFixed(2) + ' zł';
 
+                    const delivDateEl = document.getElementById('modal-order-delivery-date');
+                    if (delivDateEl) {
+                        delivDateEl.textContent = d.order.delivery_date ? d.order.delivery_date : 'Standardowa (najbliższy dzień roboczy)';
+                    }
+
                     const modalStatus = document.getElementById('modal-order-status');
                     if (modalStatus) {
                         modalStatus.value = d.order.status || 'new';
@@ -2402,6 +2578,14 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             <strong>Adres dostawy towaru:</strong>
             <div style="font-weight: 600; font-size: 12px;">${o.delivery_address_snapshot || 'Brak'}</div>
         </div>
+        <div class="meta-item">
+            <strong>Planowany termin dostawy:</strong>
+            <div style="font-weight: 800; font-size: 13px; color: #b45309;">${o.delivery_date || 'Standardowa (najbliższy dzień roboczy)'}</div>
+        </div>
+        <div class="meta-item">
+            <strong>Status zlecenia:</strong>
+            <div style="font-weight: 700; font-size: 12px; text-transform: uppercase;">${o.status || 'new'}</div>
+        </div>
         <div class="meta-item" style="grid-column: span 2;">
             <strong>Ważne uwagi dla kierowcy i magazyniera:</strong>
             <div style="font-style: italic; color: #334155; font-size: 12px;">${o.notes || 'Brak szczególnych uwag'}</div>
@@ -2466,6 +2650,116 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             showToast('Zamówienie zostało sfinalizowane i oznaczone jako Zrealizowane!');
         }
 
+        // =========================================================================
+        // EKSPORT ERP & USTAWIENIA HURTOWNI
+        // =========================================================================
+
+        function savePreferredErp(format) {
+            if (!format) return;
+            try {
+                localStorage.setItem('b2b_preferred_erp_format', format);
+            } catch(e) {}
+            const mSel = document.getElementById('modal-erp-format');
+            const bSel = document.getElementById('batch-erp-format');
+            const sSel = document.getElementById('settings-erp-format');
+            if (mSel && mSel.value !== format) mSel.value = format;
+            if (bSel && bSel.value !== format) bSel.value = format;
+            if (sSel && sSel.value !== format) sSel.value = format;
+            updateModalErpBtnLabel(format);
+        }
+
+        function updateModalErpBtnLabel(format) {
+            const lbl = document.getElementById('modal-erp-btn-label');
+            if (!lbl) return;
+            const names = {
+                'subiekt': 'Subiekt (.epp)',
+                'optima': 'Optima (.xml)',
+                'symfonia': 'Symfonia (.txt)',
+                'wfmag': 'Wf-Mag (.xml)'
+            };
+            lbl.textContent = 'Eksport ' + (names[format] || 'ERP');
+        }
+
+        function exportCurrentOrderErp() {
+            if (!currentModalOrderId) {
+                showToast('Nie wybrano zamówienia do eksportu.');
+                return;
+            }
+            const sel = document.getElementById('modal-erp-format');
+            const fmt = sel ? sel.value : (localStorage.getItem('b2b_preferred_erp_format') || 'subiekt');
+            savePreferredErp(fmt);
+            window.location.href = BASE_URL + 'b2b/exporterp?id=' + currentModalOrderId + '&format=' + encodeURIComponent(fmt);
+        }
+
+        function downloadBatchErp() {
+            const sel = document.getElementById('batch-erp-format');
+            const fmt = sel ? sel.value : (localStorage.getItem('b2b_preferred_erp_format') || 'subiekt');
+            savePreferredErp(fmt);
+            let statusParam = currentOrderStatusFilter || 'all';
+            let url = BASE_URL + 'b2b/exportbatch?format=' + encodeURIComponent(fmt);
+            if (statusParam && statusParam !== 'all') {
+                url += '&status=' + encodeURIComponent(statusParam);
+            }
+            window.location.href = url;
+        }
+
+        function saveWholesaleSettings(e) {
+            if (e) e.preventDefault();
+            const btn = document.getElementById('btn-save-settings');
+            const statusMsg = document.getElementById('settings-status-msg');
+            const cutoffInput = document.getElementById('settings-cutoff');
+            const erpSelect = document.getElementById('settings-erp-format');
+
+            const dayCheckboxes = document.querySelectorAll('.settings-day-chk:checked');
+            const selectedDays = Array.from(dayCheckboxes).map(c => c.value).join(',');
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `
+                    <svg class="animate-spin -ml-0.5 mr-1 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    <span>Zapisywanie...</span>
+                `;
+            }
+
+            const fd = new FormData();
+            fd.append('cutoff_time', cutoffInput ? cutoffInput.value : '21:30');
+            fd.append('delivery_days', selectedDays);
+            fd.append('default_erp_format', erpSelect ? erpSelect.value : 'subiekt');
+            fd.append('_csrf', CSRF_TOKEN);
+
+            fetch(BASE_URL + 'b2b/savesettings', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: fd
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (!d.ok) throw new Error(d.error || 'Błąd zapisu ustawień');
+                savePreferredErp(erpSelect ? erpSelect.value : 'subiekt');
+                showToast('Ustawienia hurtowni i ERP zostały pomyślnie zaktualizowane!');
+                if (statusMsg) {
+                    statusMsg.textContent = 'Zapisano pomyślnie!';
+                    statusMsg.classList.remove('hidden');
+                    setTimeout(() => statusMsg.classList.add('hidden'), 3500);
+                }
+            })
+            .catch(err => {
+                alert('Błąd: ' + err.message);
+            })
+            .finally(() => {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = `
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span>Zapisz ustawienia</span>
+                    `;
+                }
+            });
+        }
+
         // Inicjalizacja domyślnego filtru statusu zamówień (domyślnie 'new')
         const savedOrdersFilter = (function() {
             try { return sessionStorage.getItem('b2b_orders_status_filter') || 'new'; } catch(e) { return 'new'; }
@@ -2474,16 +2768,16 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
 
         // Inicjalizacja aktywnej zakładki (przywrócenie ostatnio otwartej, np. Klienci po odświeżeniu)
         (function initActiveTab() {
-            const validTabs = ['products', 'orders', 'clients'];
+            const validTabs = ['products', 'orders', 'clients', 'settings'];
             let targetTab = null;
 
-            // 1. Sprawdź hash w URL (#clients, #orders, #products)
+            // 1. Sprawdź hash w URL (#clients, #orders, #products, #settings)
             const hash = (window.location.hash || '').replace('#', '').trim();
             if (validTabs.includes(hash)) {
                 targetTab = hash;
             }
 
-            // 2. Jeśli brak hasha, sprawdź parametr URL (?tab=clients)
+            // 2. Jeśli brak hasha, sprawdź parametr URL (?tab=settings)
             if (!targetTab) {
                 const urlParams = new URLSearchParams(window.location.search);
                 const qTab = urlParams.get('tab');
@@ -2505,6 +2799,19 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             if (targetTab && targetTab !== 'products') {
                 switchTab(targetTab, false);
             }
+        })();
+
+        // Inicjalizacja zapamiętanego formatu ERP (z localStorage lub domyślnego z bazy)
+        (function initPreferredErp() {
+            let pref = '';
+            try {
+                pref = localStorage.getItem('b2b_preferred_erp_format');
+            } catch(e) {}
+            if (!pref) {
+                const sSel = document.getElementById('settings-erp-format');
+                pref = sSel ? sSel.value : 'subiekt';
+            }
+            savePreferredErp(pref);
         })();
     </script>
 </body>

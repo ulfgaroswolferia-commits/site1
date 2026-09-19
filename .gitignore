@@ -5,6 +5,7 @@ program/config/data.php
 .idea/
 .vscode/
 .agent/
+.agents/
 .claude/
 .gemini/
 .superpowers/
