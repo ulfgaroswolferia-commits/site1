@@ -48,41 +48,50 @@ $sampleOrders = [
 $subiekt = ErpExporter::export('subiekt', $sampleOrders);
 $subiektContent = $subiekt['content'];
 $hasInfo = (strpos($subiektContent, '[INFO]') !== false);
-$hasDokument = (strpos($subiektContent, '[DOKUMENT]') !== false || strpos($subiektContent, '"ZK"') !== false);
+$hasDokument = (strpos($subiektContent, '[DOKUMENT]') !== false && strpos($subiektContent, '"ZK"') !== false);
 $hasNip = (strpos($subiektContent, '1234567890') !== false);
 $hasPomidorCode = (strpos($subiektContent, 'POM-MAL-PL') !== false);
+$hasVat5 = (strpos($subiektContent, '5.00') !== false);
+$hasSafeSymbol = (strpos($subiektContent, 'KOPEREK') !== false);
 $hasExtensionEpp = (substr($subiekt['filename'], -4) === '.epp');
-$subiektOk = ($hasInfo && $hasDokument && $hasNip && $hasPomidorCode && $hasExtensionEpp);
-echo "1. Eksport Subiekt GT/Nexo (.epp): " . ($subiektOk ? "PASS" : "FAIL") . "\n";
+$subiektOk = ($hasInfo && $hasDokument && $hasNip && $hasPomidorCode && $hasVat5 && $hasSafeSymbol && $hasExtensionEpp);
+echo "1. Eksport Subiekt GT/Nexo (.epp VAT 5% i bezpieczne symbole): " . ($subiektOk ? "PASS" : "FAIL") . "\n";
 
-// 2. Test Comarch Optima (XML)
+// 2. Test Comarch Optima (XML zgodny z OPT021)
 $optima = ErpExporter::export('optima', $sampleOrders);
 $optimaContent = $optima['content'];
 $hasXmlHeader = (strpos($optimaContent, '<?xml') !== false);
-$hasOptimaRoot = (strpos($optimaContent, '<DOKUMENTY>') !== false || strpos($optimaContent, '<ZAMOWIENIE') !== false);
-$hasOptimaNip = (strpos($optimaContent, '<NIP>1234567890</NIP>') !== false || strpos($optimaContent, '1234567890') !== false);
+$hasOptimaRoot = (strpos($optimaContent, '<DOKUMENTY>') !== false && strpos($optimaContent, '<ZAMOWIENIE>') !== false);
+$hasOptimaNip = (strpos($optimaContent, '<NIP>1234567890</NIP>') !== false);
 $hasOptimaItem = (strpos($optimaContent, 'Pomidor Malinowy PL') !== false);
+$hasOptimaVat = (strpos($optimaContent, '<STAWKA_VAT>5</STAWKA_VAT>') !== false);
+$hasOptimaPayment = (strpos($optimaContent, '<FORMA_PLATNOSCI>przelew</FORMA_PLATNOSCI>') !== false);
+$hasOptimaMag = (strpos($optimaContent, '<MAGAZYN>MAG</MAGAZYN>') !== false);
 $hasExtensionXml = (substr($optima['filename'], -4) === '.xml');
-$optimaOk = ($hasXmlHeader && $hasOptimaRoot && $hasOptimaNip && $hasOptimaItem && $hasExtensionXml);
-echo "2. Eksport Comarch Optima (.xml): " . ($optimaOk ? "PASS" : "FAIL") . "\n";
+$optimaOk = ($hasXmlHeader && $hasOptimaRoot && $hasOptimaNip && $hasOptimaItem && $hasOptimaVat && $hasOptimaPayment && $hasOptimaMag && $hasExtensionXml);
+echo "2. Eksport Comarch Optima (.xml ze schematem OPT021): " . ($optimaOk ? "PASS" : "FAIL") . "\n";
 
-// 3. Test Symfonia Handel (TXT)
+// 3. Test Symfonia Handel (Natywny Format 3.0 HMF)
 $symfonia = ErpExporter::export('symfonia', $sampleOrders);
 $symfoniaContent = $symfonia['content'];
-$hasSymfoniaHeader = (strpos($symfoniaContent, 'ZO') !== false || strpos($symfoniaContent, 'Zamowienie') !== false);
+$hasSymfoniaFormat3 = (strpos($symfoniaContent, 'Dokument {') !== false || strpos($symfoniaContent, 'Dokument') !== false);
 $hasSymfoniaNip = (strpos($symfoniaContent, '1234567890') !== false);
+$hasSymfoniaVat = (strpos($symfoniaContent, 'stawka = 5') !== false || strpos($symfoniaContent, '5') !== false);
 $hasExtensionTxt = (substr($symfonia['filename'], -4) === '.txt');
-$symfoniaOk = ($hasSymfoniaHeader && $hasSymfoniaNip && $hasExtensionTxt);
-echo "3. Eksport Symfonia Handel (.txt): " . ($symfoniaOk ? "PASS" : "FAIL") . "\n";
+$symfoniaOk = ($hasSymfoniaFormat3 && $hasSymfoniaNip && $hasSymfoniaVat && $hasExtensionTxt);
+echo "3. Eksport Symfonia Handel (.txt Format 3.0): " . ($symfoniaOk ? "PASS" : "FAIL") . "\n";
 
-// 4. Test Wf-Mag / Asseco WAPRO (XML)
+// 4. Test Wf-Mag / Asseco WAPRO (XML z magazynem i statusem)
 $wfmag = ErpExporter::export('wfmag', $sampleOrders);
 $wfmagContent = $wfmag['content'];
-$hasWfMagHeader = (strpos($wfmagContent, '<?xml') !== false && (strpos($wfmagContent, 'WAPRO') !== false || strpos($wfmagContent, 'ZAMOWIENIE') !== false));
-$hasWfMagNip = (strpos($wfmagContent, '1234567890') !== false);
+$hasWfMagHeader = (strpos($wfmagContent, '<?xml') !== false && strpos($wfmagContent, 'WAPRO_MAG') !== false);
+$hasWfMagNip = (strpos($wfmagContent, '<NIP>1234567890</NIP>') !== false);
+$hasWfMagMag = (strpos($wfmagContent, '<MAGAZYN>MAG</MAGAZYN>') !== false);
+$hasWfMagStatus = (strpos($wfmagContent, '<STATUS_ZAMOWIENIA>1</STATUS_ZAMOWIENIA>') !== false);
+$hasWfMagVat = (strpos($wfmagContent, '<STAWKA_VAT>5</STAWKA_VAT>') !== false);
 $hasWfMagExt = (substr($wfmag['filename'], -4) === '.xml');
-$wfmagOk = ($hasWfMagHeader && $hasWfMagNip && $hasWfMagExt);
-echo "4. Eksport Asseco WAPRO Wf-Mag (.xml): " . ($wfmagOk ? "PASS" : "FAIL") . "\n";
+$wfmagOk = ($hasWfMagHeader && $hasWfMagNip && $hasWfMagMag && $hasWfMagStatus && $hasWfMagVat && $hasWfMagExt);
+echo "4. Eksport Asseco WAPRO Wf-Mag (.xml z magazynem i VAT): " . ($wfmagOk ? "PASS" : "FAIL") . "\n";
 
 if (!$subiektOk || !$optimaOk || !$symfoniaOk || !$wfmagOk) {
     echo "=== TEST ZAKOŃCZONY BŁĘDEM (Stan RED) ===\n";
