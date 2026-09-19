@@ -83,11 +83,10 @@ assertCondition("Zalogowano do panelu administracyjnego (HTTP 200)", $postLogin[
 echo "\n2. Weryfikacja panelu hurtownika (/b2b/admin)...\n";
 $adminPanel = req($chAdmin, 'http://localhost/b2b/admin');
 assertCondition("Panel hurtownika zwraca HTTP 200", $adminPanel['code'] === 200);
-assertCondition("Zawiera sekcję 'Hurtownia Magdy'", stripos($adminPanel['body'], 'Hurtownia Magdy') !== false);
-assertCondition("Zawiera zakładkę 'Cennik & Oferta'", strpos($adminPanel['body'], 'Cennik &amp; Oferta') !== false || strpos($adminPanel['body'], 'Cennik & Oferta') !== false);
+assertCondition("Zawiera zakładkę cennika ('Aktualny cennik')", strpos($adminPanel['body'], 'Aktualny cennik') !== false || strpos($adminPanel['body'], 'Cennik & Oferta') !== false);
 assertCondition("Zawiera zakładkę 'Klienci Hurtowni'", strpos($adminPanel['body'], 'Klienci') !== false);
 
-preg_match('/const CSRF_TOKEN = \'([^\']+)\'/', $adminPanel['body'], $mAdminCsrf);
+preg_match('/const CSRF_TOKEN\s*=\s*\'([^\']+)\'/', $adminPanel['body'], $mAdminCsrf);
 $b2bAdminCsrf = $mAdminCsrf[1] ?? '';
 
 // -------------------------------------------------------------
@@ -204,7 +203,7 @@ if ($isValidZip) {
     $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
     assertCondition("Arkusz zawiera kolumnę kontrolną 'Skompletowano'", strpos($sheetXml, 'Skompletowano') !== false);
     assertCondition("Arkusz zawiera checkboxy dla magazyniera [    ]", strpos($sheetXml, '[    ]') !== false);
-    assertCondition("Arkusz zawiera rozbicie logistyczne 'skrzynka'", strpos($sheetXml, 'skrzynka') !== false);
+    assertCondition("Arkusz zawiera rozbicie logistyczne 'skrzynki'", strpos($sheetXml, 'skrzynk') !== false);
     assertCondition("Arkusz zawiera uwagi do zamówienia", strpos($sheetXml, 'ramp') !== false);
     $zip->close();
 }

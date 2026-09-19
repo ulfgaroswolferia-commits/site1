@@ -297,7 +297,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
             <div class="px-6 py-5 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between">
                 <div>
                     <h3 class="text-lg font-black tracking-tight">Podsumowanie zamówienia B2B</h3>
-                    <p class="text-xs text-emerald-100 mt-0.5">Sprawdź specyfikację przed przesłaniem na rampę magazynową</p>
+                    <p class="text-xs text-emerald-100 mt-0.5">Sprawdź specyfikację przed wysłaniem</p>
                 </div>
                 <button type="button" id="btnCloseModal" class="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -456,20 +456,107 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
 
             let currentCategory = 'ALL';
 
-            // Rozbicie logistyczne w JS
+            // Odmiana jednostek i opakowań przez przypadki w JS
+            function inflectPolishJs(number, unit) {
+                if (!unit) return '';
+                const u = unit.trim().toLowerCase();
+                const formsMap = {
+                    'klatka': ['klatka', 'klatki', 'klatek'],
+                    'klatki': ['klatka', 'klatki', 'klatek'],
+                    'klatek': ['klatka', 'klatki', 'klatek'],
+                    'worek': ['worek', 'worki', 'worków'],
+                    'worki': ['worek', 'worki', 'worków'],
+                    'worków': ['worek', 'worki', 'worków'],
+                    'skrzynka': ['skrzynka', 'skrzynki', 'skrzynek'],
+                    'skrzynki': ['skrzynka', 'skrzynki', 'skrzynek'],
+                    'skrzynek': ['skrzynka', 'skrzynki', 'skrzynek'],
+                    'karton': ['karton', 'kartony', 'kartonów'],
+                    'kartony': ['karton', 'kartony', 'kartonów'],
+                    'kartonów': ['karton', 'kartony', 'kartonów'],
+                    'pudełko': ['pudełko', 'pudełka', 'pudełek'],
+                    'pudełka': ['pudełko', 'pudełka', 'pudełek'],
+                    'pudełek': ['pudełko', 'pudełka', 'pudełek'],
+                    'pęczek': ['pęczek', 'pęczki', 'pęczków'],
+                    'pęczki': ['pęczek', 'pęczki', 'pęczków'],
+                    'pęczków': ['pęczek', 'pęczki', 'pęczków'],
+                    'zgrzewka': ['zgrzewka', 'zgrzewki', 'zgrzewek'],
+                    'zgrzewki': ['zgrzewka', 'zgrzewki', 'zgrzewek'],
+                    'zgrzewek': ['zgrzewka', 'zgrzewki', 'zgrzewek'],
+                    'paleta': ['paleta', 'palety', 'palet'],
+                    'palety': ['paleta', 'palety', 'palet'],
+                    'palet': ['paleta', 'palety', 'palet'],
+                    'paczka': ['paczka', 'paczki', 'paczek'],
+                    'paczki': ['paczka', 'paczki', 'paczek'],
+                    'paczek': ['paczka', 'paczki', 'paczek'],
+                    'wytłaczanka': ['wytłaczanka', 'wytłaczanki', 'wytłaczanek'],
+                    'wytłaczanki': ['wytłaczanka', 'wytłaczanki', 'wytłaczanek'],
+                    'wytłaczanek': ['wytłaczanka', 'wytłaczanki', 'wytłaczanek'],
+                    'koszyk': ['koszyk', 'koszyki', 'koszyków'],
+                    'koszyki': ['koszyk', 'koszyki', 'koszyków'],
+                    'koszyków': ['koszyk', 'koszyki', 'koszyków'],
+                    'wiązka': ['wiązka', 'wiązki', 'wiązek'],
+                    'wiązki': ['wiązka', 'wiązki', 'wiązek'],
+                    'wiązek': ['wiązka', 'wiązki', 'wiązek'],
+                    'opakowanie': ['opakowanie', 'opakowania', 'opakowań'],
+                    'opakowania': ['opakowanie', 'opakowania', 'opakowań'],
+                    'opakowań': ['opakowanie', 'opakowania', 'opakowań'],
+                    'sztuka': ['sztuka', 'sztuki', 'sztuk'],
+                    'sztuki': ['sztuka', 'sztuki', 'sztuk'],
+                    'sztuk': ['sztuka', 'sztuki', 'sztuk'],
+                    'szt': ['szt.', 'szt.', 'szt.'],
+                    'szt.': ['szt.', 'szt.', 'szt.'],
+                    'op': ['op.', 'op.', 'op.'],
+                    'op.': ['op.', 'op.', 'op.'],
+                    'kg': ['kg', 'kg', 'kg'],
+                    'g': ['g', 'g', 'g'],
+                    'l': ['l', 'l', 'l'],
+                    'litr': ['litr', 'litry', 'litrów'],
+                    'litry': ['litr', 'litry', 'litrów'],
+                    'litrów': ['litr', 'litry', 'litrów']
+                };
+
+                let forms = formsMap[u];
+                if (!forms) {
+                    if (u.endsWith('.') || u.length <= 3) return unit;
+                    if (u.endsWith('ka')) {
+                        const stem = u.slice(0, -2);
+                        forms = [u, stem + 'ki', stem + 'ek'];
+                    } else {
+                        return unit;
+                    }
+                }
+
+                const isInt = Math.floor(number) === number;
+                if (isInt) {
+                    const abs = Math.abs(number);
+                    if (abs === 1) return forms[0];
+                    const mod10 = abs % 10;
+                    const mod100 = abs % 100;
+                    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+                        return forms[1];
+                    }
+                    return forms[2];
+                }
+                return forms[1];
+            }
+
+            // Rozbicie logistyczne w JS z poprawną gramatyką
             function computePackageSummary(qty, pkgSize, pkgUnit, unit) {
                 if (pkgSize <= 1.0) {
-                    return qty > 0 ? `${qty} ${unit}` : '-';
+                    return qty > 0 ? `${qty} ${inflectPolishJs(qty, unit)}` : '-';
                 }
                 const fullBoxes = Math.floor(qty / pkgSize);
                 const remainder = Math.round((qty % pkgSize) * 100) / 100;
 
+                const boxInflected = inflectPolishJs(fullBoxes, pkgUnit);
+                const unitInflected = inflectPolishJs(remainder, unit);
+
                 if (fullBoxes > 0 && remainder > 0) {
-                    return `${fullBoxes} ${pkgUnit} + ${remainder} ${unit}`;
+                    return `${fullBoxes} ${boxInflected} + ${remainder} ${unitInflected}`;
                 } else if (fullBoxes > 0) {
-                    return `${fullBoxes} ${pkgUnit} (${qty} ${unit})`;
+                    return `${fullBoxes} ${boxInflected}`;
                 } else if (remainder > 0) {
-                    return `${remainder} ${unit}`;
+                    return `${remainder} ${unitInflected}`;
                 }
                 return '-';
             }
@@ -502,7 +589,8 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     if (remainder > 0.001 && fillRatio >= 0.6499) {
                         const nextFullQty = Math.ceil(qty / pkgSize) * pkgSize;
                         const btnRound = optimizerHint.querySelector('.btn-round-up');
-                        btnRound.textContent = `Zaokrąglij do ${nextFullQty} ${unit} (${Math.ceil(qty / pkgSize)} ${pkgUnit})`;
+                        const ceilBoxes = Math.ceil(qty / pkgSize);
+                        btnRound.textContent = `Zaokrąglij do ${nextFullQty} ${unit} (${ceilBoxes} ${inflectPolishJs(ceilBoxes, pkgUnit)})`;
                         btnRound.dataset.targetQty = nextFullQty;
                         optimizerHint.classList.remove('hidden');
                     } else {

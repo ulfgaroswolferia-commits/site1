@@ -729,7 +729,14 @@ class B2bController extends AppController
 
         $id = (int)($_POST['id'] ?? 0);
         $ok = $this->repo->toggleClientStatus($id);
-        App::json(['ok' => $ok]);
+        $client = $this->repo->getClientById($id);
+        $isActive = $client ? (int)$client['is_active'] : null;
+
+        App::json([
+            'ok'        => $ok,
+            'is_active' => $isActive,
+            'message'   => ($isActive === 1) ? 'Konto klienta zostało aktywowane.' : 'Konto klienta zostało zablokowane.'
+        ]);
     }
 
     /**
@@ -762,6 +769,10 @@ class B2bController extends AppController
             'delivery_address' => trim((string)($_POST['delivery_address'] ?? '')),
         ];
 
+        if (isset($_POST['is_active'])) {
+            $updateData['is_active'] = ((int)$_POST['is_active'] === 1) ? 1 : 0;
+        }
+
         if (isset($_POST['login'])) {
             $updateData['login'] = trim((string)$_POST['login']) ?: null;
         }
@@ -788,6 +799,34 @@ class B2bController extends AppController
             'client'    => $updatedClient,
             'token_url' => $tokenUrl,
             'message'   => 'Dane odbiorcy zostały pomyślnie zaktualizowane.'
+        ]);
+    }
+
+    /**
+     * POST /b2b/deleteclient
+     * Trwałe usunięcie odbiorcy B2B z bazy danych.
+     */
+    public function actionDeleteclient()
+    {
+        $this->requireAuth();
+        $this->requireCsrf();
+
+        $id = (int)($_POST['id'] ?? 0);
+        $client = $this->repo->getClientById($id);
+        if (!$client) {
+            App::json(['ok' => false, 'error' => 'Klient nie istnieje.'], 404);
+            return;
+        }
+
+        $ok = $this->repo->deleteClient($id);
+        if (!$ok) {
+            App::json(['ok' => false, 'error' => 'Nie udało się usunąć klienta z bazy.'], 500);
+            return;
+        }
+
+        App::json([
+            'ok'      => true,
+            'message' => 'Odbiorca "' . $client['company_name'] . '" został trwale usunięty z bazy.'
         ]);
     }
 
@@ -935,6 +974,20 @@ class B2bController extends AppController
         }
 
         $items = $this->repo->getOrderItems($id);
+        foreach ($items as &$it) {
+            if (!empty($it['package_summary'])) {
+                $it['package_summary'] = \App\B2bRepository::inflectSummaryString((string)$it['package_summary']);
+            } elseif (!empty($it['package_size']) && (float)$it['package_size'] > 1.0) {
+                $it['package_summary'] = $this->repo->formatPackageSummary(
+                    (float)$it['quantity'],
+                    (float)$it['package_size'],
+                    (string)($it['package_unit'] ?? 'op.'),
+                    (string)($it['unit'] ?? 'kg')
+                );
+            }
+        }
+        unset($it);
+
         App::json([
             'ok'    => true,
             'order' => $order,

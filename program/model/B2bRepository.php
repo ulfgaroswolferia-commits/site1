@@ -90,6 +90,7 @@ class B2bRepository
                 package_size REAL NOT NULL DEFAULT 1.0,
                 package_unit VARCHAR(30) NOT NULL DEFAULT 'op.',
                 is_available INT NOT NULL DEFAULT 1,
+                is_new INT NOT NULL DEFAULT 0,
                 sort_order INT NOT NULL DEFAULT 0,
                 updated_at DATETIME NOT NULL
             );
@@ -131,6 +132,10 @@ class B2bRepository
                 item_total REAL NOT NULL
             );
         ");
+
+        try {
+            $this->pdo->exec("ALTER TABLE b2b_products ADD COLUMN is_new INT NOT NULL DEFAULT 0");
+        } catch (\Throwable $e) {}
     }
 
     // =========================================================================
@@ -234,6 +239,12 @@ class B2bRepository
         return $stmt->execute([':id' => $id]);
     }
 
+    public function deleteClient(int $id): bool
+    {
+        $stmt = $this->pdo->prepare("DELETE FROM b2b_clients WHERE id = :id");
+        return $stmt->execute([':id' => $id]);
+    }
+
     // =========================================================================
     // REGUŁY OPAKOWAŃ (Inteligentna pamięć klatek/skrzynek)
     // =========================================================================
@@ -294,13 +305,25 @@ class B2bRepository
     {
         $this->pdo->beginTransaction();
         try {
+            // Pobierz aktualny asortyment, aby ZACHOWAĆ wcześniej skonfigurowane jednostki i opakowania zbiorcze
+            $existingMap = [];
+            try {
+                $existingProducts = $this->pdo->query("SELECT * FROM b2b_products")->fetchAll();
+                foreach ($existingProducts as $ep) {
+                    $norm = $this->normalizePattern($ep['name']);
+                    if ($norm !== '') {
+                        $existingMap[$norm] = $ep;
+                    }
+                }
+            } catch (\Throwable $e) {}
+
             if ($clearOld) {
                 $this->pdo->exec("DELETE FROM b2b_products");
             }
 
             $stmt = $this->pdo->prepare("
-                INSERT INTO b2b_products (name, category, unit, price, package_size, package_unit, is_available, sort_order, updated_at)
-                VALUES (:name, :category, :unit, :price, :package_size, :package_unit, :is_available, :sort_order, :updated_at)
+                INSERT INTO b2b_products (name, category, unit, price, package_size, package_unit, is_available, is_new, sort_order, updated_at)
+                VALUES (:name, :category, :unit, :price, :package_size, :package_unit, :is_available, :is_new, :sort_order, :updated_at)
             ");
 
             $now = date('Y-m-d H:i:s');
@@ -310,26 +333,40 @@ class B2bRepository
                 $name = trim($p['name'] ?? '');
                 if ($name === '') continue;
 
-                $unit = trim($p['unit'] ?? 'kg');
-                $price = (float)($p['price'] ?? 0);
-                $cat = trim($p['category'] ?? $this->detectCategory($name));
-                $pkgSize = (float)($p['package_size'] ?? 1.0);
-                $pkgUnit = trim($p['package_unit'] ?? 'op.');
-                $isAvail = isset($p['is_available']) ? (int)$p['is_available'] : 1;
+                $norm = $this->normalizePattern($name);
+                $isExisting = isset($existingMap[$norm]);
 
-                // Jeśli nie podano w pliku opakowania, sprawdź regułę
-                if ($pkgSize <= 1.0) {
+                if ($isExisting) {
+                    // Towar już wcześniej istniał w ofercie — zachowaj jednostkę, opakowanie zbiorcze i kategorię
+                    $old = $existingMap[$norm];
+                    $unit = !empty($old['unit']) ? $old['unit'] : trim($p['unit'] ?? 'kg');
+                    $pkgSize = (float)($old['package_size'] ?? 1.0);
+                    $pkgUnit = !empty($old['package_unit']) ? $old['package_unit'] : trim($p['package_unit'] ?? 'op.');
+                    $cat = !empty($old['category']) ? $old['category'] : trim($p['category'] ?? $this->detectCategory($name));
+                    $price = (float)($p['price'] ?? 0);
+                    $isAvail = isset($p['is_available']) ? (int)$p['is_available'] : (int)($old['is_available'] ?? 1);
+                    $isNew = 0;
+                } else {
+                    // Nowy artykuł, którego wcześniej nie było w bazie
+                    $isNew = 1;
+                    $unit = trim($p['unit'] ?? 'kg');
+                    $price = (float)($p['price'] ?? 0);
+                    $cat = trim($p['category'] ?? $this->detectCategory($name));
+                    $pkgSize = (float)($p['package_size'] ?? 1.0);
+                    $pkgUnit = trim($p['package_unit'] ?? 'op.');
+                    $isAvail = isset($p['is_available']) ? (int)$p['is_available'] : 1;
+
+                    // Sprawdź czy pasuje do inteligentnych reguł opakowań
                     $rule = $this->getPackageRule($name);
                     if ($rule) {
                         $pkgSize = (float)$rule['package_size'];
                         $pkgUnit = $rule['package_unit'];
-                        if (!empty($rule['unit']) && ($unit === 'kg' || empty($p['unit']))) {
+                        if (!empty($rule['unit'])) {
                             $unit = $rule['unit'];
                         }
+                    } elseif ($pkgSize > 1.0 || $unit !== 'kg') {
+                        $this->savePackageRule($name, $pkgSize, $pkgUnit, $unit);
                     }
-                } else {
-                    // Zapamiętaj regułę z pliku
-                    $this->savePackageRule($name, $pkgSize, $pkgUnit, $unit);
                 }
 
                 $stmt->execute([
@@ -340,6 +377,7 @@ class B2bRepository
                     ':package_size' => $pkgSize,
                     ':package_unit' => $pkgUnit,
                     ':is_available' => $isAvail,
+                    ':is_new'       => $isNew,
                     ':sort_order'   => $idx,
                     ':updated_at'   => $now,
                 ]);
@@ -362,14 +400,14 @@ class B2bRepository
         $citrus = ['pomarańcza', 'pomarancza', 'mandarynka', 'cytryna', 'limonka', 'grejpfrut', 'grapefruit', 'pomelo'];
         $herbs  = ['koperek', 'pietruszka nać', 'szczypiorek', 'bazylia', 'mięta', 'mieta', 'sałata', 'salata', 'rukola', 'roszponka', 'szpinak'];
 
-        foreach ($citrus as $w) {
-            if (mb_stripos($nameLower, $w) !== false) return 'Cytrusy';
+        foreach ($fruits as $f) {
+            if (mb_strpos($nameLower, $f) !== false) return 'Owoce';
         }
-        foreach ($fruits as $w) {
-            if (mb_stripos($nameLower, $w) !== false) return 'Owoce';
+        foreach ($citrus as $c) {
+            if (mb_strpos($nameLower, $c) !== false) return 'Cytrusy';
         }
-        foreach ($herbs as $w) {
-            if (mb_stripos($nameLower, $w) !== false) return 'Zioła i sałaty';
+        foreach ($herbs as $h) {
+            if (mb_strpos($nameLower, $h) !== false) return 'Zioła i sałaty';
         }
 
         return 'Warzywa';
@@ -410,7 +448,7 @@ class B2bRepository
         $fields = [];
         $params = [':id' => $id];
 
-        foreach (['name', 'category', 'unit', 'price', 'package_size', 'package_unit', 'is_available'] as $f) {
+        foreach (['name', 'category', 'unit', 'price', 'package_size', 'package_unit', 'is_available', 'is_new'] as $f) {
             if (array_key_exists($f, $data)) {
                 $fields[] = "{$f} = :{$f}";
                 $params[":{$f}"] = $data[$f];
@@ -421,6 +459,11 @@ class B2bRepository
             return false;
         }
 
+        // Gdy operator edytuje towar, domyślnie zdejmij flagę is_new (chyba że podano explicite)
+        if (!array_key_exists('is_new', $data)) {
+            $fields[] = "is_new = 0";
+        }
+
         $fields[] = "updated_at = :updated_at";
         $params[':updated_at'] = date('Y-m-d H:i:s');
 
@@ -428,13 +471,14 @@ class B2bRepository
         $stmt = $this->pdo->prepare($sql);
         $ok = $stmt->execute($params);
 
-        // Jeśli zaktualizowano opakowanie, zapisz w regułach
-        if ($ok && isset($data['package_size']) && (float)$data['package_size'] > 1.0) {
-            $prod = $this->pdo->query("SELECT name, unit, package_unit FROM b2b_products WHERE id = " . (int)$id)->fetch();
+        // Jeśli zaktualizowano opakowanie lub jednostkę, zapisz w regułach
+        if ($ok) {
+            $prod = $this->pdo->query("SELECT name, unit, package_size, package_unit FROM b2b_products WHERE id = " . (int)$id)->fetch();
             if ($prod) {
                 $pkgUnit = $data['package_unit'] ?? $prod['package_unit'];
                 $unit    = $data['unit'] ?? $prod['unit'];
-                $this->savePackageRule($prod['name'], (float)$data['package_size'], $pkgUnit, $unit);
+                $pkgSize = isset($data['package_size']) ? (float)$data['package_size'] : (float)$prod['package_size'];
+                $this->savePackageRule($prod['name'], $pkgSize, $pkgUnit, $unit);
             }
         }
 
@@ -532,8 +576,12 @@ class B2bRepository
                 $pkgUnit = trim($item['package_unit'] ?? 'op.');
                 $unit    = trim($item['unit'] ?? 'kg');
 
-                // Wyliczenie rozbicia na opakowania
-                $pkgSummary = $item['package_summary'] ?? $this->formatPackageSummary($qty, $pkgSize, $pkgUnit, $unit);
+                // Wyliczenie rozbicia na opakowania z poprawną odmianą gramatyczną
+                if (!empty($item['package_summary'])) {
+                    $pkgSummary = self::inflectSummaryString((string)$item['package_summary']);
+                } else {
+                    $pkgSummary = $this->formatPackageSummary($qty, $pkgSize, $pkgUnit, $unit);
+                }
 
                 $stmtItem->execute([
                     ':order_id'        => $orderId,
@@ -551,27 +599,151 @@ class B2bRepository
 
             $this->pdo->commit();
             return $orderId;
+
         } catch (\Throwable $e) {
             $this->pdo->rollBack();
             throw $e;
         }
     }
 
+    /**
+     * Odmiana rzeczowników i jednostek przez przypadki w języku polskim.
+     * Zwraca poprawną gramatycznie formę dla liczby (np. 1 klatka, 2 klatki, 5 klatek, 2 worki, 5 worków).
+     */
+    public static function inflectPolish(float|int $number, string $unit): string
+    {
+        $unitTrim = trim($unit);
+        $unitLower = mb_strtolower($unitTrim, 'UTF-8');
+
+        $formsMap = [
+            'klatka'      => ['klatka', 'klatki', 'klatek'],
+            'klatki'      => ['klatka', 'klatki', 'klatek'],
+            'klatek'      => ['klatka', 'klatki', 'klatek'],
+
+            'worek'       => ['worek', 'worki', 'worków'],
+            'worki'       => ['worek', 'worki', 'worków'],
+            'worków'      => ['worek', 'worki', 'worków'],
+
+            'skrzynka'    => ['skrzynka', 'skrzynki', 'skrzynek'],
+            'skrzynki'    => ['skrzynka', 'skrzynki', 'skrzynek'],
+            'skrzynek'    => ['skrzynka', 'skrzynki', 'skrzynek'],
+
+            'karton'      => ['karton', 'kartony', 'kartonów'],
+            'kartony'     => ['karton', 'kartony', 'kartonów'],
+            'kartonów'    => ['karton', 'kartony', 'kartonów'],
+
+            'pudełko'     => ['pudełko', 'pudełka', 'pudełek'],
+            'pudełka'     => ['pudełko', 'pudełka', 'pudełek'],
+            'pudełek'     => ['pudełko', 'pudełka', 'pudełek'],
+
+            'pęczek'      => ['pęczek', 'pęczki', 'pęczków'],
+            'pęczki'      => ['pęczek', 'pęczki', 'pęczków'],
+            'pęczków'     => ['pęczek', 'pęczki', 'pęczków'],
+
+            'zgrzewka'    => ['zgrzewka', 'zgrzewki', 'zgrzewek'],
+            'zgrzewki'    => ['zgrzewka', 'zgrzewki', 'zgrzewek'],
+            'zgrzewek'    => ['zgrzewka', 'zgrzewki', 'zgrzewek'],
+
+            'paleta'      => ['paleta', 'palety', 'palet'],
+            'palety'      => ['paleta', 'palety', 'palet'],
+            'palet'       => ['paleta', 'palety', 'palet'],
+
+            'paczka'      => ['paczka', 'paczki', 'paczek'],
+            'paczki'      => ['paczka', 'paczki', 'paczek'],
+            'paczek'      => ['paczka', 'paczki', 'paczek'],
+
+            'wytłaczanka' => ['wytłaczanka', 'wytłaczanki', 'wytłaczanek'],
+            'wytłaczanki' => ['wytłaczanka', 'wytłaczanki', 'wytłaczanek'],
+            'wytłaczanek' => ['wytłaczanka', 'wytłaczanki', 'wytłaczanek'],
+
+            'koszyk'      => ['koszyk', 'koszyki', 'koszyków'],
+            'koszyki'     => ['koszyk', 'koszyki', 'koszyków'],
+            'koszyków'    => ['koszyk', 'koszyki', 'koszyków'],
+
+            'wiązka'      => ['wiązka', 'wiązki', 'wiązek'],
+            'wiązki'      => ['wiązka', 'wiązki', 'wiązek'],
+            'wiązek'      => ['wiązka', 'wiązki', 'wiązek'],
+
+            'opakowanie'  => ['opakowanie', 'opakowania', 'opakowań'],
+            'opakowania'  => ['opakowanie', 'opakowania', 'opakowań'],
+            'opakowań'    => ['opakowanie', 'opakowania', 'opakowań'],
+
+            'sztuka'      => ['sztuka', 'sztuki', 'sztuk'],
+            'sztuki'      => ['sztuka', 'sztuki', 'sztuk'],
+            'sztuk'       => ['sztuka', 'sztuki', 'sztuk'],
+
+            'szt'         => ['szt.', 'szt.', 'szt.'],
+            'szt.'        => ['szt.', 'szt.', 'szt.'],
+            'op'          => ['op.', 'op.', 'op.'],
+            'op.'         => ['op.', 'op.', 'op.'],
+            'kg'          => ['kg', 'kg', 'kg'],
+            'g'           => ['g', 'g', 'g'],
+            'l'           => ['l', 'l', 'l'],
+            'litr'        => ['litr', 'litry', 'litrów'],
+            'litry'       => ['litr', 'litry', 'litrów'],
+            'litrów'      => ['litr', 'litry', 'litrów'],
+        ];
+
+        $forms = $formsMap[$unitLower] ?? null;
+        if (!$forms) {
+            if (str_ends_with($unitLower, '.') || mb_strlen($unitLower, 'UTF-8') <= 3) {
+                return $unitTrim;
+            }
+            if (preg_match('/^(.*)ka$/u', $unitLower, $m)) {
+                $forms = [$unitLower, $m[1] . 'ki', $m[1] . 'ek'];
+            } else {
+                return $unitTrim;
+            }
+        }
+
+        $isInteger = (floor($number) == $number);
+        if ($isInteger) {
+            $abs = abs((int)$number);
+            if ($abs === 1) {
+                return $forms[0];
+            }
+            $mod10 = $abs % 10;
+            $mod100 = $abs % 100;
+            if ($mod10 >= 2 && $mod10 <= 4 && ($mod100 < 12 || $mod100 > 14)) {
+                return $forms[1];
+            }
+            return $forms[2];
+        }
+
+        return $forms[1];
+    }
+
+    /**
+     * Koryguje ciąg podsumowania opakowań (np. "2 klatka" -> "2 klatki", "2 worek + 5 kg" -> "2 worki + 5 kg")
+     */
+    public static function inflectSummaryString(string $summary): string
+    {
+        return preg_replace_callback('/(\d+(?:\.\d+)?)\s+([a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ.]+)/u', function($m) {
+            $val = (float)$m[1];
+            $unit = $m[2];
+            $inflected = self::inflectPolish($val, $unit);
+            return $m[1] . ' ' . $inflected;
+        }, $summary);
+    }
+
     public function formatPackageSummary(float $quantity, float $packageSize, string $packageUnit, string $unit): string
     {
         if ($packageSize <= 1.0) {
-            return "{$quantity} {$unit}";
+            $unitInflected = self::inflectPolish($quantity, $unit);
+            return "{$quantity} {$unitInflected}";
         }
 
-        $fullBoxes = floor($quantity / $packageSize);
-        $remainder = fmod($quantity, $packageSize);
+        $fullBoxes = (int)floor($quantity / $packageSize);
+        $remainder = round(fmod($quantity, $packageSize), 2);
 
         $parts = [];
         if ($fullBoxes > 0) {
-            $parts[] = "{$fullBoxes} {$packageUnit}";
+            $boxInflected = self::inflectPolish($fullBoxes, $packageUnit);
+            $parts[] = "{$fullBoxes} {$boxInflected}";
         }
         if ($remainder > 0.001) {
-            $parts[] = "{$remainder} {$unit}";
+            $unitInflected = self::inflectPolish($remainder, $unit);
+            $parts[] = "{$remainder} {$unitInflected}";
         }
 
         return !empty($parts) ? implode(' + ', $parts) : "{$quantity} {$unit}";
