@@ -32,10 +32,10 @@ $base      = $view['base'] ?? App::baseUrl();
         </a>
 
         <h2 class="mt-6 text-center text-xl font-bold tracking-tight text-slate-800">
-            Logowanie dla sklepów i odbiorców
+            Logowanie B2B
         </h2>
         <p class="mt-2 text-center text-xs text-slate-500">
-            Świeże warzywa i owoce hurtowo z codzienną dostawą
+            Dostęp dla hurtownika (panel administracyjny) oraz zarejestrowanych sklepów
         </p>
     </div>
 
@@ -51,16 +51,17 @@ $base      = $view['base'] ?? App::baseUrl();
             <?php endif; ?>
 
             <form class="space-y-5" method="POST" action="<?= $base ?>b2b/login">
+                <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken ?? '') ?>">
 
                 <div>
                     <label for="login" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
-                        Login lub NIP sklepu
+                        Login hurtownika lub NIP / e-mail sklepu
                     </label>
                     <div class="relative">
                         <input id="login" name="login" type="text" required autofocus
                             class="block w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
-                            placeholder="np. sklep@zielony.pl">
+                            placeholder="np. admin lub sklep@zielony.pl">
                     </div>
                 </div>
 

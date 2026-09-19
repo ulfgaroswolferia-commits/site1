@@ -159,6 +159,20 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                         </div>
                     </div>
 
+                    <!-- Podgląd wierszy arkusza Excel -->
+                    <div class="mb-4">
+                        <div class="text-xs font-bold text-slate-600 mb-2 flex items-center justify-between">
+                            <span>Podgląd zawartości arkusza Excel:</span>
+                            <span class="text-slate-400 font-normal text-[11px]">Wiersz wyróżniony na zielono = nagłówek</span>
+                        </div>
+                        <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-56 overflow-y-auto bg-white shadow-inner">
+                            <table class="w-full text-left text-xs" id="preview-sheet-table">
+                                <thead class="bg-slate-100 text-slate-700 font-bold sticky top-0 border-b border-slate-200" id="preview-sheet-thead"></thead>
+                                <tbody class="divide-y divide-slate-100" id="preview-sheet-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <div class="flex justify-end gap-3">
                         <button type="button" onclick="cancelMapping()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">Anuluj</button>
                         <button type="button" id="btn-process-import" class="px-5 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md transition flex items-center gap-2">
@@ -215,6 +229,21 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     </div>
 
                     <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <div id="unsaved-alert-pill" class="hidden items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-300 text-amber-900 rounded-xl text-xs font-extrabold shadow-sm animate-pulse">
+                            <span class="relative flex h-2 w-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                            </span>
+                            <span id="unsaved-count-text">0 niezatwierdzonych zmian</span>
+                        </div>
+
+                        <!-- Przycisk Zapisz wszystkie zmiany -->
+                        <button type="button" id="btn-save-all-products" onclick="saveAllProducts()" class="hidden items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-extrabold shadow-md shadow-emerald-600/25 transition-all cursor-pointer" title="Zapisz i zatwierdź wszystkie zmodyfikowane pozycje na raz (Ctrl+S)">
+                            <svg class="w-3.5 h-3.5 text-white shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+                            <span id="btn-save-all-text">Zapisz wszystkie zmiany</span>
+                            <span id="btn-save-all-count" class="ml-1 px-1.5 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-black">0</span>
+                        </button>
+
                         <div class="relative flex-1 sm:w-64">
                             <input id="product-search-admin" type="text" placeholder="Filtruj asortyment..." class="w-full text-xs font-medium pl-8 pr-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:border-emerald-500">
                             <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -239,13 +268,25 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                 <th class="py-3.5 px-4 font-bold text-right w-36">Cena hurtowa</th>
                                 <th class="py-3.5 px-4 font-bold text-center w-24">Jedn.</th>
                                 <th class="py-3.5 px-4 font-bold w-48">Opakowanie zbiorcze (klatka/skrzynka)</th>
-                                <th class="py-3.5 px-4 font-bold text-center w-20">Zapisz</th>
+                                <th class="py-3.5 px-4 font-bold text-center w-28">Zapisz</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100" id="products-tbody">
                             <?php if (!empty($products)): ?>
                                 <?php foreach ($products as $p): ?>
-                                    <tr class="hover:bg-slate-50/80 transition <?= (int)$p['is_available'] === 0 ? 'opacity-50 bg-slate-50' : '' ?>" id="prod-row-<?= $p['id'] ?>" data-cat="<?= Tools::h($p['category']) ?>" data-name="<?= Tools::h(mb_strtolower($p['name'])) ?>">
+                                    <?php
+                                        $uRaw = mb_strtolower(trim((string)($p['unit'] ?? 'kg')), 'UTF-8');
+                                        $uClean = str_replace('.', '', $uRaw);
+                                        $isSzt = ($uClean === 'szt' || $uClean === 'sztuka' || $uClean === 'sztuki');
+                                        $isPeczek = ($uClean === 'pęczek' || $uClean === 'peczek' || $uClean === 'pecz');
+                                        $isOp = ($uClean === 'op' || $uClean === 'kart' || $uClean === 'skrz');
+                                        $isKg = (!$isSzt && !$isPeczek && !$isOp);
+                                        $unitVal = $isKg ? 'kg' : ($isSzt ? 'szt.' : ($isOp ? 'op.' : 'pęczek'));
+                                        $priceVal = number_format((float)$p['price'], 2, '.', '');
+                                        $pkgSizeVal = (float)$p['package_size'];
+                                        $pkgUnitVal = (string)$p['package_unit'];
+                                    ?>
+                                    <tr class="prod-row hover:bg-slate-50/80 transition-all border-l-4 border-l-transparent <?= (int)$p['is_available'] === 0 ? 'opacity-50 bg-slate-50' : '' ?>" id="prod-row-<?= $p['id'] ?>" data-prod-id="<?= $p['id'] ?>" data-cat="<?= Tools::h($p['category']) ?>" data-name="<?= Tools::h(mb_strtolower($p['name'])) ?>">
                                         <!-- Przełącznik In stock / Out of stock -->
                                         <td class="py-3 px-4 text-center">
                                             <button type="button" onclick="toggleProduct(<?= $p['id'] ?>)" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold transition <?= (int)$p['is_available'] === 1 ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-200 text-slate-600 hover:bg-slate-300' ?>">
@@ -254,11 +295,16 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                         </td>
                                         <!-- Nazwa -->
                                         <td class="py-3 px-4 font-bold text-slate-900">
-                                            <input type="text" id="name-<?= $p['id'] ?>" value="<?= Tools::h($p['name']) ?>" class="w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 focus:bg-white px-1.5 py-0.5 rounded text-sm font-bold">
+                                            <div class="flex items-center gap-2">
+                                                <input type="text" id="name-<?= $p['id'] ?>" data-prod-id="<?= $p['id'] ?>" data-field-name="name" data-initial="<?= Tools::h($p['name']) ?>" value="<?= Tools::h($p['name']) ?>" class="prod-field w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 focus:bg-white px-1.5 py-0.5 rounded text-sm font-bold transition">
+                                                <span id="dirty-badge-<?= $p['id'] ?>" class="hidden shrink-0 items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300/80 shadow-xs" title="Pozycja zmodyfikowana — wymaga zatwierdzenia">
+                                                    Edytowano
+                                                </span>
+                                            </div>
                                         </td>
                                         <!-- Kategoria -->
                                         <td class="py-3 px-4">
-                                            <select id="cat-<?= $p['id'] ?>" class="text-xs font-medium border border-slate-200 rounded-lg p-1 bg-white">
+                                            <select id="cat-<?= $p['id'] ?>" data-prod-id="<?= $p['id'] ?>" data-field-name="category" data-initial="<?= Tools::h($p['category']) ?>" class="prod-field text-xs font-medium border border-slate-200 rounded-lg p-1 bg-white transition focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
                                                 <option value="Warzywa" <?= $p['category'] === 'Warzywa' ? 'selected' : '' ?>>Warzywa</option>
                                                 <option value="Owoce" <?= $p['category'] === 'Owoce' ? 'selected' : '' ?>>Owoce</option>
                                                 <option value="Cytrusy" <?= $p['category'] === 'Cytrusy' ? 'selected' : '' ?>>Cytrusy</option>
@@ -269,24 +315,24 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                         <!-- Cena -->
                                         <td class="py-3 px-4 text-right">
                                             <div class="inline-flex items-center justify-end gap-1">
-                                                <input type="number" step="0.01" min="0" id="price-<?= $p['id'] ?>" value="<?= number_format((float)$p['price'], 2, '.', '') ?>" class="w-24 text-right text-sm font-extrabold text-blue-700 border border-slate-200 focus:border-emerald-500 rounded-lg p-1">
+                                                <input type="number" step="0.01" min="0" id="price-<?= $p['id'] ?>" data-prod-id="<?= $p['id'] ?>" data-field-name="price" data-initial="<?= $priceVal ?>" value="<?= $priceVal ?>" class="prod-field w-24 text-right text-sm font-extrabold text-blue-700 border border-slate-200 focus:border-emerald-500 rounded-lg p-1 transition focus:ring-1 focus:ring-emerald-500">
                                                 <span class="text-xs font-bold text-slate-500">zł</span>
                                             </div>
                                         </td>
                                         <!-- Jednostka -->
                                         <td class="py-3 px-4 text-center">
-                                            <select id="unit-<?= $p['id'] ?>" class="text-xs font-medium border border-slate-200 rounded-lg p-1 bg-white">
-                                                <option value="kg" <?= $p['unit'] === 'kg' ? 'selected' : '' ?>>kg</option>
-                                                <option value="szt." <?= $p['unit'] === 'szt.' ? 'selected' : '' ?>>szt.</option>
-                                                <option value="op." <?= $p['unit'] === 'op.' ? 'selected' : '' ?>>op.</option>
-                                                <option value="pęczek" <?= $p['unit'] === 'pęczek' ? 'selected' : '' ?>>pęczek</option>
+                                            <select id="unit-<?= $p['id'] ?>" data-prod-id="<?= $p['id'] ?>" data-field-name="unit" data-initial="<?= $unitVal ?>" class="prod-field text-xs font-medium border border-slate-200 rounded-lg p-1 bg-white transition focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                                                <option value="kg" <?= $isKg ? 'selected' : '' ?>>kg</option>
+                                                <option value="szt." <?= $isSzt ? 'selected' : '' ?>>szt.</option>
+                                                <option value="op." <?= $isOp ? 'selected' : '' ?>>op.</option>
+                                                <option value="pęczek" <?= $isPeczek ? 'selected' : '' ?>>pęczek</option>
                                             </select>
                                         </td>
                                         <!-- Opakowanie zbiorcze -->
                                         <td class="py-3 px-4">
                                             <div class="flex items-center gap-1.5">
-                                                <input type="number" step="0.5" min="1" id="pkg-size-<?= $p['id'] ?>" value="<?= (float)$p['package_size'] ?>" class="w-16 text-center text-xs font-bold border border-slate-200 focus:border-emerald-500 rounded-lg p-1">
-                                                <select id="pkg-unit-<?= $p['id'] ?>" class="text-xs font-medium border border-slate-200 rounded-lg p-1 bg-white">
+                                                <input type="number" step="0.5" min="1" id="pkg-size-<?= $p['id'] ?>" data-prod-id="<?= $p['id'] ?>" data-field-name="package_size" data-initial="<?= $pkgSizeVal ?>" value="<?= $pkgSizeVal ?>" class="prod-field w-16 text-center text-xs font-bold border border-slate-200 focus:border-emerald-500 rounded-lg p-1 transition focus:ring-1 focus:ring-emerald-500">
+                                                <select id="pkg-unit-<?= $p['id'] ?>" data-prod-id="<?= $p['id'] ?>" data-field-name="package_unit" data-initial="<?= Tools::h($pkgUnitVal) ?>" class="prod-field text-xs font-medium border border-slate-200 rounded-lg p-1 bg-white transition focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
                                                     <option value="klatka" <?= $p['package_unit'] === 'klatka' ? 'selected' : '' ?>>klatka</option>
                                                     <option value="skrzynka" <?= $p['package_unit'] === 'skrzynka' ? 'selected' : '' ?>>skrzynka</option>
                                                     <option value="karton" <?= $p['package_unit'] === 'karton' ? 'selected' : '' ?>>karton</option>
@@ -296,9 +342,12 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                             </div>
                                         </td>
                                         <!-- Zapis -->
-                                        <td class="py-3 px-4 text-center">
-                                            <button type="button" onclick="saveProduct(<?= $p['id'] ?>)" class="p-1.5 text-emerald-600 hover:text-white hover:bg-emerald-600 rounded-lg transition" title="Zapisz zmiany">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                        <td class="py-3 px-4 text-center whitespace-nowrap">
+                                            <button type="button" id="save-btn-<?= $p['id'] ?>" onclick="saveProduct(<?= $p['id'] ?>)" class="save-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 border border-transparent transition-all" title="Zapisz zmiany">
+                                                <svg id="save-icon-<?= $p['id'] ?>" class="w-4 h-4 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                </svg>
+                                                <span id="save-label-<?= $p['id'] ?>" class="hidden font-bold">Zapisz</span>
                                             </button>
                                         </td>
                                     </tr>
@@ -337,14 +386,23 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                 <th class="py-3.5 px-4 font-bold text-right">Wartość</th>
                                 <th class="py-3.5 px-4 font-bold text-center">Status</th>
                                 <th class="py-3.5 px-4 font-bold text-right">Data</th>
-                                <th class="py-3.5 px-4 font-bold text-center">Akcje</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <?php if (!empty($orders)): ?>
                                 <?php foreach ($orders as $o): ?>
-                                    <tr class="hover:bg-slate-50/80 transition">
-                                        <td class="py-3 px-4 font-extrabold text-blue-700"><?= Tools::h($o['order_number']) ?></td>
+                                    <tr class="hover:bg-slate-50/80 transition" id="order-row-<?= $o['id'] ?>">
+                                        <td class="py-3 px-4">
+                                            <div class="flex flex-col items-start gap-0.5">
+                                                <button type="button" onclick="showOrderModal(<?= $o['id'] ?>)" class="font-extrabold text-blue-700 hover:text-blue-900 hover:underline text-left cursor-pointer transition text-sm order-details-btn-<?= $o['id'] ?>" title="Kliknij, aby otworzyć szczegóły zamówienia">
+                                                    <?= Tools::h($o['order_number']) ?>
+                                                </button>
+                                                <button type="button" onclick="showOrderModal(<?= $o['id'] ?>)" class="inline-flex items-center gap-1 text-[11px] font-bold text-sky-600 hover:text-sky-800 hover:underline cursor-pointer transition" title="Zobacz pozycje i dane zamówienia">
+                                                    <svg class="w-3 h-3 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                                    <span>Szczegóły zamówienia</span>
+                                                </button>
+                                            </div>
+                                        </td>
                                         <td class="py-3 px-4 font-bold text-slate-900"><?= Tools::h($o['client_name_snapshot']) ?></td>
                                         <td class="py-3 px-4 text-xs font-semibold text-slate-600"><?= Tools::h($o['client_phone_snapshot'] ?: '—') ?></td>
                                         <td class="py-3 px-4 text-center font-bold text-slate-700"><?= (int)$o['total_items'] ?></td>
@@ -358,16 +416,11 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                             </select>
                                         </td>
                                         <td class="py-3 px-4 text-right text-xs text-slate-400 font-medium"><?= date('d.m.Y H:i', strtotime($o['created_at'])) ?></td>
-                                        <td class="py-3 px-4 text-center">
-                                            <button type="button" onclick="showOrderModal(<?= $o['id'] ?>)" class="px-2.5 py-1 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-lg hover:bg-sky-100 transition">
-                                                Szczegóły
-                                            </button>
-                                        </td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="8" class="py-8 text-center text-slate-400 font-medium">Brak złożonych zamówień w historii.</td>
+                                    <td colspan="7" class="py-8 text-center text-slate-400 font-medium">Brak złożonych zamówień w historii.</td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
@@ -419,7 +472,25 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
 
             <!-- Tabela zarejestrowanych klientów -->
             <section class="bg-white/95 border border-slate-200 rounded-2xl shadow-sm overflow-hidden p-5">
-                <h3 class="text-base font-extrabold text-slate-900 mb-4">Baza Odbiorców B2B</h3>
+                <div class="flex items-center justify-between mb-4 flex-wrap gap-4">
+                    <div>
+                        <h3 class="text-base font-extrabold text-slate-900">Baza Odbiorców B2B</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Lista klientów posortowana chronologicznie — od ostatnio zarejestrowanego odbiorcy</p>
+                    </div>
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <!-- Wyszukiwarka klientów po nazwie -->
+                        <div class="relative flex-1 sm:w-72">
+                            <input id="client-search-admin" type="text" placeholder="Szukaj klienta po nazwie / NIP / tel..." class="w-full text-xs font-medium pl-8 pr-8 py-2 border border-slate-300 rounded-xl focus:outline-none focus:border-emerald-500 shadow-2xs">
+                            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <button type="button" id="client-search-clear" onclick="clearClientSearch()" class="hidden absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600" title="Wyczyść szukanie">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+                        </div>
+                        <span id="clients-count-badge" class="text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl whitespace-nowrap shadow-2xs">
+                            <?= count($clients) ?> odbiorców
+                        </span>
+                    </div>
+                </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm" id="clients-table">
                         <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
@@ -429,39 +500,82 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                 <th class="py-3.5 px-4 font-bold">E-mail</th>
                                 <th class="py-3.5 px-4 font-bold">Adres dostawy</th>
                                 <th class="py-3.5 px-4 font-bold text-center">Status</th>
-                                <th class="py-3.5 px-4 font-bold text-center">Link dostępu dla klienta</th>
+                                <th class="py-3.5 px-4 font-bold text-center">Dostęp i Wysyłka Linku</th>
+                                <th class="py-3.5 px-4 font-bold text-center">Akcje</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100" id="clients-tbody">
                             <?php if (!empty($clients)): ?>
                                 <?php foreach ($clients as $c): ?>
                                     <?php $tokenUrl = $base . 'b2b?token=' . $c['auth_token']; ?>
-                                    <tr class="hover:bg-slate-50/80 transition">
+                                    <tr class="hover:bg-slate-50/80 transition-colors client-data-row" id="client-row-<?= $c['id'] ?>" data-client-name="<?= mb_strtolower(Tools::h($c['company_name']), 'UTF-8') ?>" data-client-nip="<?= mb_strtolower(Tools::h($c['nip'] ?? ''), 'UTF-8') ?>" data-client-phone="<?= mb_strtolower(Tools::h($c['phone'] ?? ''), 'UTF-8') ?>">
                                         <td class="py-3 px-4 font-extrabold text-slate-900">
-                                            <?= Tools::h($c['company_name']) ?>
-                                            <?php if (!empty($c['nip'])): ?>
-                                                <span class="block text-xs font-normal text-slate-400">NIP: <?= Tools::h($c['nip']) ?></span>
-                                            <?php endif; ?>
+                                            <div class="flex items-center gap-2">
+                                                <span id="client-name-display-<?= $c['id'] ?>"><?= Tools::h($c['company_name']) ?></span>
+                                            </div>
+                                            <div class="flex items-center gap-2 text-xs font-normal text-slate-400 mt-0.5">
+                                                <span id="client-nip-display-<?= $c['id'] ?>" class="<?= empty($c['nip']) ? 'hidden' : '' ?>">NIP: <?= Tools::h($c['nip'] ?? '') ?></span>
+                                                <?php if (!empty($c['created_at'])): ?>
+                                                    <span class="text-slate-300 <?= empty($c['nip']) ? 'hidden' : '' ?>">•</span>
+                                                    <span class="text-slate-400" title="Data rejestracji">Dodano: <?= date('d.m.Y H:i', strtotime($c['created_at'])) ?></span>
+                                                <?php endif; ?>
+                                            </div>
                                         </td>
-                                        <td class="py-3 px-4 font-semibold text-slate-700"><?= Tools::h($c['phone'] ?: '—') ?></td>
-                                        <td class="py-3 px-4 text-xs text-slate-600"><?= Tools::h($c['email'] ?: '—') ?></td>
-                                        <td class="py-3 px-4 text-xs text-slate-600"><?= Tools::h($c['delivery_address'] ?: '—') ?></td>
-                                        <td class="py-3 px-4 text-center">
-                                            <button type="button" onclick="toggleClient(<?= $c['id'] ?>)" class="text-xs font-bold px-2.5 py-1 rounded-lg <?= (int)$c['is_active'] === 1 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600' ?>">
+                                        <td class="py-3 px-4 font-semibold text-slate-700">
+                                            <span id="client-phone-display-<?= $c['id'] ?>"><?= Tools::h($c['phone'] ?: '—') ?></span>
+                                        </td>
+                                        <td class="py-3 px-4 text-xs text-slate-600">
+                                            <span id="client-email-display-<?= $c['id'] ?>"><?= Tools::h($c['email'] ?: '—') ?></span>
+                                        </td>
+                                        <td class="py-3 px-4 text-xs text-slate-600">
+                                            <span id="client-address-display-<?= $c['id'] ?>"><?= Tools::h($c['delivery_address'] ?: '—') ?></span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center whitespace-nowrap">
+                                            <button type="button" id="client-status-btn-<?= $c['id'] ?>" onclick="toggleClient(<?= $c['id'] ?>)" class="text-xs font-bold px-2.5 py-1 rounded-lg <?= (int)$c['is_active'] === 1 ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-200 text-slate-600 hover:bg-slate-300' ?> transition">
                                                 <?= (int)$c['is_active'] === 1 ? 'Aktywny' : 'Zablokowany' ?>
                                             </button>
                                         </td>
-                                        <td class="py-3 px-4 text-center">
-                                            <button type="button" onclick="copyToken('<?= $tokenUrl ?>')" class="copy-token inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-xl hover:bg-sky-100 transition shadow-sm" title="Skopiuj unikalny link do wysłania klientowi SMS-em">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
-                                                <span>Kopiuj szybki link</span>
+                                        <td class="py-3 px-4 text-center whitespace-nowrap">
+                                            <div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
+                                                <!-- Kopiuj link -->
+                                                <button type="button" onclick="copyToken('<?= $tokenUrl ?>')" class="copy-token inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-xl hover:bg-sky-100 transition shadow-2xs" title="Skopiuj bezpośredni link logowania klienta do schowka">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                                                    <span>Kopiuj</span>
+                                                </button>
+
+                                                <!-- Wyślij E-mail -->
+                                                <button type="button" id="btn-send-email-<?= $c['id'] ?>" onclick="sendTokenEmail(<?= $c['id'] ?>)" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-xl hover:bg-indigo-100 transition shadow-2xs" title="<?= !empty($c['email']) ? 'Wyślij bezpośredni link dostępowy na e-mail: ' . Tools::h($c['email']) : 'Brak e-maila klienta' ?>">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                                    <span>E-mail</span>
+                                                </button>
+
+                                                <!-- Wyślij SMS / Tel -->
+                                                <button type="button" onclick="openSendSmsModal(<?= $c['id'] ?>)" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition shadow-2xs" title="Wyślij link SMS-em lub przez WhatsApp">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                                                    <span>SMS / Tel</span>
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td class="py-3 px-4 text-center whitespace-nowrap">
+                                            <button type="button" onclick="openEditClientModal(<?= $c['id'] ?>)" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded-xl transition border border-slate-200 shadow-2xs" title="Edytuj dane odbiorcy">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                                <span>Edytuj</span>
                                             </button>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
+                                <tr id="no-clients-search-row" class="hidden">
+                                    <td colspan="7" class="py-10 text-center text-slate-400 font-medium">
+                                        <div class="flex flex-col items-center justify-center gap-2">
+                                            <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                            <p>Nie znaleziono klientów pasujących do frazy: <strong id="no-clients-search-term" class="text-slate-700"></strong></p>
+                                            <button type="button" onclick="clearClientSearch()" class="mt-1 text-xs font-bold text-emerald-600 hover:text-emerald-700 underline">Wyczyść filtr wyszukiwania</button>
+                                        </div>
+                                    </td>
+                                </tr>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="6" class="py-8 text-center text-slate-400 font-medium">Brak dodanych odbiorców. Dodaj pierwszego klienta powyżej.</td>
+                                    <td colspan="7" class="py-8 text-center text-slate-400 font-medium">Brak dodanych odbiorców. Dodaj pierwszego klienta powyżej.</td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
@@ -507,6 +621,135 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
         </div>
     </div>
 
+    <!-- Modal edycji klienta -->
+    <div id="modal-edit-client" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden animate-fade-in">
+        <div class="bg-white rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
+            <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+                <div>
+                    <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                        <span class="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                        </span>
+                        Edycja Danych Klienta
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5" id="modal-edit-client-subtitle">Zmień dane kontaktowe i parametry dostępu</p>
+                </div>
+                <button type="button" onclick="closeEditClientModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <form id="form-edit-client" class="p-6 space-y-4 overflow-y-auto">
+                <input type="hidden" id="edit-client-id">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Nazwa sklepu / Odbiorcy *</label>
+                        <input type="text" id="edit-client-name" required class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-bold focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">NIP (opcjonalnie)</label>
+                        <input type="text" id="edit-client-nip" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Telefon kontaktowy *</label>
+                        <input type="tel" id="edit-client-phone" required class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-bold focus:border-emerald-500 focus:outline-none">
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Adres e-mail (do wysyłki linku i powiadomień)</label>
+                        <input type="email" id="edit-client-email" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none">
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Adres dostawy towaru</label>
+                        <input type="text" id="edit-client-address" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Login (opcjonalny)</label>
+                        <input type="text" id="edit-client-login" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none" placeholder="Pozostaw puste dla logowania linkiem">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Nowe hasło (opcjonalnie)</label>
+                        <input type="password" id="edit-client-password" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none" placeholder="Wypełnij tylko, aby zmienić">
+                    </div>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="edit-client-regen-token" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                        <span class="text-xs font-medium text-slate-600">Wygeneruj nowy unikalny token dostępu (unieważni poprzedni link)</span>
+                    </label>
+                </div>
+
+                <div class="pt-4 border-t border-slate-200 flex items-center justify-end gap-3">
+                    <button type="button" onclick="closeEditClientModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
+                        Anuluj
+                    </button>
+                    <button type="submit" id="edit-client-submit-btn" class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md shadow-emerald-600/20 transition flex items-center gap-2">
+                        <span>Zapisz zmiany</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal wysyłki SMS / WhatsApp -->
+    <div id="modal-send-sms" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden animate-fade-in">
+        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-slate-200 flex flex-col">
+            <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+                <div>
+                    <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                        <span class="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                        </span>
+                        Wysyłka Linku na Telefon (SMS / WhatsApp)
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5" id="sms-modal-recipient">Odbiorca: —</p>
+                </div>
+                <button type="button" onclick="closeSendSmsModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Numer telefonu odbiorcy</label>
+                    <input type="text" id="sms-phone-display" readonly class="w-full text-sm font-bold bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800">
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Treść wiadomości z bezpośrednim linkiem (możesz edytować)</label>
+                    <textarea id="sms-text-preview" rows="4" class="w-full text-xs font-medium border border-slate-300 rounded-xl p-3 focus:border-emerald-500 focus:outline-none"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
+                    <!-- Otwórz SMS -->
+                    <a id="sms-btn-native" href="#" class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition text-center">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                        <span>Otwórz SMS</span>
+                    </a>
+
+                    <!-- WhatsApp -->
+                    <a id="sms-btn-whatsapp" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition text-center">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.669-.699c.969.53 1.771.78 2.791.78 3.182 0 5.77-2.587 5.77-5.766.001-3.182-2.585-5.766-5.77-5.766zm0 10.514c-.878 0-1.637-.251-2.316-.677l-.165-.104-1.579.414.421-1.54-.108-.172c-.476-.757-.746-1.564-.745-2.669.001-2.618 2.13-4.747 4.752-4.747 2.62 0 4.749 2.129 4.749 4.749.001 2.62-2.129 4.75-4.75 4.75z"/></svg>
+                        <span>WhatsApp</span>
+                    </a>
+
+                    <!-- Kopiuj treść SMS -->
+                    <button type="button" onclick="copySmsText()" class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition text-center border border-slate-200">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                        <span>Kopiuj treść</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Powiadomienie Toast -->
     <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-xl transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none z-50 flex items-center gap-2">
         <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -514,9 +757,10 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
     </div>
 
     <script>
-        const CSRF_TOKEN = '<?= $csrfToken ?>';
-        const BASE_URL   = '<?= $base ?>';
-        let currentFileId = null;
+        const CSRF_TOKEN   = '<?= $csrfToken ?>';
+        const BASE_URL     = '<?= $base ?>';
+        const CLIENTS_DATA = <?= json_encode(!empty($clients) ? array_column($clients, null, 'id') : (object)[], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+        let currentFileId  = null;
 
         function showToast(msg) {
             const t = document.getElementById('toast');
@@ -605,48 +849,200 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 });
         }
 
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function normalizeRows(rows) {
+            if (!rows) return [];
+            if (Array.isArray(rows)) {
+                return rows.map((r, idx) => {
+                    if (r && typeof r === 'object' && 'row_index' in r && 'cells' in r) {
+                        return {
+                            row_index: Number(r.row_index),
+                            cells: (r.cells && typeof r.cells === 'object') ? r.cells : {}
+                        };
+                    }
+                    if (r && typeof r === 'object') {
+                        return {
+                            row_index: idx + 1,
+                            cells: r
+                        };
+                    }
+                    return {
+                        row_index: idx + 1,
+                        cells: {}
+                    };
+                });
+            }
+            if (typeof rows === 'object') {
+                return Object.keys(rows).map(rowKey => {
+                    const rowVal = rows[rowKey];
+                    return {
+                        row_index: parseInt(rowKey, 10),
+                        cells: (rowVal && typeof rowVal === 'object') ? rowVal : {}
+                    };
+                }).sort((a, b) => a.row_index - b.row_index);
+            }
+            return [];
+        }
+
+        let currentNormRows = [];
+        let currentMaxCols = 0;
+
+        function renderPreviewTable(normRows, maxCols, headerRowIndex) {
+            const thead = document.getElementById('preview-sheet-thead');
+            const tbody = document.getElementById('preview-sheet-tbody');
+            if (!thead || !tbody) return;
+
+            let thHtml = '<tr><th class="py-2 px-3 w-12 text-slate-400 font-mono text-[11px] bg-slate-100">#</th>';
+            for (let c = 0; c < maxCols; c++) {
+                const colLetter = String.fromCharCode(65 + (c % 26));
+                thHtml += `<th class="py-2 px-3 whitespace-nowrap bg-slate-100">Kolumna ${colLetter}</th>`;
+            }
+            thHtml += '</tr>';
+            thead.innerHTML = thHtml;
+
+            let tbHtml = '';
+            normRows.slice(0, 10).forEach(r => {
+                const isHeader = (r.row_index === Number(headerRowIndex));
+                tbHtml += `<tr class="${isHeader ? 'bg-emerald-50/80 font-semibold text-emerald-950' : 'hover:bg-slate-50 text-slate-700'}">`;
+                tbHtml += `<td class="py-2 px-3 font-mono ${isHeader ? 'text-emerald-700 font-bold' : 'text-slate-400'}">${r.row_index}</td>`;
+                for (let c = 0; c < maxCols; c++) {
+                    const val = (r.cells[c] !== undefined && r.cells[c] !== null) ? String(r.cells[c]) : '';
+                    tbHtml += `<td class="py-2 px-3 whitespace-nowrap max-w-xs truncate">${escapeHtml(val)}</td>`;
+                }
+                tbHtml += '</tr>';
+            });
+            tbody.innerHTML = tbHtml;
+        }
+
         function renderMapping(rows, cand) {
+            const normRows = normalizeRows(rows);
+            if (normRows.length === 0) {
+                const status = document.getElementById('upload-status');
+                status.textContent = 'Błąd: Przesłany arkusz jest pusty lub nie zawiera czytelnych wierszy.';
+                status.className = 'mt-3 text-center text-sm font-semibold text-rose-600';
+                return;
+            }
+
             const box = document.getElementById('mapping-box');
             box.classList.remove('hidden');
 
             const selHeader = document.getElementById('map-header-row');
-            const selProd = document.getElementById('map-col-product');
-            const selPrice = document.getElementById('map-col-price');
-            const selUnit = document.getElementById('map-col-unit');
+            const selProd   = document.getElementById('map-col-product');
+            const selPrice  = document.getElementById('map-col-price');
+            const selUnit   = document.getElementById('map-col-unit');
 
             selHeader.innerHTML = '';
-            selProd.innerHTML = '';
-            selPrice.innerHTML = '';
-            selUnit.innerHTML = '<option value="">-- Domyślnie (kg / szt.) --</option>';
+            selProd.innerHTML   = '';
+            selPrice.innerHTML  = '';
+            selUnit.innerHTML   = '<option value="">-- Domyślnie (kg / szt.) --</option>';
 
-            rows.slice(0, 10).forEach(r => {
+            // Liczba kolumn w arkuszu
+            let maxCols = 0;
+            normRows.forEach(r => {
+                const keys = Object.keys(r.cells).map(Number);
+                if (keys.length > 0) {
+                    maxCols = Math.max(maxCols, Math.max(...keys) + 1);
+                }
+            });
+
+            currentNormRows = normRows;
+            currentMaxCols  = maxCols;
+
+            const candHeaderRow = Number(cand?.header_row_index ?? cand?.headerRow ?? normRows[0].row_index);
+            const candProdCol   = Number(cand?.product_col_index ?? cand?.productCol ?? 0);
+            const candPriceCol  = Number(cand?.price_col_index ?? cand?.priceCol ?? 1);
+            const rawUnitCol    = cand?.unit_col_index ?? cand?.unitCol;
+            const candUnitCol   = (rawUnitCol !== null && rawUnitCol !== undefined && rawUnitCol !== '') ? Number(rawUnitCol) : null;
+
+            // Opcje wiersza nagłówka
+            normRows.slice(0, 15).forEach(r => {
                 const opt = document.createElement('option');
                 opt.value = r.row_index;
-                opt.textContent = 'Wiersz ' + r.row_index + ': ' + Object.values(r.cells).slice(0, 3).join(' | ');
-                if (r.row_index === cand.header_row_index) opt.selected = true;
+                const sampleValues = Object.values(r.cells)
+                    .map(v => (v !== null && v !== undefined ? String(v).trim() : ''))
+                    .filter(v => v.length > 0);
+                const preview = sampleValues.slice(0, 3).join(' | ');
+                opt.textContent = 'Wiersz ' + r.row_index + (preview ? ': ' + preview : ' (pusty)');
+                if (r.row_index === candHeaderRow) {
+                    opt.selected = true;
+                }
                 selHeader.appendChild(opt);
             });
 
             // Kolumny
-            const firstRowCells = rows[0] ? rows[0].cells : {};
-            Object.keys(firstRowCells).forEach(cIdx => {
-                const colLetter = String.fromCharCode(65 + parseInt(cIdx));
-                const label = 'Kolumna ' + colLetter + ' (' + (firstRowCells[cIdx] || '') + ')';
+            const headerRowObj = normRows.find(r => r.row_index === candHeaderRow);
 
-                const oP = new Option(label, cIdx, false, parseInt(cIdx) === cand.product_col_index);
+            for (let c = 0; c < maxCols; c++) {
+                const colLetter = String.fromCharCode(65 + (c % 26));
+                let headerText = '';
+                if (headerRowObj && headerRowObj.cells && headerRowObj.cells[c]) {
+                    headerText = String(headerRowObj.cells[c]).trim();
+                }
+
+                let sampleVal = '';
+                for (const r of normRows) {
+                    if (r.row_index <= candHeaderRow) continue;
+                    const val = r.cells[c];
+                    if (val !== undefined && val !== null && String(val).trim() !== '') {
+                        sampleVal = String(val).trim();
+                        break;
+                    }
+                }
+
+                let label = `Kolumna ${colLetter}`;
+                if (headerText) {
+                    label += `: "${headerText}"`;
+                }
+                if (sampleVal) {
+                    label += ` (np. "${sampleVal}")`;
+                }
+
+                const oP = new Option(label, c, false, c === candProdCol);
                 selProd.appendChild(oP);
 
-                const oPr = new Option(label, cIdx, false, parseInt(cIdx) === cand.price_col_index);
+                const oPr = new Option(label, c, false, c === candPriceCol);
                 selPrice.appendChild(oPr);
 
-                const oU = new Option(label, cIdx, false, cand.unit_col_index !== null && parseInt(cIdx) === cand.unit_col_index);
+                const oU = new Option(label, c, false, candUnitCol !== null && c === candUnitCol);
                 selUnit.appendChild(oU);
+            }
+
+            // Jawnie ustawiamy wybrane wartości w polach select
+            if (candProdCol !== null && candProdCol !== undefined) {
+                selProd.value = String(candProdCol);
+            }
+            if (candPriceCol !== null && candPriceCol !== undefined) {
+                selPrice.value = String(candPriceCol);
+            }
+            if (candUnitCol !== null && candUnitCol !== undefined) {
+                selUnit.value = String(candUnitCol);
+            }
+
+            renderPreviewTable(normRows, maxCols, candHeaderRow);
+        }
+
+        const selHeaderEl = document.getElementById('map-header-row');
+        if (selHeaderEl) {
+            selHeaderEl.addEventListener('change', function() {
+                renderPreviewTable(currentNormRows, currentMaxCols, this.value);
             });
         }
 
         function cancelMapping() {
             document.getElementById('mapping-box').classList.add('hidden');
             document.getElementById('upload-status').classList.add('hidden');
+            const fi = document.getElementById('file-input');
+            if (fi) fi.value = '';
+            currentFileId = null;
         }
 
         document.getElementById('btn-process-import').addEventListener('click', () => {
@@ -677,23 +1073,494 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 });
         });
 
-        // Edycja produktu na żywo
+        // ===================================================================
+        // Śledzenie modyfikacji (Dirty State) i zatwierdzanie zmian produktu
+        // ===================================================================
+        function checkFieldDirty(field) {
+            const initial = field.getAttribute('data-initial') ?? '';
+            const current = field.value;
+            const fieldType = field.getAttribute('data-field-name');
+
+            let isDirty = false;
+            if (fieldType === 'price' || fieldType === 'package_size') {
+                const numInit = parseFloat(initial);
+                const numCurr = parseFloat(current);
+                if (isNaN(numCurr) || current.trim() === '') {
+                    isDirty = true;
+                } else if (isNaN(numInit)) {
+                    isDirty = true;
+                } else {
+                    isDirty = Math.abs(numInit - numCurr) > 0.0001;
+                }
+            } else {
+                isDirty = (initial.trim() !== current.trim());
+            }
+
+            if (isDirty) {
+                field.classList.add('is-dirty-field', 'border-amber-400', 'bg-amber-50/80', 'ring-2', 'ring-amber-300/60', 'text-amber-950', 'font-semibold');
+                field.classList.remove('border-slate-200', 'hover:border-slate-300', 'border-transparent');
+            } else {
+                field.classList.remove('is-dirty-field', 'border-amber-400', 'bg-amber-50/80', 'ring-2', 'ring-amber-300/60', 'text-amber-950', 'font-semibold');
+                if (fieldType === 'name') {
+                    field.classList.add('border-transparent', 'hover:border-slate-300');
+                } else {
+                    field.classList.add('border-slate-200');
+                }
+            }
+            return isDirty;
+        }
+
+        function updateRowDirtyState(prodId) {
+            const row = document.getElementById('prod-row-' + prodId);
+            if (!row) return;
+
+            const fields = row.querySelectorAll('.prod-field');
+            let hasDirty = false;
+            fields.forEach(f => {
+                if (checkFieldDirty(f)) {
+                    hasDirty = true;
+                }
+            });
+
+            const btn   = document.getElementById('save-btn-' + prodId);
+            const label = document.getElementById('save-label-' + prodId);
+            const badge = document.getElementById('dirty-badge-' + prodId);
+
+            if (hasDirty) {
+                // Podkreślenie pozycji edytowanej w tabeli
+                row.classList.add('bg-amber-50/70', 'border-l-amber-500', 'is-row-dirty');
+                row.classList.remove('border-l-transparent', 'hover:bg-slate-50/80');
+                if (badge) {
+                    badge.classList.remove('hidden');
+                    badge.classList.add('inline-flex');
+                }
+
+                // Subtelne polecenie zatwierdzenia zmian przy akcji Zapisz (animowany pulse, wyraźny CTA)
+                if (btn) {
+                    btn.className = 'save-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/30 ring-2 ring-emerald-400/60 animate-pulse transition-all cursor-pointer';
+                    btn.title = 'Wprowadzono zmiany — kliknij, aby zatwierdzić';
+                }
+                if (label) {
+                    label.classList.remove('hidden');
+                }
+            } else {
+                // Powrót do neutralnego stanu spoczynku
+                row.classList.remove('bg-amber-50/70', 'border-l-amber-500', 'is-row-dirty');
+                row.classList.add('border-l-transparent', 'hover:bg-slate-50/80');
+                if (badge) {
+                    badge.classList.add('hidden');
+                    badge.classList.remove('inline-flex');
+                }
+
+                if (btn) {
+                    btn.className = 'save-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 border border-transparent transition-all';
+                    btn.title = 'Zapisz zmiany';
+                }
+                if (label) {
+                    label.classList.add('hidden');
+                }
+            }
+
+            updateGlobalUnsavedCount();
+        }
+
+        function updateGlobalUnsavedCount() {
+            const dirtyRows = document.querySelectorAll('.prod-row.is-row-dirty');
+            const pill = document.getElementById('unsaved-alert-pill');
+            const text = document.getElementById('unsaved-count-text');
+            const btnSaveAll = document.getElementById('btn-save-all-products');
+            const countBadge = document.getElementById('btn-save-all-count');
+            if (!pill || !text) return;
+
+            const count = dirtyRows.length;
+            if (count > 0) {
+                pill.classList.remove('hidden');
+                pill.classList.add('inline-flex');
+                if (count === 1) {
+                    text.textContent = '1 niezatwierdzona zmiana';
+                } else if (count >= 2 && count <= 4) {
+                    text.textContent = count + ' niezatwierdzone zmiany';
+                } else {
+                    text.textContent = count + ' niezatwierdzonych zmian';
+                }
+                if (btnSaveAll) {
+                    btnSaveAll.classList.remove('hidden');
+                    btnSaveAll.classList.add('inline-flex');
+                }
+                if (countBadge) {
+                    countBadge.textContent = count;
+                }
+            } else {
+                pill.classList.add('hidden');
+                pill.classList.remove('inline-flex');
+                if (btnSaveAll) {
+                    btnSaveAll.classList.add('hidden');
+                    btnSaveAll.classList.remove('inline-flex');
+                }
+            }
+        }
+
+        // Rejestracja zdarzeń dla pól produktów
+        const productsTbody = document.getElementById('products-tbody');
+        if (productsTbody) {
+            productsTbody.addEventListener('input', (e) => {
+                const field = e.target.closest('.prod-field');
+                if (field && field.dataset.prodId) {
+                    updateRowDirtyState(field.dataset.prodId);
+                }
+            });
+
+            productsTbody.addEventListener('change', (e) => {
+                const field = e.target.closest('.prod-field');
+                if (field && field.dataset.prodId) {
+                    updateRowDirtyState(field.dataset.prodId);
+                }
+            });
+
+            productsTbody.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    const field = e.target.closest('.prod-field');
+                    if (field && field.dataset.prodId) {
+                        e.preventDefault();
+                        saveProduct(field.dataset.prodId);
+                    }
+                }
+            });
+        }
+
+        // Skrót klawiaturowy Ctrl+S / Cmd+S do zapisu wszystkich zmian
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                const dirtyRows = document.querySelectorAll('.prod-row.is-row-dirty');
+                if (dirtyRows.length > 0) {
+                    e.preventDefault();
+                    saveAllProducts();
+                }
+            }
+        });
+
+        // Ostrzeżenie przed przypadkowym opuszczeniem strony z niezapisanymi zmianami
+        window.addEventListener('beforeunload', (e) => {
+            const count = document.querySelectorAll('.prod-row.is-row-dirty').length;
+            if (count > 0) {
+                e.preventDefault();
+                e.returnValue = 'Masz ' + count + ' niezatwierdzonych zmian w ofercie. Czy na pewno chcesz opuścić stronę?';
+            }
+        });
+
+        // Zapis produktu na żywo
         function saveProduct(id) {
+            const row = document.getElementById('prod-row-' + id);
+            const btn = document.getElementById('save-btn-' + id);
+            const badge = document.getElementById('dirty-badge-' + id);
+
+            const nameInput    = document.getElementById('name-' + id);
+            const catSelect    = document.getElementById('cat-' + id);
+            const priceInput   = document.getElementById('price-' + id);
+            const unitSelect   = document.getElementById('unit-' + id);
+            const pkgSizeInput = document.getElementById('pkg-size-' + id);
+            const pkgUnitSelect= document.getElementById('pkg-unit-' + id);
+
+            if (!nameInput || !priceInput) return;
+
+            const prodName = nameInput.value.trim();
+            if (!prodName) {
+                alert('Nazwa towaru nie może być pusta!');
+                nameInput.focus();
+                return;
+            }
+
+            // Stan ładowania przycisku
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.remove('animate-pulse');
+                btn.className = 'save-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-700 text-white cursor-wait opacity-90 shadow-sm';
+                btn.innerHTML = `
+                    <svg class="animate-spin -ml-0.5 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    <span>Zapisywanie...</span>
+                `;
+            }
+
             const fd = new FormData();
             fd.append('id', id);
-            fd.append('name', document.getElementById('name-' + id).value);
-            fd.append('category', document.getElementById('cat-' + id).value);
-            fd.append('price', document.getElementById('price-' + id).value);
-            fd.append('unit', document.getElementById('unit-' + id).value);
-            fd.append('package_size', document.getElementById('pkg-size-' + id).value);
-            fd.append('package_unit', document.getElementById('pkg-unit-' + id).value);
+            fd.append('name', prodName);
+            fd.append('category', catSelect ? catSelect.value : 'Warzywa');
+            fd.append('price', priceInput.value);
+            fd.append('unit', unitSelect ? unitSelect.value : 'kg');
+            fd.append('package_size', pkgSizeInput ? pkgSizeInput.value : '1');
+            fd.append('package_unit', pkgUnitSelect ? pkgUnitSelect.value : 'skrzynka');
             fd.append('_csrf', CSRF_TOKEN);
 
             fetch(BASE_URL + 'b2b/updateproduct', { method: 'POST', body: fd })
                 .then(r => r.json())
                 .then(d => {
-                    if (d.ok) showToast('Zapisano zmiany w produkcie!');
-                    else alert(d.error || 'Błąd zapisu');
+                    if (!d.ok) throw new Error(d.error || 'Błąd zapisu produktu');
+
+                    // 1. Zaktualizuj data-initial dla wszystkich pól w wierszu
+                    if (nameInput)    nameInput.setAttribute('data-initial', prodName);
+                    if (catSelect)    catSelect.setAttribute('data-initial', catSelect.value);
+                    if (priceInput)   priceInput.setAttribute('data-initial', parseFloat(priceInput.value).toFixed(2));
+                    if (unitSelect)   unitSelect.setAttribute('data-initial', unitSelect.value);
+                    if (pkgSizeInput) pkgSizeInput.setAttribute('data-initial', parseFloat(pkgSizeInput.value).toString());
+                    if (pkgUnitSelect)pkgUnitSelect.setAttribute('data-initial', pkgUnitSelect.value);
+
+                    // Aktualizacja atrybutów wyszukiwania w wierszu
+                    if (row) {
+                        row.setAttribute('data-name', prodName.toLowerCase());
+                        if (catSelect) row.setAttribute('data-cat', catSelect.value);
+
+                        // Usunięcie podświetlenia "dirty" z pól
+                        row.querySelectorAll('.prod-field').forEach(f => {
+                            f.classList.remove('is-dirty-field', 'border-amber-400', 'bg-amber-50/80', 'ring-2', 'ring-amber-300/60', 'text-amber-950', 'font-semibold');
+                            if (f.getAttribute('data-field-name') === 'name') {
+                                f.classList.add('border-transparent', 'hover:border-slate-300');
+                            } else {
+                                f.classList.add('border-slate-200');
+                            }
+                        });
+
+                        // 2. Efektowny rozbłysk sukcesu na wierszu
+                        row.classList.remove('bg-amber-50/70', 'border-l-amber-500', 'is-row-dirty');
+                        row.classList.add('bg-emerald-100/80', 'border-l-emerald-500');
+                    }
+
+                    if (badge) {
+                        badge.classList.add('hidden');
+                        badge.classList.remove('inline-flex');
+                    }
+
+                    // 3. Stan sukcesu na przycisku
+                    if (btn) {
+                        btn.className = 'save-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-sm transition-all';
+                        btn.innerHTML = `
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Zatwierdzono!</span>
+                        `;
+                    }
+
+                    showToast('Zapisano zmiany dla pozycji: ' + prodName);
+                    updateGlobalUnsavedCount();
+
+                    // 4. Płynny powrót do neutralnego stanu spoczynku
+                    setTimeout(() => {
+                        if (row) {
+                            row.classList.remove('bg-emerald-100/80', 'border-l-emerald-500');
+                            row.classList.add('border-l-transparent', 'hover:bg-slate-50/80');
+                        }
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.className = 'save-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 border border-transparent transition-all';
+                            btn.title = 'Zapisz zmiany';
+                            btn.innerHTML = `
+                                <svg id="save-icon-${id}" class="w-4 h-4 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span id="save-label-${id}" class="hidden font-bold">Zapisz</span>
+                            `;
+                        }
+                    }, 1200);
+                })
+                .catch(err => {
+                    alert('Błąd zapisu produktu: ' + err.message);
+                    if (btn) {
+                        btn.disabled = false;
+                        updateRowDirtyState(id);
+                    }
+                });
+        }
+
+        // Hurtowy zapis wszystkich zmodyfikowanych pozycji asortymentu
+        function saveAllProducts() {
+            const dirtyRows = Array.from(document.querySelectorAll('.prod-row.is-row-dirty'));
+            if (dirtyRows.length === 0) {
+                showToast('Brak niezatwierdzonych zmian do zapisania.');
+                return;
+            }
+
+            const btnSaveAll = document.getElementById('btn-save-all-products');
+            const btnText = document.getElementById('btn-save-all-text');
+            const countBadge = document.getElementById('btn-save-all-count');
+
+            const productsData = [];
+            const rowsToUpdate = [];
+
+            for (const row of dirtyRows) {
+                const id = row.getAttribute('data-prod-id');
+                if (!id) continue;
+
+                const nameInput    = document.getElementById('name-' + id);
+                const catSelect    = document.getElementById('cat-' + id);
+                const priceInput   = document.getElementById('price-' + id);
+                const unitSelect   = document.getElementById('unit-' + id);
+                const pkgSizeInput = document.getElementById('pkg-size-' + id);
+                const pkgUnitSelect= document.getElementById('pkg-unit-' + id);
+
+                if (!nameInput || !priceInput) continue;
+
+                const prodName = nameInput.value.trim();
+                if (!prodName) {
+                    alert('Nazwa towaru dla pozycji ID ' + id + ' nie może być pusta!');
+                    nameInput.focus();
+                    return;
+                }
+
+                productsData.push({
+                    id: id,
+                    name: prodName,
+                    category: catSelect ? catSelect.value : 'Warzywa',
+                    price: priceInput.value,
+                    unit: unitSelect ? unitSelect.value : 'kg',
+                    package_size: pkgSizeInput ? pkgSizeInput.value : '1',
+                    package_unit: pkgUnitSelect ? pkgUnitSelect.value : 'skrzynka'
+                });
+
+                rowsToUpdate.push({
+                    id: id,
+                    row: row,
+                    nameInput: nameInput,
+                    catSelect: catSelect,
+                    priceInput: priceInput,
+                    unitSelect: unitSelect,
+                    pkgSizeInput: pkgSizeInput,
+                    pkgUnitSelect: pkgUnitSelect,
+                    btn: document.getElementById('save-btn-' + id),
+                    badge: document.getElementById('dirty-badge-' + id),
+                    prodName: prodName
+                });
+            }
+
+            if (productsData.length === 0) return;
+
+            // Stan ładowania na przycisku głównym
+            if (btnSaveAll) {
+                btnSaveAll.disabled = true;
+                btnSaveAll.classList.add('cursor-wait', 'opacity-90');
+                if (btnText) btnText.textContent = 'Zapisywanie (' + productsData.length + ')...';
+            }
+
+            // Stan ładowania na przyciskach poszczególnych wierszy
+            rowsToUpdate.forEach(item => {
+                if (item.btn) {
+                    item.btn.disabled = true;
+                    item.btn.className = 'save-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-700 text-white cursor-wait opacity-90 shadow-sm';
+                    item.btn.innerHTML = `
+                        <svg class="animate-spin -ml-0.5 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <span>Zapisywanie...</span>
+                    `;
+                }
+            });
+
+            const fd = new FormData();
+            fd.append('products', JSON.stringify(productsData));
+            fd.append('_csrf', CSRF_TOKEN);
+
+            fetch(BASE_URL + 'b2b/updateproductsbatch', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(d => {
+                    if (!d.ok) throw new Error(d.error || 'Błąd hurtowego zapisu produktów');
+
+                    // Aktualizacja każdego zapisanego wiersza
+                    rowsToUpdate.forEach(item => {
+                        const { id, row, nameInput, catSelect, priceInput, unitSelect, pkgSizeInput, pkgUnitSelect, btn, badge, prodName } = item;
+
+                        if (nameInput)    nameInput.setAttribute('data-initial', prodName);
+                        if (catSelect)    catSelect.setAttribute('data-initial', catSelect.value);
+                        if (priceInput)   priceInput.setAttribute('data-initial', parseFloat(priceInput.value).toFixed(2));
+                        if (unitSelect)   unitSelect.setAttribute('data-initial', unitSelect.value);
+                        if (pkgSizeInput) pkgSizeInput.setAttribute('data-initial', parseFloat(pkgSizeInput.value).toString());
+                        if (pkgUnitSelect)pkgUnitSelect.setAttribute('data-initial', pkgUnitSelect.value);
+
+                        if (row) {
+                            row.setAttribute('data-name', prodName.toLowerCase());
+                            if (catSelect) row.setAttribute('data-cat', catSelect.value);
+
+                            row.querySelectorAll('.prod-field').forEach(f => {
+                                f.classList.remove('is-dirty-field', 'border-amber-400', 'bg-amber-50/80', 'ring-2', 'ring-amber-300/60', 'text-amber-950', 'font-semibold');
+                                if (f.getAttribute('data-field-name') === 'name') {
+                                    f.classList.add('border-transparent', 'hover:border-slate-300');
+                                } else {
+                                    f.classList.add('border-slate-200');
+                                }
+                            });
+
+                            row.classList.remove('bg-amber-50/70', 'border-l-amber-500', 'is-row-dirty');
+                            row.classList.add('bg-emerald-100/80', 'border-l-emerald-500');
+                        }
+
+                        if (badge) {
+                            badge.classList.add('hidden');
+                            badge.classList.remove('inline-flex');
+                        }
+
+                        if (btn) {
+                            btn.className = 'save-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-sm transition-all';
+                            btn.innerHTML = `
+                                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Zatwierdzono!</span>
+                            `;
+                        }
+
+                        setTimeout(() => {
+                            if (row) {
+                                row.classList.remove('bg-emerald-100/80', 'border-l-emerald-500');
+                                row.classList.add('border-l-transparent', 'hover:bg-slate-50/80');
+                            }
+                            if (btn) {
+                                btn.disabled = false;
+                                btn.className = 'save-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 border border-transparent transition-all';
+                                btn.title = 'Zapisz zmiany';
+                                btn.innerHTML = `
+                                    <svg id="save-icon-${id}" class="w-4 h-4 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                    <span id="save-label-${id}" class="hidden font-bold">Zapisz</span>
+                                `;
+                            }
+                        }, 1400);
+                    });
+
+                    // Stan sukcesu na przycisku głównym
+                    if (btnSaveAll) {
+                        btnSaveAll.className = 'inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-700 text-white rounded-xl text-xs font-extrabold shadow-md transition-all';
+                        if (btnText) btnText.textContent = 'Zatwierdzono wszystkie!';
+                    }
+
+                    showToast('Zapisano hurtowo zmiany dla ' + (d.saved_count || productsData.length) + ' pozycji asortymentu!');
+                    updateGlobalUnsavedCount();
+
+                    setTimeout(() => {
+                        if (btnSaveAll) {
+                            btnSaveAll.disabled = false;
+                            btnSaveAll.classList.remove('cursor-wait', 'opacity-90');
+                            btnSaveAll.className = 'hidden items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-extrabold shadow-md shadow-emerald-600/25 transition-all cursor-pointer';
+                            if (btnText) btnText.textContent = 'Zapisz wszystkie zmiany';
+                        }
+                    }, 1800);
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Błąd podczas zapisywania zmian: ' + err.message);
+                    if (btnSaveAll) {
+                        btnSaveAll.disabled = false;
+                        btnSaveAll.classList.remove('cursor-wait', 'opacity-90');
+                        if (btnText) btnText.textContent = 'Zapisz wszystkie zmiany';
+                    }
+                    rowsToUpdate.forEach(item => {
+                        if (item.btn) {
+                            item.btn.disabled = false;
+                            updateRowDirtyState(item.id);
+                        }
+                    });
                 });
         }
 
@@ -740,6 +1607,290 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 .then(d => {
                     if (d.ok) window.location.reload();
                 });
+        }
+
+        // ===================================================================
+        // WYSZUKIWANIE KLIENTÓW PO NAZWIE / NIP / TELEFONIE
+        // ===================================================================
+        const clientSearchInput = document.getElementById('client-search-admin');
+        const clientSearchClear = document.getElementById('client-search-clear');
+        const clientsCountBadge = document.getElementById('clients-count-badge');
+        const noClientsRow = document.getElementById('no-clients-search-row');
+        const noClientsTerm = document.getElementById('no-clients-search-term');
+
+        function filterClients() {
+            if (!clientSearchInput) return;
+            const q = clientSearchInput.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#clients-tbody tr.client-data-row');
+
+            if (clientSearchClear) {
+                if (q.length > 0) {
+                    clientSearchClear.classList.remove('hidden');
+                } else {
+                    clientSearchClear.classList.add('hidden');
+                }
+            }
+
+            let visibleCount = 0;
+            rows.forEach(r => {
+                const name  = (r.getAttribute('data-client-name') || '').toLowerCase();
+                const nip   = (r.getAttribute('data-client-nip') || '').toLowerCase();
+                const phone = (r.getAttribute('data-client-phone') || '').toLowerCase();
+
+                const match = q === '' || name.includes(q) || nip.includes(q) || phone.includes(q);
+                if (match) {
+                    r.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    r.classList.add('hidden');
+                }
+            });
+
+            if (noClientsRow) {
+                if (visibleCount === 0 && rows.length > 0) {
+                    noClientsRow.classList.remove('hidden');
+                    if (noClientsTerm) noClientsTerm.textContent = clientSearchInput.value.trim();
+                } else {
+                    noClientsRow.classList.add('hidden');
+                }
+            }
+
+            if (clientsCountBadge) {
+                if (q === '') {
+                    clientsCountBadge.textContent = rows.length + ' odbiorców';
+                } else {
+                    clientsCountBadge.textContent = 'Wyniki: ' + visibleCount + ' z ' + rows.length;
+                }
+            }
+        }
+
+        function clearClientSearch() {
+            if (clientSearchInput) {
+                clientSearchInput.value = '';
+                filterClients();
+                clientSearchInput.focus();
+            }
+        }
+
+        if (clientSearchInput) {
+            clientSearchInput.addEventListener('input', filterClients);
+        }
+
+        // ===================================================================
+        // ZARZĄDZANIE ODBIORCAMI (EDYCJA I WYSYŁKA TOKENÓW)
+        // ===================================================================
+        function openEditClientModal(id) {
+            const c = CLIENTS_DATA[id];
+            if (!c) return;
+
+            document.getElementById('edit-client-id').value = c.id;
+            document.getElementById('edit-client-name').value = c.company_name || '';
+            document.getElementById('edit-client-nip').value = c.nip || '';
+            document.getElementById('edit-client-phone').value = c.phone || '';
+            document.getElementById('edit-client-email').value = c.email || '';
+            document.getElementById('edit-client-address').value = c.delivery_address || '';
+            document.getElementById('edit-client-login').value = c.login || '';
+            document.getElementById('edit-client-password').value = '';
+            document.getElementById('edit-client-regen-token').checked = false;
+
+            document.getElementById('modal-edit-client-subtitle').textContent = 'Edycja danych dla: ' + c.company_name;
+            document.getElementById('modal-edit-client').classList.remove('hidden');
+        }
+
+        function closeEditClientModal() {
+            document.getElementById('modal-edit-client').classList.add('hidden');
+        }
+
+        const formEditClient = document.getElementById('form-edit-client');
+        if (formEditClient) {
+            formEditClient.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const id = document.getElementById('edit-client-id').value;
+                const btn = document.getElementById('edit-client-submit-btn');
+                const origBtnHtml = btn.innerHTML;
+
+                btn.disabled = true;
+                btn.innerHTML = `
+                    <svg class="animate-spin -ml-0.5 mr-1 h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    <span>Zapisywanie...</span>
+                `;
+
+                const fd = new FormData();
+                fd.append('id', id);
+                fd.append('company_name', document.getElementById('edit-client-name').value);
+                fd.append('nip', document.getElementById('edit-client-nip').value);
+                fd.append('phone', document.getElementById('edit-client-phone').value);
+                fd.append('email', document.getElementById('edit-client-email').value);
+                fd.append('delivery_address', document.getElementById('edit-client-address').value);
+                fd.append('login', document.getElementById('edit-client-login').value);
+                const pass = document.getElementById('edit-client-password').value;
+                if (pass) fd.append('password', pass);
+                if (document.getElementById('edit-client-regen-token').checked) {
+                    fd.append('regenerate_token', '1');
+                }
+                fd.append('_csrf', CSRF_TOKEN);
+
+                fetch(BASE_URL + 'b2b/updateclient', { method: 'POST', body: fd })
+                    .then(r => r.json())
+                    .then(d => {
+                        btn.disabled = false;
+                        btn.innerHTML = origBtnHtml;
+
+                        if (!d.ok) throw new Error(d.error || 'Błąd aktualizacji klienta');
+
+                        CLIENTS_DATA[id] = d.client;
+
+                        // Aktualizacja wiersza w tabeli
+                        const nameEl = document.getElementById('client-name-display-' + id);
+                        const nipEl = document.getElementById('client-nip-display-' + id);
+                        const phoneEl = document.getElementById('client-phone-display-' + id);
+                        const emailEl = document.getElementById('client-email-display-' + id);
+                        const addrEl = document.getElementById('client-address-display-' + id);
+                        const emailBtn = document.getElementById('btn-send-email-' + id);
+
+                        if (nameEl) nameEl.textContent = d.client.company_name;
+                        if (nipEl) {
+                            if (d.client.nip) {
+                                nipEl.textContent = 'NIP: ' + d.client.nip;
+                                nipEl.classList.remove('hidden');
+                            } else {
+                                nipEl.classList.add('hidden');
+                            }
+                        }
+                        if (phoneEl) phoneEl.textContent = d.client.phone || '—';
+                        if (emailEl) emailEl.textContent = d.client.email || '—';
+                        if (addrEl) addrEl.textContent = d.client.delivery_address || '—';
+                        if (emailBtn) {
+                            emailBtn.title = d.client.email ? 'Wyślij bezpośredni link dostępowy na e-mail: ' + d.client.email : 'Brak e-maila klienta';
+                        }
+
+                        const row = document.getElementById('client-row-' + id);
+                        if (row) {
+                            row.setAttribute('data-client-name', (d.client.company_name || '').toLowerCase());
+                            row.setAttribute('data-client-nip', (d.client.nip || '').toLowerCase());
+                            row.setAttribute('data-client-phone', (d.client.phone || '').toLowerCase());
+                            row.classList.add('bg-emerald-50');
+                            setTimeout(() => row.classList.remove('bg-emerald-50'), 1500);
+                        }
+
+                        closeEditClientModal();
+                        showToast(d.message || 'Zaktualizowano dane klienta!');
+                    })
+                    .catch(err => {
+                        btn.disabled = false;
+                        btn.innerHTML = origBtnHtml;
+                        alert(err.message);
+                    });
+            });
+        }
+
+        function sendTokenEmail(id) {
+            const c = CLIENTS_DATA[id];
+            if (!c) return;
+
+            if (!c.email || !c.email.includes('@')) {
+                alert('Odbiorca nie ma zapisanego adresu e-mail. Wprowadź e-mail w oknie edycji klienta.');
+                openEditClientModal(id);
+                return;
+            }
+
+            if (!confirm('Czy na pewno chcesz wysłać wiadomość e-mail z bezpośrednim linkiem dostępowym do odbiorcy "' + c.company_name + '" na adres: ' + c.email + '?')) {
+                return;
+            }
+
+            const btn = document.getElementById('btn-send-email-' + id);
+            let origHtml = '';
+            if (btn) {
+                origHtml = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = `
+                    <svg class="animate-spin w-3.5 h-3.5 text-indigo-600 inline" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                    </svg>
+                    <span>Wysyłam...</span>
+                `;
+            }
+
+            const fd = new FormData();
+            fd.append('id', id);
+            fd.append('channel', 'email');
+            fd.append('_csrf', CSRF_TOKEN);
+
+            fetch(BASE_URL + 'b2b/sendtoken', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(d => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = origHtml;
+                    }
+
+                    if (!d.ok) {
+                        if (d.fallback_mailto) {
+                            if (confirm('Wystąpił problem z bezpośrednią wysyłką przez serwer pocztowy:\n' + d.error + '\n\nCzy chcesz otworzyć wiadomość w domyślnym programie pocztowym (np. Thunderbird/Outlook)?')) {
+                                window.location.href = d.fallback_mailto;
+                            }
+                            return;
+                        }
+                        throw new Error(d.error || 'Błąd wysyłki e-mail');
+                    }
+
+                    showToast(d.message || 'Wysłano link dostępowy na e-mail: ' + c.email);
+                })
+                .catch(err => {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = origHtml;
+                    }
+                    alert(err.message);
+                });
+        }
+
+        let currentSmsText = '';
+
+        function openSendSmsModal(id) {
+            const c = CLIENTS_DATA[id];
+            if (!c) return;
+
+            const tokenUrl = BASE_URL + 'b2b?token=' + c.auth_token;
+            const phone = c.phone ? c.phone.trim() : '';
+            const cleanPhone = phone.replace(/[^0-9+]/g, '');
+
+            const message = 'Dzień dobry! Oto Twój bezpieczny link do składania zamówień hurtowych w Hurtowni: ' + tokenUrl + ' - kliknij, aby przejrzeć bieżącą ofertę i złożyć zamówienie.';
+            currentSmsText = message;
+
+            document.getElementById('sms-modal-recipient').textContent = 'Odbiorca: ' + c.company_name;
+            document.getElementById('sms-phone-display').value = phone ? phone : 'Brak numeru telefonu';
+            document.getElementById('sms-text-preview').value = message;
+
+            // Link do natywnej aplikacji SMS (iOS vs Android/Desktop)
+            const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const smsSep = isIos ? '&' : '?';
+            const smsHref = cleanPhone ? 'sms:' + cleanPhone + smsSep + 'body=' + encodeURIComponent(message) : 'javascript:alert("Brak numeru telefonu klienta")';
+            document.getElementById('sms-btn-native').href = smsHref;
+
+            // Link do WhatsApp
+            const waPhone = cleanPhone.replace(/^\+/, '');
+            const waHref = waPhone ? 'https://wa.me/' + waPhone + '?text=' + encodeURIComponent(message) : 'javascript:alert("Brak numeru telefonu klienta")';
+            document.getElementById('sms-btn-whatsapp').href = waHref;
+
+            document.getElementById('modal-send-sms').classList.remove('hidden');
+        }
+
+        function closeSendSmsModal() {
+            document.getElementById('modal-send-sms').classList.add('hidden');
+        }
+
+        function copySmsText() {
+            const text = document.getElementById('sms-text-preview').value || currentSmsText;
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Skopiowano treść SMS z linkiem do schowka!');
+            }).catch(() => {
+                prompt('Skopiuj treść wiadomości SMS:', text);
+            });
         }
 
         function updateOrderStatus(id, status) {

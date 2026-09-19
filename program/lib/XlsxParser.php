@@ -232,59 +232,99 @@ class XlsxParser
      */
     public function detectCandidateColumns(array $previewRows): array
     {
-        $productKeywords = ['towar', 'produkt', 'asortyment', 'nazwa', 'artykuł', 'warzywo', 'owoc', 'opis'];
-        $priceKeywords   = ['cena', 'cena netto', 'cena brutto', 'cena hurtowa', 'zł', 'pln', 'stawka'];
-        $unitKeywords    = ['jm', 'jedn', 'jednostka', 'kg', 'szt', 'opakowanie', 'op'];
-
         $bestHeaderRow = null;
         $bestProductCol = null;
         $bestPriceCol = null;
         $bestUnitCol = null;
         $maxScore = 0;
 
+        $totalKeywords = ['wartość', 'wartosc', 'kwota', 'razem', 'suma', 'łączna', 'laczna', 'ogółem', 'ogolem', 'zapłaty', 'zaplaty'];
+        $productKeywords = ['towar', 'produkt', 'asortyment', 'nazwa', 'artykuł', 'artykul', 'warzywo', 'owoc', 'opis'];
+
         foreach ($previewRows as $rowNum => $cols) {
-            $score = 0;
+            $rowScore = 0;
             $foundProd = null;
+            $prodScore = 0;
             $foundPrice = null;
+            $priceScore = 0;
             $foundUnit = null;
+            $unitScore = 0;
 
             foreach ($cols as $colIndex => $val) {
-                $valLower = mb_strtolower(trim($val), 'UTF-8');
-                if ($valLower === '') {
+                $valClean = trim((string)$val);
+                if ($valClean === '') {
                     continue;
                 }
+                $valLower = mb_strtolower($valClean, 'UTF-8');
+                $valNoPunct = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $valLower);
+                $words = array_filter(explode(' ', $valNoPunct));
 
-                foreach ($productKeywords as $kw) {
-                    if (str_contains($valLower, $kw)) {
-                        $foundProd = $colIndex;
-                        $score += 3;
+                // 1. Sprawdź czy kolumna to podsumowanie / wartość łączna
+                $isTotal = false;
+                foreach ($totalKeywords as $tKw) {
+                    if (str_contains($valLower, $tKw)) {
+                        $isTotal = true;
                         break;
                     }
                 }
 
-                foreach ($priceKeywords as $kw) {
-                    if (str_contains($valLower, $kw)) {
-                        $foundPrice = $colIndex;
-                        $score += 3;
-                        break;
+                // 2. Detekcja kolumny ceny (wykluczamy kolumny wartości/sumy)
+                $colIsPrice = false;
+                if (!$isTotal) {
+                    if (str_contains($valLower, 'cena') || str_contains($valLower, 'stawka') || str_contains($valLower, 'taryfa')) {
+                        $colIsPrice = true;
+                        if ($priceScore < 10) {
+                            $foundPrice = $colIndex;
+                            $priceScore = 10;
+                        }
+                    } elseif (in_array('zł', $words) || in_array('pln', $words)) {
+                        if ($priceScore < 3) {
+                            $foundPrice = $colIndex;
+                            $priceScore = 3;
+                        }
                     }
                 }
 
-                foreach ($unitKeywords as $kw) {
-                    if (str_contains($valLower, $kw)) {
-                        $foundUnit = $colIndex;
-                        $score += 2;
-                        break;
+                // 3. Detekcja kolumny jednostki (kolumny z ceną/wartością NIE MOGĄ być jednostką!)
+                if (!$colIsPrice && !$isTotal && !str_contains($valLower, 'cena') && !str_contains($valLower, 'stawka')) {
+                    $isUnitHeader = false;
+                    // Precyzyjne nagłówki jednostki
+                    if (str_contains($valLower, 'jednostka') || str_contains($valNoPunct, 'jm') || str_contains($valNoPunct, 'j m') || str_contains($valLower, 'miara') || in_array('uom', $words)) {
+                        $isUnitHeader = true;
+                        if ($unitScore < 10) {
+                            $foundUnit = $colIndex;
+                            $unitScore = 10;
+                        }
+                    } elseif (in_array('jedn', $words) || in_array('szt', $words) || in_array('kg', $words) || in_array('op', $words)) {
+                        if ($unitScore < 5) {
+                            $foundUnit = $colIndex;
+                            $unitScore = 5;
+                        }
+                    }
+                }
+
+                // 4. Detekcja kolumny produktu
+                if (!$colIsPrice && !$isTotal && $foundUnit !== $colIndex) {
+                    foreach ($productKeywords as $pKw) {
+                        if (str_contains($valLower, $pKw)) {
+                            if ($prodScore < 10) {
+                                $foundProd = $colIndex;
+                                $prodScore = 10;
+                            }
+                            break;
+                        }
                     }
                 }
             }
 
-            if ($score > $maxScore && ($foundProd !== null || $foundPrice !== null)) {
-                $maxScore = $score;
-                $bestHeaderRow = $rowNum;
+            $rowScore = $prodScore + $priceScore + $unitScore;
+
+            if ($rowScore > $maxScore && ($foundProd !== null || $foundPrice !== null)) {
+                $maxScore = $rowScore;
+                $bestHeaderRow  = $rowNum;
                 $bestProductCol = $foundProd;
-                $bestPriceCol = $foundPrice;
-                $bestUnitCol = $foundUnit;
+                $bestPriceCol   = $foundPrice;
+                $bestUnitCol    = $foundUnit;
             }
         }
 
@@ -294,7 +334,7 @@ class XlsxParser
             $bestHeaderRow = $firstKey;
             $cols = array_keys($previewRows[$firstKey]);
             $bestProductCol = $cols[0] ?? 0;
-            $bestPriceCol = $cols[1] ?? 1;
+            $bestPriceCol   = $cols[1] ?? 1;
         }
 
         return [
@@ -324,6 +364,73 @@ class XlsxParser
         }
 
         return round((float)$clean, 2);
+    }
+
+    /**
+     * Inteligentnie określa jednostkę miary (szt. / pęczek / op. / kg)
+     * na podstawie sparsowanej komórki jednostki lub nazwy towaru.
+     */
+    public static function detectProductUnit(string $productName, string $rawUnit = ''): string
+    {
+        // 1. Jeśli w kolumnie jednostki podano wartość, znormalizuj ją
+        $cleanRaw = mb_strtolower(trim($rawUnit), 'UTF-8');
+        if ($cleanRaw !== '') {
+            if (str_contains($cleanRaw, 'szt') || str_contains($cleanRaw, 'don') || str_contains($cleanRaw, 'kpl')) {
+                return 'szt.';
+            }
+            if (str_contains($cleanRaw, 'pęcz') || str_contains($cleanRaw, 'pecz')) {
+                return 'pęczek';
+            }
+            if (str_contains($cleanRaw, 'op') || str_contains($cleanRaw, 'kart') || str_contains($cleanRaw, 'skrz') || str_contains($cleanRaw, 'klat') || str_contains($cleanRaw, 'wor') || str_contains($cleanRaw, 'tack') || str_contains($cleanRaw, 'wiad')) {
+                return 'op.';
+            }
+            if (str_contains($cleanRaw, 'kg') || str_contains($cleanRaw, 'kilo')) {
+                return 'kg';
+            }
+        }
+
+        // 2. Jeśli brak kolumny jednostki lub jest pusta — wykryj z nazwy towaru
+        $nameLower = mb_strtolower(trim($productName), 'UTF-8');
+
+        // Warzywa i zioła pęczkowe
+        $bunchKeywords = [
+            'koperek', 'koper', 'szczypiorek', 'szczypior', 'natka', 'pietruszka nać', 'nać pietruszki',
+            'rzodkiewka', 'mięta', 'mieta', 'bazylia', 'kolendra', 'rozmaryn', 'tymianek',
+            'lubczyk', 'melisa', 'botwina', 'botwinka', 'rabarbar', 'pęczek', 'peczek'
+        ];
+        foreach ($bunchKeywords as $bKw) {
+            if (str_contains($nameLower, $bKw)) {
+                if (!preg_match('/\bkg\b/i', $nameLower) && !str_contains($nameLower, 'luzem')) {
+                    return 'pęczek';
+                }
+            }
+        }
+
+        // Towary typowo sztukowe
+        $pieceKeywords = [
+            'sałata', 'salata', 'kalafior', 'brokuł', 'brokul', 'kapusta pekińska', 'kapusta pekinska',
+            'kapusta młoda', 'kapusta mloda', 'kapusta stożkowa', 'kapusta stozkowa', 'kapusta biała szt',
+            'kapusta czerwona szt', 'kapusta włoska', 'kapusta wloska', 'seler naciowy', 'por', 'czosnek',
+            'kukurydza', 'arbuz', 'melon', 'ananas', 'mango', 'awokado', 'papaja', 'granat', 'kokos',
+            'pomelo', 'ogórek szklarniowy', 'ogorek szklarniowy', 'ogórek długi', 'ogorek dlugi',
+            'dynia hokkaido', 'dynia piżmowa', 'dynia pizmowa', 'bakłażan szt', 'baklazan szt',
+            'cukinia szt', 'szt.', 'szt'
+        ];
+        foreach ($pieceKeywords as $pKw) {
+            if (str_contains($nameLower, $pKw)) {
+                if (!preg_match('/\bkg\b/i', $nameLower)) {
+                    return 'szt.';
+                }
+            }
+        }
+
+        // Opakowania zbiorcze
+        if (preg_match('/\b(op|op\.|opak|opak\.|karton|kart\.|worek|skrzynka|klatka|tacka)\b/u', $nameLower)) {
+            return 'op.';
+        }
+
+        // Domyślna jednostka dla owoców i warzyw wagowych
+        return 'kg';
     }
 
     /**
@@ -362,20 +469,7 @@ class XlsxParser
             }
 
             $price = self::normalizePrice($rawPrice);
-            $unit = 'kg'; // Domyślna jednostka dla warzyw i owoców
-
-            if ($rawUnit !== '') {
-                $uLower = mb_strtolower($rawUnit, 'UTF-8');
-                if (str_contains($uLower, 'szt')) {
-                    $unit = 'szt.';
-                } elseif (str_contains($uLower, 'op') || str_contains($uLower, 'kart')) {
-                    $unit = 'op.';
-                } elseif (str_contains($uLower, 'pęcz') || str_contains($uLower, 'pecz')) {
-                    $unit = 'pęczek';
-                } else {
-                    $unit = 'kg';
-                }
-            }
+            $unit  = self::detectProductUnit($rawName, $rawUnit);
 
             $products[] = [
                 'id'       => $index++,

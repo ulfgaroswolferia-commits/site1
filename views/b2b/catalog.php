@@ -30,6 +30,22 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
 </head>
 <body class="min-h-full flex flex-col bg-slate-100 text-slate-800 pb-28">
 
+    <?php if (!empty($view['isAdmin'])): ?>
+    <!-- Pasek informacyjny trybu podglądu dla administratora hurtowni -->
+    <div class="bg-amber-500 text-slate-950 px-4 py-2 text-xs font-bold shadow-sm relative z-50 border-b border-amber-600/40">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-slate-900 text-amber-400 text-xs">👁️</span>
+                <span><strong>TRYB PODGLĄDU SKLEPU B2B:</strong> Jesteś zalogowany jako Hurtownik (Admin). Klienci widzą poniższy cennik i asortyment.</span>
+            </div>
+            <a href="<?= $base ?>b2b/admin" class="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900 text-white hover:bg-slate-800 rounded-lg text-xs font-bold transition shadow-sm">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                Wróć do Panelu Hurtownika
+            </a>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Top Navigation Header -->
     <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -51,7 +67,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 <div class="flex items-center gap-3 sm:gap-6">
                     <div class="text-right">
                         <div class="flex items-center justify-end gap-1.5">
-                            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span class="inline-block w-2 h-2 rounded-full <?= !empty($view['isAdmin']) ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse' ?>"></span>
                             <span class="text-xs font-black text-slate-900 uppercase tracking-wide">
                                 <?= htmlspecialchars($client['company_name'] ?? 'Odbiorca B2B') ?>
                             </span>
@@ -61,6 +77,19 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                         </div>
                     </div>
 
+                    <?php if (!empty($view['isAdmin'])): ?>
+                    <a href="<?= $base ?>b2b/admin" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-100 border border-amber-300 text-xs font-bold text-amber-900 hover:bg-amber-200 transition" title="Wróć do panelu hurtownika">
+                        <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Panel Hurtownika
+                    </a>
+                    <a href="<?= $base ?>home/logout" class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Wyloguj administratora">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                    </a>
+                    <?php else: ?>
                     <a href="<?= $base ?>b2b/history" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
                         <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -73,6 +102,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
                     </a>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

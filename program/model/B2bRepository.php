@@ -188,9 +188,17 @@ class B2bRepository
         return $row ?: null;
     }
 
-    public function getAllClients(): array
+    public function getAllClients(string $orderBy = 'created_at DESC, id DESC'): array
     {
-        $stmt = $this->pdo->query("SELECT * FROM b2b_clients ORDER BY company_name ASC");
+        $allowed = [
+            'created_at DESC, id DESC' => 'created_at DESC, id DESC',
+            'id DESC'                  => 'id DESC',
+            'company_name ASC'         => 'company_name ASC',
+            'company_name DESC'        => 'company_name DESC',
+        ];
+        $orderSql = $allowed[$orderBy] ?? 'created_at DESC, id DESC';
+
+        $stmt = $this->pdo->query("SELECT * FROM b2b_clients ORDER BY {$orderSql}");
         return $stmt->fetchAll();
     }
 
@@ -199,7 +207,7 @@ class B2bRepository
         $fields = [];
         $params = [':id' => $id];
 
-        foreach (['company_name', 'nip', 'phone', 'email', 'delivery_address', 'login', 'price_group_id', 'is_active'] as $f) {
+        foreach (['company_name', 'nip', 'phone', 'email', 'delivery_address', 'login', 'price_group_id', 'is_active', 'auth_token'] as $f) {
             if (array_key_exists($f, $data)) {
                 $fields[] = "{$f} = :{$f}";
                 $params[":{$f}"] = $data[$f];
@@ -315,7 +323,7 @@ class B2bRepository
                     if ($rule) {
                         $pkgSize = (float)$rule['package_size'];
                         $pkgUnit = $rule['package_unit'];
-                        if (empty($p['unit']) && !empty($rule['unit'])) {
+                        if (!empty($rule['unit']) && ($unit === 'kg' || empty($p['unit']))) {
                             $unit = $rule['unit'];
                         }
                     }
@@ -387,6 +395,14 @@ class B2bRepository
     {
         $stmt = $this->pdo->query("SELECT * FROM b2b_products ORDER BY sort_order ASC, name ASC");
         return $stmt->fetchAll();
+    }
+
+    public function getProductById(int $id): ?array
+    {
+        $stmt = $this->pdo->prepare("SELECT * FROM b2b_products WHERE id = :id LIMIT 1");
+        $stmt->execute([':id' => $id]);
+        $row = $stmt->fetch();
+        return $row ?: null;
     }
 
     public function updateProduct(int $id, array $data): bool
