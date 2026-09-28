@@ -17,6 +17,7 @@ robocze/
 tmp/
 db/
 storage/
+.worktrees/
 
 # Zależności (gdyby projekt jednak sięgnął po Composer / npm)
 vendor/
