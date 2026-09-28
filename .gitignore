@@ -19,6 +19,11 @@ db/
 storage/
 .worktrees/
 
+# Narzędzia deweloperskie — pliki z danymi sesji/cookie (zawierają wrażliwe dane)
+cookies.txt
+*.cookie
+*.cookies
+
 # Zależności (gdyby projekt jednak sięgnął po Composer / npm)
 vendor/
 node_modules/

@@ -2581,16 +2581,23 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     }
 
                     const tbody = document.getElementById('modal-order-items');
-                    tbody.innerHTML = '';
+                    tbody.replaceChildren();
                     d.items.forEach(i => {
-                        tbody.innerHTML += `
-                            <tr>
-                                <td class="py-2 font-bold text-slate-800">${i.product_name}</td>
-                                <td class="py-2 text-right font-bold text-slate-900">${i.quantity} ${i.unit}</td>
-                                <td class="py-2 text-center text-xs font-semibold text-emerald-700 bg-emerald-50 rounded">${i.package_summary || '—'}</td>
-                                <td class="py-2 text-right font-bold text-slate-800">${Number(i.item_total).toFixed(2)} zł</td>
-                            </tr>
-                        `;
+                        const row = document.createElement('tr');
+                        const productName = document.createElement('td');
+                        productName.className = 'py-2 font-bold text-slate-800';
+                        productName.textContent = i.product_name;
+                        const quantity = document.createElement('td');
+                        quantity.className = 'py-2 text-right font-bold text-slate-900';
+                        quantity.textContent = `${i.quantity} ${i.unit}`;
+                        const packageSummary = document.createElement('td');
+                        packageSummary.className = 'py-2 text-center text-xs font-semibold text-emerald-700 bg-emerald-50 rounded';
+                        packageSummary.textContent = i.package_summary || '—';
+                        const itemTotal = document.createElement('td');
+                        itemTotal.className = 'py-2 text-right font-bold text-slate-800';
+                        itemTotal.textContent = `${Number(i.item_total).toFixed(2)} zł`;
+                        row.append(productName, quantity, packageSummary, itemTotal);
+                        tbody.appendChild(row);
                     });
                     updateFinalizeButtonSubtext();
                     document.getElementById('modal-order').classList.remove('hidden');
@@ -2620,9 +2627,9 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             const rowsHtml = items.map((it, idx) => `
                 <tr style="border-bottom: 1px solid #e2e8f0;">
                     <td style="padding: 8px 10px; text-align: center; font-size: 12px; color: #64748b;">${idx + 1}</td>
-                    <td style="padding: 8px 10px; font-weight: 700; font-size: 13px; color: #0f172a;">${it.product_name}</td>
-                    <td style="padding: 8px 10px; text-align: right; font-weight: 700; font-size: 13px;">${it.quantity} ${it.unit}</td>
-                    <td style="padding: 8px 10px; text-align: center; font-size: 12px; background: #f8fafc; font-weight: 600; color: #047857;">${it.package_summary || '—'}</td>
+                    <td style="padding: 8px 10px; font-weight: 700; font-size: 13px; color: #0f172a;">${escapeHtml(it.product_name)}</td>
+                    <td style="padding: 8px 10px; text-align: right; font-weight: 700; font-size: 13px;">${Number(it.quantity)} ${escapeHtml(it.unit)}</td>
+                    <td style="padding: 8px 10px; text-align: center; font-size: 12px; background: #f8fafc; font-weight: 600; color: #047857;">${escapeHtml(it.package_summary || '—')}</td>
                     <td style="padding: 8px 10px; text-align: right; font-size: 12px; color: #64748b;">${Number(it.price).toFixed(2)} zł</td>
                     <td style="padding: 8px 10px; text-align: right; font-weight: 700; font-size: 13px; color: #0f172a;">${Number(it.item_total).toFixed(2)} zł</td>
                 </tr>
@@ -2632,7 +2639,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
 <html lang="pl">
 <head>
     <meta charset="utf-8">
-    <title>Specyfikacja zamówienia ${o.order_number}</title>
+    <title>Specyfikacja zamówienia ${escapeHtml(o.order_number)}</title>
     <style>
         @page { size: A4; margin: 12mm; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #0f172a; margin: 0; padding: 15px; font-size: 13px; line-height: 1.4; }
@@ -2665,8 +2672,8 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             <div class="subtitle">Karta kompletacyjna dla magazynu i kierowcy</div>
         </div>
         <div style="text-align: right;">
-            <div style="font-size: 16px; font-weight: 900; color: #0f172a;">${o.order_number}</div>
-            <div style="font-size: 11px; color: #64748b;">Złożono: ${o.created_at || '—'}</div>
+            <div style="font-size: 16px; font-weight: 900; color: #0f172a;">${escapeHtml(o.order_number)}</div>
+            <div style="font-size: 11px; color: #64748b;">Złożono: ${escapeHtml(o.created_at || '—')}</div>
             <div style="font-size: 11px; color: #64748b;">Wydruk: ${printDate}</div>
         </div>
     </div>
@@ -2674,24 +2681,24 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
     <div class="meta-box">
         <div class="meta-item">
             <strong>Odbiorca / Sklep:</strong>
-            <div style="font-weight: bold; font-size: 13px;">${o.client_name_snapshot}</div>
-            <div style="font-size: 12px; color: #334155;">Tel: ${o.client_phone_snapshot || '—'}</div>
+            <div style="font-weight: bold; font-size: 13px;">${escapeHtml(o.client_name_snapshot)}</div>
+            <div style="font-size: 12px; color: #334155;">Tel: ${escapeHtml(o.client_phone_snapshot || '—')}</div>
         </div>
         <div class="meta-item">
             <strong>Adres dostawy towaru:</strong>
-            <div style="font-weight: 600; font-size: 12px;">${o.delivery_address_snapshot || 'Brak'}</div>
+            <div style="font-weight: 600; font-size: 12px;">${escapeHtml(o.delivery_address_snapshot || 'Brak')}</div>
         </div>
         <div class="meta-item">
             <strong>Planowany termin dostawy:</strong>
-            <div style="font-weight: 800; font-size: 13px; color: #b45309;">${o.delivery_date || 'Standardowa (najbliższy dzień roboczy)'}</div>
+            <div style="font-weight: 800; font-size: 13px; color: #b45309;">${escapeHtml(o.delivery_date || 'Standardowa (najbliższy dzień roboczy)')}</div>
         </div>
         <div class="meta-item">
             <strong>Status zlecenia:</strong>
-            <div style="font-weight: 700; font-size: 12px; text-transform: uppercase;">${o.status || 'new'}</div>
+            <div style="font-weight: 700; font-size: 12px; text-transform: uppercase;">${escapeHtml(o.status || 'new')}</div>
         </div>
         <div class="meta-item" style="grid-column: span 2;">
             <strong>Ważne uwagi dla kierowcy i magazyniera:</strong>
-            <div style="font-style: italic; color: #334155; font-size: 12px;">${o.notes || 'Brak szczególnych uwag'}</div>
+            <div style="font-style: italic; color: #334155; font-size: 12px;">${escapeHtml(o.notes || 'Brak szczególnych uwag')}</div>
         </div>
     </div>
 

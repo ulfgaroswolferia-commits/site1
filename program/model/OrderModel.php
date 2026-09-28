@@ -36,7 +36,7 @@ class OrderModel extends \Model
     {
         $dir = defined('BASE_PATH') ? (BASE_PATH . '/db') : (__DIR__ . '/../../db');
         if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
+            mkdir($dir, 0750, true);
         }
 
         $sqliteFile = $dir . '/orders.sqlite';

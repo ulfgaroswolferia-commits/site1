@@ -244,34 +244,51 @@ $title  = $view['title'] ?? 'Historia Zamówień — Hurtownia Magdy';
                     // Badge statusu
                     const st = d.order.status || 'new';
                     const statusBadges = {
-                        'new': '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border bg-sky-50 text-sky-700 border-sky-200">Nowe</span>',
-                        'processing': '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border bg-amber-50 text-amber-700 border-amber-200">W kompletacji</span>',
-                        'completed': '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border bg-emerald-50 text-emerald-700 border-emerald-200">Zrealizowane</span>',
-                        'cancelled': '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border bg-rose-50 text-rose-700 border-rose-200">Anulowane</span>'
+                        'new': { label: 'Nowe', classes: 'bg-sky-50 text-sky-700 border-sky-200' },
+                        'processing': { label: 'W kompletacji', classes: 'bg-amber-50 text-amber-700 border-amber-200' },
+                        'completed': { label: 'Zrealizowane', classes: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+                        'cancelled': { label: 'Anulowane', classes: 'bg-rose-50 text-rose-700 border-rose-200' }
                     };
-                    document.getElementById('modalOrderStatusBadge').innerHTML = statusBadges[st] || `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border bg-slate-50 text-slate-700 border-slate-200">${st}</span>`;
+                    const badge = document.createElement('span');
+                    const statusConfig = statusBadges[st];
+                    badge.className = 'inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold border ' +
+                        (statusConfig ? statusConfig.classes : 'bg-slate-50 text-slate-700 border-slate-200');
+                    badge.textContent = statusConfig ? statusConfig.label : String(st);
+                    document.getElementById('modalOrderStatusBadge').replaceChildren(badge);
 
                     // Pozycje zamówienia
                     const tbody = document.getElementById('modalOrderItemsBody');
-                    tbody.innerHTML = '';
+                    tbody.replaceChildren();
                     if (d.items && d.items.length > 0) {
                         d.items.forEach(it => {
                             const tr = document.createElement('tr');
                             tr.className = 'hover:bg-slate-50 transition';
-                            tr.innerHTML = `
-                                <td class="py-2.5 px-3 font-bold text-slate-800">${it.product_name}</td>
-                                <td class="py-2.5 px-3 text-right font-semibold text-emerald-700">${parseFloat(it.quantity)} ${it.unit}</td>
-                                <td class="py-2.5 px-3 text-center">
-                                    <span class="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium text-[11px]">
-                                        ${it.package_summary || '—'}
-                                    </span>
-                                </td>
-                                <td class="py-2.5 px-3 text-right font-black text-slate-900">${parseFloat(it.item_total).toFixed(2)} zł</td>
-                            `;
+                            const productName = document.createElement('td');
+                            productName.className = 'py-2.5 px-3 font-bold text-slate-800';
+                            productName.textContent = it.product_name;
+                            const quantity = document.createElement('td');
+                            quantity.className = 'py-2.5 px-3 text-right font-semibold text-emerald-700';
+                            quantity.textContent = `${parseFloat(it.quantity)} ${it.unit}`;
+                            const packageCell = document.createElement('td');
+                            packageCell.className = 'py-2.5 px-3 text-center';
+                            const packageSummary = document.createElement('span');
+                            packageSummary.className = 'inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium text-[11px]';
+                            packageSummary.textContent = it.package_summary || '—';
+                            packageCell.appendChild(packageSummary);
+                            const itemTotal = document.createElement('td');
+                            itemTotal.className = 'py-2.5 px-3 text-right font-black text-slate-900';
+                            itemTotal.textContent = `${parseFloat(it.item_total).toFixed(2)} zł`;
+                            tr.append(productName, quantity, packageCell, itemTotal);
                             tbody.appendChild(tr);
                         });
                     } else {
-                        tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-400">Brak pozycji w zamówieniu.</td></tr>';
+                        const emptyRow = document.createElement('tr');
+                        const emptyCell = document.createElement('td');
+                        emptyCell.colSpan = 4;
+                        emptyCell.className = 'py-6 text-center text-slate-400';
+                        emptyCell.textContent = 'Brak pozycji w zamówieniu.';
+                        emptyRow.appendChild(emptyCell);
+                        tbody.appendChild(emptyRow);
                     }
 
                     modal.classList.remove('hidden');

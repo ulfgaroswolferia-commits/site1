@@ -14,7 +14,7 @@ class XlsxWriter
     {
         $dir = dirname($filePath);
         if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
+            mkdir($dir, 0750, true);
         }
 
         $xlsxContent = self::createOrderWorkbook($items, $meta);
@@ -28,7 +28,7 @@ class XlsxWriter
     {
         $dir = dirname($filePath);
         if (!is_dir($dir)) {
-            mkdir($dir, 0777, true);
+            mkdir($dir, 0750, true);
         }
 
         $xlsxContent = self::createPackingSheetWorkbook($items, $meta);

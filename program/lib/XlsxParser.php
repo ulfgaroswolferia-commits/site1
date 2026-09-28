@@ -112,7 +112,9 @@ class XlsxParser
      */
     private function parseSharedStrings(string $xmlContent): void
     {
-        $xml = simplexml_load_string($xmlContent, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_NOERROR | LIBXML_NOWARNING);
+        // Ochrona przed XXE: LIBXML_NONET blokuje próby połączeń sieciowych,
+        // brak LIBXML_NOENT / LIBXML_XINCLUDE uniemożliwia wstrzykiwanie encji zewnętrznych.
+        $xml = simplexml_load_string($xmlContent, 'SimpleXMLElement', LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING);
         if (!$xml) {
             return;
         }
@@ -138,7 +140,8 @@ class XlsxParser
      */
     private function parseSheet(string $xmlContent): void
     {
-        $xml = simplexml_load_string($xmlContent, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_XINCLUDE | LIBXML_NOERROR | LIBXML_NOWARNING);
+        // Ochrona przed XXE: brak LIBXML_NOENT / LIBXML_XINCLUDE
+        $xml = simplexml_load_string($xmlContent, 'SimpleXMLElement', LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING);
         if (!$xml || !isset($xml->sheetData)) {
             $this->rows = [];
             return;

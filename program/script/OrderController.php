@@ -101,9 +101,33 @@ class OrderController extends AppController
             return;
         }
 
+        // Limit rozmiaru pliku — ochrona przed DoS przez duże pliki.
+        $maxBytes = 20 * 1024 * 1024; // 20 MB
+        if ($file['size'] > $maxBytes) {
+            App::json(['ok' => false, 'error' => 'Plik jest za duży. Maksymalny rozmiar to 20 MB.'], 400);
+            return;
+        }
+
+        // Walidacja MIME przez finfo — rozszerzenie z $_FILES['name'] jest kontrolowane przez przeglądarkę.
+        // XLSX to plik ZIP, więc akceptujemy oba odpowiednie typy MIME.
+        $allowedMimes = [
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/zip',
+            'application/x-zip-compressed',
+        ];
+        if (function_exists('finfo_open')) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $detectedMime = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+            if (!in_array($detectedMime, $allowedMimes, true)) {
+                App::json(['ok' => false, 'error' => 'Nieprawidłowy typ pliku. Dozwolony jest wyłącznie format .xlsx (Excel).'], 400);
+                return;
+            }
+        }
+
         $tmpDir = BASE_PATH . '/tmp';
         if (!is_dir($tmpDir)) {
-            mkdir($tmpDir, 0777, true);
+            mkdir($tmpDir, 0750, true);
         }
 
         $fileId = 'cennik_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.xlsx';
@@ -244,7 +268,7 @@ class OrderController extends AppController
             // 1. Zapis czystego pliku Excela do katalogu storage/orders/
             $storageDir = BASE_PATH . '/storage/orders';
             if (!is_dir($storageDir)) {
-                mkdir($storageDir, 0777, true);
+                mkdir($storageDir, 0750, true);
             }
 
             $exportPath = $storageDir . '/' . $exportFilename;

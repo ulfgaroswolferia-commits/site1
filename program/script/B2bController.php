@@ -22,6 +22,7 @@ class B2bController extends AppController
             $token = trim((string)$_GET['token']);
             $client = $this->repo->getClientByToken($token);
             if ($client) {
+                session_regenerate_id(true); // Ochrona przed Session Fixation
                 $_SESSION['b2b_client_id']    = (int)$client['id'];
                 $_SESSION['b2b_client_token'] = $client['auth_token'];
                 $_SESSION['b2b_company_name'] = $client['company_name'];
@@ -60,6 +61,7 @@ class B2bController extends AppController
             $token = trim((string)$_GET['token']);
             $client = $this->repo->getClientByToken($token);
             if ($client) {
+                session_regenerate_id(true); // Ochrona przed Session Fixation
                 $_SESSION['b2b_client_id']    = (int)$client['id'];
                 $_SESSION['b2b_client_token'] = $client['auth_token'];
                 $_SESSION['b2b_company_name'] = $client['company_name'];
@@ -182,34 +184,11 @@ class B2bController extends AppController
             return;
         }
 
-        $preparedItems = [];
-        $totalAmount = 0.0;
-
-        foreach ($items as $it) {
-            $qty = (float)($it['quantity'] ?? 0);
-            if ($qty <= 0) continue;
-
-            $name        = trim((string)($it['product_name'] ?? $it['name'] ?? 'Towar'));
-            $price       = (float)($it['price'] ?? 0);
-            $unit        = trim((string)($it['unit'] ?? 'kg'));
-            $pkgSize     = (float)($it['package_size'] ?? 1.0);
-            $pkgUnit     = trim((string)($it['package_unit'] ?? 'op.'));
-            $itemTotal   = round($qty * $price, 2);
-            $pkgSummary  = $this->repo->formatPackageSummary($qty, $pkgSize, $pkgUnit, $unit);
-
-            $preparedItems[] = [
-                'product_id'      => isset($it['product_id']) ? (int)$it['product_id'] : null,
-                'product_name'    => $name,
-                'price'           => $price,
-                'quantity'        => $qty,
-                'unit'            => $unit,
-                'package_size'    => $pkgSize,
-                'package_unit'    => $pkgUnit,
-                'package_summary' => $pkgSummary,
-                'item_total'      => $itemTotal
-            ];
-
-            $totalAmount += $itemTotal;
+        try {
+            $preparedItems = $this->repo->prepareOrderItems($items);
+        } catch (\InvalidArgumentException $e) {
+            App::json(['ok' => false, 'error' => $e->getMessage()], 400);
+            return;
         }
 
         if (empty($preparedItems)) {
@@ -217,6 +196,7 @@ class B2bController extends AppController
             return;
         }
 
+        $totalAmount = array_sum(array_column($preparedItems, 'item_total'));
         $orderNumber = $this->repo->generateOrderNumber();
         $notes = trim((string)($_POST['notes'] ?? ''));
 
@@ -648,7 +628,7 @@ class B2bController extends AppController
 
         $tmpDir = BASE_PATH . '/tmp';
         if (!is_dir($tmpDir)) {
-            mkdir($tmpDir, 0777, true);
+            mkdir($tmpDir, 0750, true);
         }
 
         $fileId = 'cennik_b2b_' . time() . '_' . bin2hex(random_bytes(6)) . '.xlsx';

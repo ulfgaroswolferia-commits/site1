@@ -39,7 +39,7 @@ class B2bRepository
             // Domyślny SQLite
             $dbDir = BASE_PATH . '/db';
             if (!is_dir($dbDir)) {
-                mkdir($dbDir, 0777, true);
+                mkdir($dbDir, 0750, true);
             }
             $dbPath = $dbDir . '/b2b.sqlite';
             $this->pdo = new PDO('sqlite:' . $dbPath, null, null, [
@@ -588,6 +588,68 @@ class B2bRepository
         $stmt->execute([':id' => $id]);
         $row = $stmt->fetch();
         return $row ?: null;
+    }
+
+    public function prepareOrderItems(array $items): array
+    {
+        $preparedItems = [];
+
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                throw new \InvalidArgumentException('Nieprawidłowa pozycja zamówienia.');
+            }
+
+            $quantity = filter_var($item['quantity'] ?? null, FILTER_VALIDATE_FLOAT);
+            if ($quantity === false || !is_finite((float)$quantity)) {
+                throw new \InvalidArgumentException('Nieprawidłowa ilość produktu.');
+            }
+            if ($quantity <= 0) {
+                continue;
+            }
+
+            $product = null;
+            $rawProductId = $item['product_id'] ?? null;
+            if ($rawProductId !== null && $rawProductId !== '') {
+                $productId = filter_var($rawProductId, FILTER_VALIDATE_INT);
+                if ($productId === false || $productId <= 0) {
+                    throw new \InvalidArgumentException('Nieprawidłowy produkt w zamówieniu.');
+                }
+                $product = $this->getProductById($productId);
+                if ($product && (int)$product['is_available'] !== 1) {
+                    $product = null;
+                }
+            } elseif (is_string($item['product_name'] ?? $item['name'] ?? null)) {
+                $stmt = $this->pdo->prepare(
+                    'SELECT * FROM b2b_products WHERE name = :name AND is_available = 1 LIMIT 1'
+                );
+                $stmt->execute([':name' => trim($item['product_name'] ?? $item['name'])]);
+                $product = $stmt->fetch() ?: null;
+            }
+
+            if (!$product) {
+                throw new \InvalidArgumentException('Produkt nie istnieje lub jest niedostępny.');
+            }
+
+            $price = (float)$product['price'];
+            $packageSize = (float)$product['package_size'];
+            $unit = trim((string)$product['unit']);
+            $packageUnit = trim((string)$product['package_unit']);
+            $itemTotal = round((float)$quantity * $price, 2);
+
+            $preparedItems[] = [
+                'product_id'      => (int)$product['id'],
+                'product_name'    => (string)$product['name'],
+                'price'           => $price,
+                'quantity'        => (float)$quantity,
+                'unit'            => $unit,
+                'package_size'    => $packageSize,
+                'package_unit'    => $packageUnit,
+                'package_summary' => $this->formatPackageSummary((float)$quantity, $packageSize, $packageUnit, $unit),
+                'item_total'      => $itemTotal,
+            ];
+        }
+
+        return $preparedItems;
     }
 
     public function updateProduct(int $id, array $data): bool

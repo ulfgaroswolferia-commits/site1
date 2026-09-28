@@ -784,12 +784,19 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     total += it.item_total;
                     const tr = document.createElement('tr');
                     tr.className = 'hover:bg-slate-50';
-                    tr.innerHTML = `
-                        <td class="py-2.5 px-3 font-semibold text-slate-900">${it.product_name}</td>
-                        <td class="py-2.5 px-3 text-center font-bold text-emerald-700">${it.quantity} ${it.unit}</td>
-                        <td class="py-2.5 px-3 text-slate-500">${it.package_summary}</td>
-                        <td class="py-2.5 px-3 text-right font-bold text-slate-800">${it.item_total.toFixed(2)} zł</td>
-                    `;
+                    const productName = document.createElement('td');
+                    productName.className = 'py-2.5 px-3 font-semibold text-slate-900';
+                    productName.textContent = it.product_name;
+                    const quantity = document.createElement('td');
+                    quantity.className = 'py-2.5 px-3 text-center font-bold text-emerald-700';
+                    quantity.textContent = `${it.quantity} ${it.unit}`;
+                    const packageSummary = document.createElement('td');
+                    packageSummary.className = 'py-2.5 px-3 text-slate-500';
+                    packageSummary.textContent = it.package_summary;
+                    const itemTotal = document.createElement('td');
+                    itemTotal.className = 'py-2.5 px-3 text-right font-bold text-slate-800';
+                    itemTotal.textContent = `${it.item_total.toFixed(2)} zł`;
+                    tr.append(productName, quantity, packageSummary, itemTotal);
                     modalItemsBody.appendChild(tr);
                 });
 

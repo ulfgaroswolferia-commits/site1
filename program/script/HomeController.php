@@ -66,7 +66,11 @@ class HomeController extends AppController
         $login    = trim((string) ($_POST['login'] ?? ''));
         $password = (string) ($_POST['password'] ?? '');
 
-        if ($login === (defined('APP_LOGIN') ? APP_LOGIN : '') && $password === (defined('APP_PASSWORD') ? APP_PASSWORD : '')) {
+        $adminLogin    = defined('APP_LOGIN') ? APP_LOGIN : '';
+        $adminPassHash = defined('APP_PASSWORD_HASH') ? APP_PASSWORD_HASH : '';
+        $isAdminOk     = ($adminLogin !== '' && $login === $adminLogin && $adminPassHash !== '' && password_verify($password, $adminPassHash));
+
+        if ($isAdminOk) {
             $this->startUserSession(1, ['app_login' => $login]);
             App::redirect('home/index');
         }
@@ -75,6 +79,7 @@ class HomeController extends AppController
         $b2bRepo = new \App\B2bRepository();
         $client  = $b2bRepo->getClientByLogin($login);
         if ($client && !empty($client['password_hash']) && password_verify($password, $client['password_hash'])) {
+            session_regenerate_id(true); // Ochrona przed Session Fixation
             $_SESSION['b2b_client_id']    = (int)$client['id'];
             $_SESSION['b2b_client_token'] = $client['auth_token'];
             $_SESSION['b2b_company_name'] = $client['company_name'];
