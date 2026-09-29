@@ -461,6 +461,13 @@ class B2bController extends AppController
             }
         }
 
+        if (isset($_POST['default_import_method'])) {
+            $method = strtolower(trim((string)$_POST['default_import_method']));
+            if (in_array($method, ['excel', 'erp'], true)) {
+                $this->repo->setSetting('default_import_method', $method);
+            }
+        }
+
         if (isset($_POST['finalize_action'])) {
             $action = strtolower(trim((string)$_POST['finalize_action']));
             if (in_array($action, ['print', 'excel', 'erp', 'status_only'], true)) {
@@ -685,7 +692,7 @@ class B2bController extends AppController
         $fileId = basename((string)($_POST['file_id'] ?? ''));
         $target = BASE_PATH . '/tmp/' . $fileId;
 
-        if (!file_exists($target)) {
+        if ($fileId === '' || !is_file($target)) {
             App::json(['ok' => false, 'error' => 'Plik cennika wygasł lub nie został znaleziony.'], 400);
             return;
         }
@@ -713,6 +720,100 @@ class B2bController extends AppController
             ]);
         } catch (\Throwable $e) {
             App::json(['ok' => false, 'error' => 'Błąd importu cennika: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * POST /b2b/importerp
+     * Import asortymentu z pliku ERP (Subiekt .epp, Optima .xml, Symfonia .txt, Wf-Mag .xml).
+     * Krok 1 (step=preview): Parsuje plik i zwraca podgląd towarów do zatwierdzenia.
+     * Krok 2 (step=confirm): Wdraża zatwierdzony asortyment do oferty.
+     */
+    public function actionImporterp()
+    {
+        $this->requireAuth();
+        $this->requireCsrf();
+
+        $step = (string)($_POST['step'] ?? 'preview');
+
+        // ── KROK 2: zatwierdzenie podglądu i zapis ─────────────────────────
+        if ($step === 'confirm') {
+            $rawProducts = $_POST['products'] ?? null;
+            if (is_string($rawProducts)) {
+                $products = json_decode($rawProducts, true);
+            } elseif (is_array($rawProducts)) {
+                $products = $rawProducts;
+            } else {
+                $products = [];
+            }
+
+            if (empty($products) || !is_array($products)) {
+                App::json(['ok' => false, 'error' => 'Brak produktów do importu.'], 400);
+                return;
+            }
+
+            try {
+                $count = $this->repo->saveProductsBatch($products, true);
+                App::json(['ok' => true, 'total_imported' => $count]);
+            } catch (\Throwable $e) {
+                App::json(['ok' => false, 'error' => 'Błąd zapisu do bazy: ' . $e->getMessage()], 500);
+            }
+            return;
+        }
+
+        // ── KROK 1: upload + parsowanie + podgląd ──────────────────────────
+        if (empty($_FILES['erp_file']) || $_FILES['erp_file']['error'] !== UPLOAD_ERR_OK) {
+            App::json(['ok' => false, 'error' => 'Nie przesłano pliku lub wystąpił błąd uploadu.'], 400);
+            return;
+        }
+
+        $file    = $_FILES['erp_file'];
+        $ext     = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowed = ['epp', 'xml', 'txt'];
+
+        if (!in_array($ext, $allowed, true)) {
+            App::json(['ok' => false, 'error' => 'Obsługiwane formaty: .epp (Subiekt), .xml (Optima / Wf-Mag), .txt (Symfonia).'], 400);
+            return;
+        }
+
+        $tmpDir = BASE_PATH . '/tmp';
+        if (!is_dir($tmpDir)) {
+            mkdir($tmpDir, 0750, true);
+        }
+
+        $fileId = 'erp_import_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+        $target = $tmpDir . '/' . $fileId;
+
+        if (!move_uploaded_file($file['tmp_name'], $target)) {
+            App::json(['ok' => false, 'error' => 'Nie udało się zapisać pliku tymczasowego.'], 500);
+            return;
+        }
+
+        try {
+            $rawContent = file_get_contents($target);
+            @unlink($target);
+
+            // Wykryj lub pobierz format
+            $format = strtolower(trim((string)($_POST['format'] ?? '')));
+            if ($format === '' || !in_array($format, ['subiekt', 'optima', 'symfonia', 'wfmag'], true)) {
+                $format = ErpImporter::detectFormat($rawContent) ?? 'optima';
+            }
+
+            $products = ErpImporter::import($format, $rawContent);
+
+            if (empty($products)) {
+                App::json(['ok' => false, 'error' => 'W pliku nie znaleziono żadnych pozycji towarowych.'], 400);
+                return;
+            }
+
+            App::json([
+                'ok'             => true,
+                'format'         => $format,
+                'total_detected' => count($products),
+                'products'       => $products,
+            ]);
+        } catch (\Throwable $e) {
+            App::json(['ok' => false, 'error' => 'Błąd parsowania pliku ERP: ' . $e->getMessage()], 500);
         }
     }
 

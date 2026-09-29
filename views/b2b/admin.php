@@ -8,7 +8,10 @@ $base      = $view['base'] ?? '/';
 $products  = $view['products'] ?? [];
 $orders    = $view['orders'] ?? [];
 $clients   = $view['clients'] ?? [];
+$settings  = $view['settings'] ?? [];
 $activeTab = $view['activeTab'] ?? 'products';
+$defaultImportMethod = $settings['default_import_method'] ?? 'excel';
+$defaultErpFormat    = $settings['default_erp_format'] ?? 'subiekt';
 $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defined('DBLOGIN') && DBLOGIN !== 'CHANGEME' && DBLOGIN !== '';
 ?>
 <!DOCTYPE html>
@@ -46,6 +49,24 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             .bg-grid, header, nav, #tab-products, #tab-clients, .no-print, [role="tablist"], button { display: none !important; }
             #modal-order { position: static !important; display: block !important; background: none !important; padding: 0 !important; }
             #modal-order > div { box-shadow: none !important; border: 1px solid #cbd5e1 !important; max-width: 100% !important; max-height: none !important; }
+        }
+
+        /* Naprzemienne tło wierszy asortymentu (zebra) oraz ciemniejszy szary na hover */
+        #products-tbody tr.prod-row:nth-child(odd),
+        #products-tbody tr.prod-row.prod-row-odd {
+            background-color: #ffffff;
+        }
+        #products-tbody tr.prod-row:nth-child(even),
+        #products-tbody tr.prod-row.prod-row-even {
+            background-color: #f8fafc;
+        }
+        #products-tbody tr.prod-row {
+            transition: background-color 0.15s ease-in-out;
+        }
+        #products-tbody tr.prod-row:hover,
+        #products-tbody tr.prod-row.prod-row-odd:hover,
+        #products-tbody tr.prod-row.prod-row-even:hover {
+            background-color: #e2e8f0 !important;
         }
     </style>
 </head>
@@ -122,80 +143,205 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
         <!-- =================================================================== -->
         <main id="tab-products" class="space-y-6">
             
-            <!-- Strefa wgrania nowego cennika Excel -->
-            <section class="bg-white/95 border border-slate-200 rounded-2xl p-6 shadow-sm">
-                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-                    <div>
-                        <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                            <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">1</span>
-                            Wgraj nowy cennik hurtowni (.xlsx)
-                        </h2>
-                        <p class="text-xs text-slate-500 mt-0.5">Wgraj plik od dostawcy — parser automatycznie pominie logotypy i dopasuje klatki/skrzynki z pamięci systemu.</p>
+            <!-- ============================================================= -->
+            <!-- SEKCJA IMPORTU CENNIKA — zakładki Excel / ERP                 -->
+            <!-- ============================================================= -->
+            <section class="bg-white/95 border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+
+                <!-- Nagłówek + belka wewnętrznych zakładek -->
+                <div class="px-6 pt-5 pb-0 border-b border-slate-100">
+                    <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2 mb-3">
+                        <span class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs">1</span>
+                        Wgraj nowy cennik hurtowni
+                    </h2>
+                    <!-- Wewnętrzne zakładki (kolejność i wybór domyślny wg ustawień hurtowni) -->
+                    <div class="flex gap-1" id="import-tabs-header-container" role="tablist" aria-label="Metoda importu cennika">
+                        <?php if ($defaultImportMethod === 'erp'): ?>
+                            <!-- Domyślny ERP jako pierwszy -->
+                            <button type="button" id="import-tab-btn-erp"
+                                onclick="switchImportTab('erp')"
+                                class="px-4 py-2 text-xs font-bold rounded-t-xl border border-b-0 border-indigo-400 bg-indigo-600 text-white transition"
+                                role="tab" aria-selected="true" aria-controls="import-panel-erp">
+                                <span class="flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+                                    Import z ERP (Domyślny)
+                                </span>
+                            </button>
+                            <button type="button" id="import-tab-btn-excel"
+                                onclick="switchImportTab('excel')"
+                                class="px-4 py-2 text-xs font-bold rounded-t-xl border border-b-0 border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition"
+                                role="tab" aria-selected="false" aria-controls="import-panel-excel">
+                                <span class="flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    Import z Excel (.xlsx)
+                                </span>
+                            </button>
+                        <?php else: ?>
+                            <!-- Domyślny Excel jako pierwszy -->
+                            <button type="button" id="import-tab-btn-excel"
+                                onclick="switchImportTab('excel')"
+                                class="px-4 py-2 text-xs font-bold rounded-t-xl border border-b-0 border-emerald-400 bg-emerald-600 text-white transition"
+                                role="tab" aria-selected="true" aria-controls="import-panel-excel">
+                                <span class="flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    Import z Excel (.xlsx) (Domyślny)
+                                </span>
+                            </button>
+                            <button type="button" id="import-tab-btn-erp"
+                                onclick="switchImportTab('erp')"
+                                class="px-4 py-2 text-xs font-bold rounded-t-xl border border-b-0 border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition"
+                                role="tab" aria-selected="false" aria-controls="import-panel-erp">
+                                <span class="flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+                                    Import z ERP
+                                </span>
+                            </button>
+                        <?php endif; ?>
                     </div>
-                    <span class="text-xs font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">Format: Microsoft Excel (.xlsx)</span>
                 </div>
 
-                <div id="dropzone" class="relative border-2 border-dashed border-slate-300 hover:border-emerald-500 bg-slate-50/50 hover:bg-emerald-50/20 transition rounded-xl p-8 text-center cursor-pointer">
-                    <input id="file-input" type="file" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" accept=".xlsx">
-                    <div class="flex flex-col items-center justify-center gap-2 pointer-events-none">
-                        <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                <!-- ── Panel 1: Import Excel ────────────────────────────── -->
+                <div id="import-panel-excel" role="tabpanel" aria-labelledby="import-tab-btn-excel" class="p-6 <?= $defaultImportMethod === 'excel' ? '' : 'hidden' ?>">
+                    <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                        <p class="text-xs text-slate-500">Wgraj plik od dostawcy — parser automatycznie pominie logotypy i dopasuje klatki/skrzynki z pamięci systemu.</p>
+                        <span class="text-xs font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">Format: Microsoft Excel (.xlsx)</span>
+                    </div>
+
+                    <div id="dropzone" class="relative border-2 border-dashed border-slate-300 hover:border-emerald-500 bg-slate-50/50 hover:bg-emerald-50/20 transition rounded-xl p-8 text-center cursor-pointer">
+                        <input id="file-input" type="file" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" accept=".xlsx">
+                        <div class="flex flex-col items-center justify-center gap-2 pointer-events-none">
+                            <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                            </div>
+                            <p class="font-bold text-sm text-slate-800">Przeciągnij plik cennika tutaj lub kliknij, aby wybrać</p>
+                            <p class="text-xs text-slate-400">System zachowa zapamiętane opakowania zbiorcze (np. klatki mango, skrzynki pomidorów)</p>
                         </div>
-                        <p class="font-bold text-sm text-slate-800">Przeciągnij plik cennika tutaj lub kliknij, aby wybrać</p>
-                        <p class="text-xs text-slate-400">System zachowa zapamiętane opakowania zbiorcze (np. klatki mango, skrzynki pomidorów)</p>
+                    </div>
+
+                    <div id="upload-status" class="mt-3 text-center text-sm font-semibold hidden"></div>
+
+                    <!-- Kontener mapowania (pojawia się po uploadzie) -->
+                    <div id="mapping-box" class="mt-6 pt-6 border-t border-slate-200 hidden animate-fade-in">
+                        <h3 class="font-bold text-sm text-slate-900 mb-3">Potwierdź przypisanie kolumn cennika:</h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4">
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1" for="map-header-row">Wiersz nagłówka</label>
+                                <select id="map-header-row" class="w-full text-sm bg-white border border-slate-300 rounded-lg p-2 font-medium"></select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1" for="map-col-product">Kolumna: Towar</label>
+                                <select id="map-col-product" class="w-full text-sm bg-white border border-slate-300 rounded-lg p-2 font-medium"></select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1" for="map-col-price">Kolumna: Cena</label>
+                                <select id="map-col-price" class="w-full text-sm bg-white border border-slate-300 rounded-lg p-2 font-medium"></select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1" for="map-col-unit">Kolumna: Jednostka</label>
+                                <select id="map-col-unit" class="w-full text-sm bg-white border border-slate-300 rounded-lg p-2 font-medium">
+                                    <option value="">-- Domyślnie (kg / szt.) --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Podgląd wierszy arkusza Excel -->
+                        <div class="mb-4">
+                            <div class="text-xs font-bold text-slate-600 mb-2 flex items-center justify-between">
+                                <span>Podgląd zawartości arkusza Excel:</span>
+                                <span class="text-slate-400 font-normal text-[11px]">Wiersz wyróżniony na zielono = nagłówek</span>
+                            </div>
+                            <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-56 overflow-y-auto bg-white shadow-inner">
+                                <table class="w-full text-left text-xs" id="preview-sheet-table">
+                                    <thead class="bg-slate-100 text-slate-700 font-bold sticky top-0 border-b border-slate-200" id="preview-sheet-thead"></thead>
+                                    <tbody class="divide-y divide-slate-100" id="preview-sheet-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end gap-3">
+                            <button type="button" onclick="cancelMapping()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">Anuluj</button>
+                            <button type="button" id="btn-process-import" class="px-5 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md transition flex items-center gap-2">
+                                <span>Wdróż ten cennik do oferty B2B</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div id="upload-status" class="mt-3 text-center text-sm font-semibold hidden"></div>
+                <!-- ── Panel 2: Import z ERP ─────────────────────────────── -->
+                <div id="import-panel-erp" role="tabpanel" aria-labelledby="import-tab-btn-erp" class="p-6 <?= $defaultImportMethod === 'erp' ? '' : 'hidden' ?>">
 
-                <!-- Kontener mapowania (pojawia się po uploadzie) -->
-                <div id="mapping-box" class="mt-6 pt-6 border-t border-slate-200 hidden animate-fade-in">
-                    <h3 class="font-bold text-sm text-slate-900 mb-3">Potwierdź przypisanie kolumn cennika:</h3>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4">
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1" for="map-header-row">Wiersz nagłówka</label>
-                            <select id="map-header-row" class="w-full text-sm bg-white border border-slate-300 rounded-lg p-2 font-medium"></select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1" for="map-col-product">Kolumna: Towar</label>
-                            <select id="map-col-product" class="w-full text-sm bg-white border border-slate-300 rounded-lg p-2 font-medium"></select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1" for="map-col-price">Kolumna: Cena</label>
-                            <select id="map-col-price" class="w-full text-sm bg-white border border-slate-300 rounded-lg p-2 font-medium"></select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1" for="map-col-unit">Kolumna: Jednostka</label>
-                            <select id="map-col-unit" class="w-full text-sm bg-white border border-slate-300 rounded-lg p-2 font-medium">
-                                <option value="">-- Domyślnie (kg / szt.) --</option>
+                    <!-- Wybór systemu ERP -->
+                    <div class="flex flex-wrap items-end gap-4 mb-5">
+                        <div class="flex-1 min-w-[220px]">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5" for="erp-import-format">System ERP / Format pliku</label>
+                            <select id="erp-import-format" onchange="syncErpFormatFromImport(this.value)" class="w-full text-sm font-bold bg-white border border-slate-300 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-500 transition cursor-pointer">
+                                <option value="subiekt" <?= $defaultErpFormat === 'subiekt' ? 'selected' : '' ?>>InsERT Subiekt GT / Nexo (.epp — EDI++)</option>
+                                <option value="optima" <?= $defaultErpFormat === 'optima' ? 'selected' : '' ?>>Comarch ERP Optima (.xml — OPT021)</option>
+                                <option value="symfonia" <?= $defaultErpFormat === 'symfonia' ? 'selected' : '' ?>>Symfonia Handel (.txt — HMF 3.0)</option>
+                                <option value="wfmag" <?= $defaultErpFormat === 'wfmag' ? 'selected' : '' ?>>Asseco WAPRO Wf-Mag (.xml — WAPRO_MAG)</option>
                             </select>
                         </div>
+                        <div class="text-xs text-slate-500 bg-indigo-50 border border-indigo-200 rounded-xl px-3 py-2 max-w-xs">
+                            <span class="font-bold text-indigo-700">Tip:</span> Wgraj plik eksportu towarów z systemu ERP — system automatycznie wykryje format jeśli nie wybierzesz.
+                        </div>
                     </div>
 
-                    <!-- Podgląd wierszy arkusza Excel -->
-                    <div class="mb-4">
-                        <div class="text-xs font-bold text-slate-600 mb-2 flex items-center justify-between">
-                            <span>Podgląd zawartości arkusza Excel:</span>
-                            <span class="text-slate-400 font-normal text-[11px]">Wiersz wyróżniony na zielono = nagłówek</span>
+                    <!-- Strefa drag & drop ERP -->
+                    <div id="erp-dropzone" class="relative border-2 border-dashed border-indigo-300 hover:border-indigo-500 bg-indigo-50/30 hover:bg-indigo-50/60 transition rounded-xl p-8 text-center cursor-pointer">
+                        <input id="erp-file-input" type="file" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" accept=".epp,.xml,.txt">
+                        <div class="flex flex-col items-center justify-center gap-2 pointer-events-none">
+                            <div class="w-12 h-12 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+                            </div>
+                            <p class="font-bold text-sm text-slate-800">Przeciągnij plik z systemu ERP lub kliknij, aby wybrać</p>
+                            <p class="text-xs text-slate-400">Akceptowane formaty: <strong>.epp</strong> (Subiekt), <strong>.xml</strong> (Optima / Wf-Mag), <strong>.txt</strong> (Symfonia)</p>
                         </div>
-                        <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-56 overflow-y-auto bg-white shadow-inner">
-                            <table class="w-full text-left text-xs" id="preview-sheet-table">
-                                <thead class="bg-slate-100 text-slate-700 font-bold sticky top-0 border-b border-slate-200" id="preview-sheet-thead"></thead>
-                                <tbody class="divide-y divide-slate-100" id="preview-sheet-tbody"></tbody>
+                    </div>
+
+                    <!-- Status parsowania ERP -->
+                    <div id="erp-upload-status" class="mt-3 text-center text-sm font-semibold hidden"></div>
+
+                    <!-- Podgląd towarów z ERP (pojawia się po parsowaniu) -->
+                    <div id="erp-preview-box" class="mt-5 pt-5 border-t border-slate-200 hidden animate-fade-in">
+                        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+                            <h3 class="font-bold text-sm text-slate-900 flex items-center gap-2">
+                                <span class="w-5 h-5 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-black">✓</span>
+                                Znalezione towary w pliku ERP:
+                                <span id="erp-detected-count" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-800 font-black">0</span>
+                            </h3>
+                            <span id="erp-detected-format" class="text-[11px] font-bold px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg"></span>
+                        </div>
+
+                        <!-- Tabela podglądu produktów ERP -->
+                        <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-64 overflow-y-auto bg-white shadow-inner mb-4">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-200 sticky top-0">
+                                    <tr>
+                                        <th class="py-2.5 px-3 font-bold">Kod ERP</th>
+                                        <th class="py-2.5 px-3 font-bold">Nazwa towaru</th>
+                                        <th class="py-2.5 px-3 font-bold text-right">Cena</th>
+                                        <th class="py-2.5 px-3 font-bold text-center">Jedn.</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="erp-preview-tbody" class="divide-y divide-slate-100"></tbody>
                             </table>
                         </div>
-                    </div>
 
-                    <div class="flex justify-end gap-3">
-                        <button type="button" onclick="cancelMapping()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">Anuluj</button>
-                        <button type="button" id="btn-process-import" class="px-5 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md transition flex items-center gap-2">
-                            <span>Wdróż ten cennik do oferty B2B</span>
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                        </button>
+                        <div class="flex justify-end gap-3">
+                            <button type="button" onclick="cancelErpImport()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition">Anuluj</button>
+                            <button type="button" id="btn-confirm-erp-import"
+                                class="px-5 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition flex items-center gap-2">
+                                <span id="btn-confirm-erp-label">Wdróż asortyment z ERP do oferty B2B</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
+
+
 
             <!-- Mały placeholder: Połącz z bazą danych MySQL -->
             <div class="bg-white/80 border border-dashed border-slate-300/90 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3 transition">
@@ -301,7 +447,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                         $pkgSizeVal = (float)$p['package_size'];
                                         $pkgUnitVal = (string)$p['package_unit'];
                                     ?>
-                                    <tr class="prod-row hover:bg-slate-50/80 transition-all border-l-4 border-l-transparent <?= (int)$p['is_available'] === 0 ? 'opacity-50 bg-slate-50' : '' ?>" id="prod-row-<?= $p['id'] ?>" data-prod-id="<?= $p['id'] ?>" data-cat="<?= Tools::h($p['category']) ?>" data-name="<?= Tools::h(mb_strtolower($p['name'])) ?>">
+                                    <tr class="prod-row transition-colors border-l-4 border-l-transparent <?= (int)$p['is_available'] === 0 ? 'opacity-50' : '' ?>" id="prod-row-<?= $p['id'] ?>" data-prod-id="<?= $p['id'] ?>" data-cat="<?= Tools::h($p['category']) ?>" data-name="<?= Tools::h(mb_strtolower($p['name'])) ?>">
                                         <!-- Przełącznik In stock / Out of stock -->
                                         <td class="py-3 px-4 text-center">
                                             <button type="button" onclick="toggleProduct(<?= $p['id'] ?>)" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold transition <?= (int)$p['is_available'] === 1 ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-200 text-slate-600 hover:bg-slate-300' ?>">
@@ -751,19 +897,52 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                         </div>
                     </div>
 
-                    <!-- 3. Domyślny format ERP -->
+                    <!-- 3. Domyślna metoda importu oferty -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                        <label class="block font-bold text-sm text-slate-800 mb-1">
+                            Domyślny moduł importu oferty (cennika)
+                        </label>
+                        <p class="text-xs text-slate-500 mb-3">
+                            Wybierz, która metoda wgrywania oferty ma być otwierana jako pierwsza (domyślna) w panelu hurtowni.
+                        </p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-emerald-400 transition shadow-2xs">
+                                <input type="radio" id="settings-default-import-excel" name="default_import_method" value="excel" <?= $defaultImportMethod === 'excel' ? 'checked' : '' ?> class="mt-0.5 text-emerald-600 focus:ring-emerald-500">
+                                <div>
+                                    <span class="block font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                                        <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        Import z Excel (.xlsx)
+                                    </span>
+                                    <span class="block text-[11px] text-slate-500 mt-0.5">Import z arkuszy kalkulacyjnych od dostawców z inteligentnym mapowaniem kolumn.</span>
+                                </div>
+                            </label>
+
+                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-indigo-400 transition shadow-2xs">
+                                <input type="radio" id="settings-default-import-erp" name="default_import_method" value="erp" <?= $defaultImportMethod === 'erp' ? 'checked' : '' ?> class="mt-0.5 text-indigo-600 focus:ring-indigo-500">
+                                <div>
+                                    <span class="block font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                                        <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
+                                        Import z ERP (.epp / .xml / .txt)
+                                    </span>
+                                    <span class="block text-[11px] text-slate-500 mt-0.5">Bezpośredni import kartotek z Subiekta, Optimy, Symfonii lub Wf-Maga.</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 4. Domyślny format ERP (zunifikowany z importem i eksportem) -->
                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
                         <label for="settings-erp-format" class="block font-bold text-sm text-slate-800 mb-1">
                             Główny system handlowo-magazynowy (ERP)
                         </label>
                         <p class="text-xs text-slate-500 mb-3">
-                            Wybierz format eksportu, z którego korzysta Twoja hurtownia. Wybór będzie domyślnie podpowiadany przy pobieraniu pojedynczych zamówień i paczek zbiorczych.
+                            Wybierz format eksportu i importu, z którego korzysta Twoja hurtownia. Wybór automatycznie określa domyślny format przy imporcie pliku ERP oraz przy eksporcie zamówień.
                         </p>
-                        <select id="settings-erp-format" name="default_erp_format" class="w-full sm:w-80 text-sm font-bold bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-2xs cursor-pointer">
-                            <option value="subiekt" <?= $defaultFmt === 'subiekt' ? 'selected' : '' ?>>InsERT Subiekt GT / Nexo (.epp / EDI++)</option>
-                            <option value="optima" <?= $defaultFmt === 'optima' ? 'selected' : '' ?>>Comarch ERP Optima (.xml)</option>
-                            <option value="symfonia" <?= $defaultFmt === 'symfonia' ? 'selected' : '' ?>>Symfonia Handel (.txt)</option>
-                            <option value="wfmag" <?= $defaultFmt === 'wfmag' ? 'selected' : '' ?>>Asseco WAPRO / Wf-Mag (.xml)</option>
+                        <select id="settings-erp-format" name="default_erp_format" onchange="syncErpFormatSelection(this.value)" class="w-full sm:w-80 text-sm font-bold bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-2xs cursor-pointer">
+                            <option value="subiekt" <?= $defaultErpFormat === 'subiekt' ? 'selected' : '' ?>>InsERT Subiekt GT / Nexo (.epp / EDI++)</option>
+                            <option value="optima" <?= $defaultErpFormat === 'optima' ? 'selected' : '' ?>>Comarch ERP Optima (.xml)</option>
+                            <option value="symfonia" <?= $defaultErpFormat === 'symfonia' ? 'selected' : '' ?>>Symfonia Handel (.txt)</option>
+                            <option value="wfmag" <?= $defaultErpFormat === 'wfmag' ? 'selected' : '' ?>>Asseco WAPRO / Wf-Mag (.xml)</option>
                         </select>
                     </div>
 
@@ -1187,9 +1366,214 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             }
         }
 
+        // ─── Wewnętrzne zakładki sekcji importu cennika ──────────────────
+        const DEFAULT_IMPORT_METHOD = <?= json_encode($defaultImportMethod) ?>;
+        const DEFAULT_ERP_FORMAT    = <?= json_encode($defaultErpFormat) ?>;
+
+        function syncErpFormatSelection(fmt) {
+            const impSel = document.getElementById('erp-import-format');
+            if (impSel && impSel.value !== fmt) {
+                impSel.value = fmt;
+            }
+            updateFinalizeButtonSubtext();
+        }
+
+        function syncErpFormatFromImport(fmt) {
+            const setSel = document.getElementById('settings-erp-format');
+            if (setSel && setSel.value !== fmt) {
+                setSel.value = fmt;
+            }
+            updateFinalizeButtonSubtext();
+        }
+
+        function reorderImportTabs(defaultMethod) {
+            const container = document.getElementById('import-tabs-header-container');
+            const btnExcel = document.getElementById('import-tab-btn-excel');
+            const btnErp = document.getElementById('import-tab-btn-erp');
+            if (!container || !btnExcel || !btnErp) return;
+            if (defaultMethod === 'erp') {
+                container.prepend(btnErp);
+            } else {
+                container.prepend(btnExcel);
+            }
+        }
+
+        // ─── Wewnętrzne zakładki sekcji importu cennika ──────────────────
+        function switchImportTab(tab) {
+            const panels = ['excel', 'erp'];
+            panels.forEach(p => {
+                const panel = document.getElementById('import-panel-' + p);
+                const btn   = document.getElementById('import-tab-btn-' + p);
+                if (!panel || !btn) return;
+                if (p === tab) {
+                    panel.classList.remove('hidden');
+                    const activeColorClass = (p === 'erp')
+                        ? 'border-indigo-400 bg-indigo-600 text-white'
+                        : 'border-emerald-400 bg-emerald-600 text-white';
+                    btn.className = 'px-4 py-2 text-xs font-bold rounded-t-xl border border-b-0 ' + activeColorClass + ' transition';
+                    btn.setAttribute('aria-selected', 'true');
+                } else {
+                    panel.classList.add('hidden');
+                    btn.className = 'px-4 py-2 text-xs font-bold rounded-t-xl border border-b-0 border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition';
+                    btn.setAttribute('aria-selected', 'false');
+                }
+            });
+            try { localStorage.setItem('b2b_import_tab', tab); } catch(e) {}
+        }
+
+        // Przywróć lub ustaw domyślną zakładkę importu
+        (function() {
+            try {
+                const saved = localStorage.getItem('b2b_import_tab') || DEFAULT_IMPORT_METHOD || 'excel';
+                switchImportTab(saved);
+            } catch(e) {
+                switchImportTab(DEFAULT_IMPORT_METHOD || 'excel');
+            }
+        })();
+
+        // ─── Obsługa importu z ERP ────────────────────────────────────────
+        let erpParsedProducts = [];
+
+        const erpFileInput = document.getElementById('erp-file-input');
+        if (erpFileInput) {
+            erpFileInput.addEventListener('change', () => {
+                if (erpFileInput.files.length > 0) uploadErpFile(erpFileInput.files[0]);
+            });
+        }
+
+        // Drag & drop dla strefy ERP
+        const erpDropzone = document.getElementById('erp-dropzone');
+        if (erpDropzone) {
+            erpDropzone.addEventListener('dragover', e => { e.preventDefault(); erpDropzone.classList.add('border-indigo-500', 'bg-indigo-50/80'); });
+            erpDropzone.addEventListener('dragleave', ()  => { erpDropzone.classList.remove('border-indigo-500', 'bg-indigo-50/80'); });
+            erpDropzone.addEventListener('drop', e => {
+                e.preventDefault();
+                erpDropzone.classList.remove('border-indigo-500', 'bg-indigo-50/80');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) uploadErpFile(files[0]);
+            });
+        }
+
+        function uploadErpFile(file) {
+            const status = document.getElementById('erp-upload-status');
+            status.textContent = 'Trwa parsowanie pliku ERP...';
+            status.className = 'mt-3 text-center text-sm font-semibold text-indigo-600';
+            status.classList.remove('hidden');
+            document.getElementById('erp-preview-box').classList.add('hidden');
+            erpParsedProducts = [];
+
+            const format = document.getElementById('erp-import-format')?.value || '';
+            const fd = new FormData();
+            fd.append('erp_file', file);
+            fd.append('format', format);
+            fd.append('step', 'preview');
+            fd.append('_csrf', CSRF_TOKEN);
+
+            fetch(BASE_URL + 'b2b/importerp', { method: 'POST', body: fd })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.ok) throw new Error(data.error || 'Błąd parsowania');
+                    erpParsedProducts = data.products || [];
+                    status.textContent = 'Plik sparsowany pomyślnie — ' + data.total_detected + ' pozycji. Sprawdź podgląd poniżej.';
+                    status.className = 'mt-3 text-center text-sm font-semibold text-emerald-600';
+                    renderErpPreview(data.products, data.format);
+                })
+                .catch(err => {
+                    status.textContent = 'Błąd: ' + err.message;
+                    status.className = 'mt-3 text-center text-sm font-semibold text-rose-600';
+                });
+        }
+
+        const ERP_FORMAT_LABELS = {
+            subiekt: 'InsERT Subiekt GT / Nexo (.epp)',
+            optima:  'Comarch ERP Optima (.xml)',
+            symfonia: 'Symfonia Handel (.txt)',
+            wfmag:   'Asseco WAPRO Wf-Mag (.xml)'
+        };
+
+        function renderErpPreview(products, format) {
+            const tbody  = document.getElementById('erp-preview-tbody');
+            const box    = document.getElementById('erp-preview-box');
+            const count  = document.getElementById('erp-detected-count');
+            const fmtEl  = document.getElementById('erp-detected-format');
+            if (!tbody || !box) return;
+
+            count.textContent = products.length;
+            fmtEl.textContent = ERP_FORMAT_LABELS[format] || format;
+
+            let html = '';
+            products.slice(0, 200).forEach(p => {
+                const price = parseFloat(p.price || 0).toFixed(2);
+                html += `<tr class="hover:bg-slate-50 transition">
+                    <td class="py-2 px-3 font-mono text-slate-500 text-[11px]">${escapeHtml(p.erp_code || '—')}</td>
+                    <td class="py-2 px-3 font-semibold text-slate-800">${escapeHtml(p.name)}</td>
+                    <td class="py-2 px-3 text-right font-bold text-blue-700">${price} zł</td>
+                    <td class="py-2 px-3 text-center text-slate-600">${escapeHtml(p.unit || 'kg')}</td>
+                </tr>`;
+            });
+            if (products.length > 200) {
+                html += `<tr><td colspan="4" class="py-2 px-3 text-center text-xs text-slate-400 italic">… i ${products.length - 200} kolejnych pozycji (podgląd skrócony do 200)</td></tr>`;
+            }
+            tbody.innerHTML = html;
+            box.classList.remove('hidden');
+        }
+
+        function cancelErpImport() {
+            document.getElementById('erp-preview-box').classList.add('hidden');
+            document.getElementById('erp-upload-status').classList.add('hidden');
+            const fi = document.getElementById('erp-file-input');
+            if (fi) fi.value = '';
+            erpParsedProducts = [];
+        }
+
+        const btnConfirmErp = document.getElementById('btn-confirm-erp-import');
+        if (btnConfirmErp) {
+            btnConfirmErp.addEventListener('click', () => {
+                if (!erpParsedProducts.length) return;
+                const label = document.getElementById('btn-confirm-erp-label');
+                btnConfirmErp.disabled = true;
+                if (label) label.textContent = 'Wdrażanie...';
+
+                const fd = new FormData();
+                fd.append('step', 'confirm');
+                fd.append('products', JSON.stringify(erpParsedProducts));
+                fd.append('_csrf', CSRF_TOKEN);
+
+                fetch(BASE_URL + 'b2b/importerp', { method: 'POST', body: fd })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.ok) throw new Error(data.error || 'Błąd importu');
+                        alert('Sukces! Zaimportowano ' + data.total_imported + ' pozycji z pliku ERP do oferty hurtowni.');
+                        window.location.reload();
+                    })
+                    .catch(err => {
+                        alert('Błąd: ' + err.message);
+                        btnConfirmErp.disabled = false;
+                        if (label) label.textContent = 'Wdróż asortyment z ERP do oferty B2B';
+                    });
+            });
+        }
+
         // Filtrowanie asortymentu w panelu admina
+
         const searchInput = document.getElementById('product-search-admin');
         const catFilter = document.getElementById('filter-category-admin');
+
+        function updateProductRowStriping() {
+            let visibleIndex = 0;
+            const rows = document.querySelectorAll('#products-tbody tr.prod-row');
+            rows.forEach(r => {
+                if (r.style.display !== 'none') {
+                    r.classList.remove('prod-row-even', 'prod-row-odd');
+                    if (visibleIndex % 2 === 1) {
+                        r.classList.add('prod-row-even');
+                    } else {
+                        r.classList.add('prod-row-odd');
+                    }
+                    visibleIndex++;
+                }
+            });
+        }
 
         function filterProducts() {
             const q = searchInput.value.toLowerCase().trim();
@@ -1203,11 +1587,13 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 const matchCat = (cat === 'all') || (rCat === cat);
                 r.style.display = (matchQ && matchCat) ? '' : 'none';
             });
+            updateProductRowStriping();
         }
 
         if (searchInput && catFilter) {
             searchInput.addEventListener('input', filterProducts);
             catFilter.addEventListener('change', filterProducts);
+            updateProductRowStriping();
         }
 
         // Upload cennika Excel
@@ -2856,10 +3242,15 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             const finAction = finActionInput ? finActionInput.value : 'print';
             const finErp = finErpSelect ? finErpSelect.value : 'default';
 
+            const importMethodInput = document.querySelector('input[name="default_import_method"]:checked');
+            const importMethod = importMethodInput ? importMethodInput.value : 'excel';
+            const erpFormatVal = erpSelect ? erpSelect.value : 'subiekt';
+
             const fd = new FormData();
             fd.append('cutoff_time', cutoffInput ? cutoffInput.value : '21:30');
             fd.append('delivery_days', selectedDays);
-            fd.append('default_erp_format', erpSelect ? erpSelect.value : 'subiekt');
+            fd.append('default_erp_format', erpFormatVal);
+            fd.append('default_import_method', importMethod);
             fd.append('finalize_action', finAction);
             fd.append('finalize_erp_format', finErp);
             fd.append('_csrf', CSRF_TOKEN);
@@ -2875,8 +3266,11 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 FINALIZE_ACTION = finAction;
                 FINALIZE_ERP_FORMAT = finErp;
                 updateFinalizeButtonSubtext();
-                savePreferredErp(erpSelect ? erpSelect.value : 'subiekt');
-                showToast('Ustawienia hurtowni i ERP zostały pomyślnie zaktualizowane!');
+                savePreferredErp(erpFormatVal);
+                syncErpFormatSelection(erpFormatVal);
+                reorderImportTabs(importMethod);
+                switchImportTab(importMethod);
+                showToast('Ustawienia hurtowni i formatu ERP zostały pomyślnie zaktualizowane!');
                 if (statusMsg) {
                     statusMsg.textContent = 'Zapisano pomyślnie!';
                     statusMsg.classList.remove('hidden');

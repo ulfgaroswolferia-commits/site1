@@ -26,6 +26,24 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
         input[type=number] {
             -moz-appearance: textfield;
         }
+
+        /* Naprzemienne tło wierszy asortymentu (zebra) oraz ciemniejszy szary na hover */
+        #catalogTable tbody tr.product-row:nth-child(odd),
+        #catalogTable tbody tr.product-row.prod-row-odd {
+            background-color: #ffffff;
+        }
+        #catalogTable tbody tr.product-row:nth-child(even),
+        #catalogTable tbody tr.product-row.prod-row-even {
+            background-color: #f8fafc;
+        }
+        #catalogTable tbody tr.product-row {
+            transition: background-color 0.15s ease-in-out;
+        }
+        #catalogTable tbody tr.product-row:hover,
+        #catalogTable tbody tr.product-row.prod-row-odd:hover,
+        #catalogTable tbody tr.product-row.prod-row-even:hover {
+            background-color: #e2e8f0 !important;
+        }
     </style>
 </head>
 <body class="min-h-full flex flex-col bg-slate-100 text-slate-800 pb-28">
@@ -179,7 +197,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                                 $unit = htmlspecialchars($p['unit'] ?? 'kg');
                                 $price = (float)($p['price'] ?? 0);
                             ?>
-                                <tr class="product-row hover:bg-emerald-50/40 transition group"
+                                <tr class="product-row transition-colors group"
                                     data-id="<?= (int)$p['id'] ?>"
                                     data-name="<?= htmlspecialchars($p['name']) ?>"
                                     data-category="<?= htmlspecialchars($p['category'] ?? 'Warzywa') ?>"
@@ -651,10 +669,11 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 btnOpenReview.disabled = (orderedCount === 0);
             }
 
-            // Filtrowanie widoczności wierszy
+            // Filtrowanie widoczności wierszy z zachowaniem naprzemiennego tła
             function filterRows() {
                 const searchVal = searchInput.value.toLowerCase().trim();
                 const onlyOrdered = filterOrderedOnly.checked;
+                let visibleIdx = 0;
 
                 rows.forEach(row => {
                     const name = row.dataset.name.toLowerCase();
@@ -667,7 +686,13 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     const matchesOrdered = !onlyOrdered || (qty > 0);
 
                     if (matchesSearch && matchesCategory && matchesOrdered) {
-                        row.classList.remove('hidden');
+                        row.classList.remove('hidden', 'prod-row-even', 'prod-row-odd');
+                        if (visibleIdx % 2 === 1) {
+                            row.classList.add('prod-row-even');
+                        } else {
+                            row.classList.add('prod-row-odd');
+                        }
+                        visibleIdx++;
                     } else {
                         row.classList.add('hidden');
                     }

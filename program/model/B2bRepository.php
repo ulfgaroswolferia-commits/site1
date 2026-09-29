@@ -153,11 +153,12 @@ class B2bRepository
 
         // Domyślne konfiguracje hurtowni (cut-off, dni dostaw, format ERP, akcja finalizacji)
         $defaultSettings = [
-            'cutoff_time'         => '21:30',
-            'delivery_days'       => 'mon,tue,wed,thu,fri,sat',
-            'default_erp_format'  => 'subiekt',
-            'finalize_action'     => 'print',
-            'finalize_erp_format' => 'default'
+            'cutoff_time'           => '21:30',
+            'delivery_days'         => 'mon,tue,wed,thu,fri,sat',
+            'default_erp_format'    => 'subiekt',
+            'default_import_method' => 'excel',
+            'finalize_action'       => 'print',
+            'finalize_erp_format'   => 'default'
         ];
         foreach ($defaultSettings as $sk => $sv) {
             try {

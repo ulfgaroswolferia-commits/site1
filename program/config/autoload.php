@@ -49,6 +49,14 @@ spl_autoload_register(function ($class) {
         return;
     }
 
+    // 4. Biblioteki pomocnicze → program/lib/
+    $file = $programDir . '/lib/' . $class . '.php';
+    $checked[] = $file;
+    if (is_file($file)) {
+        require_once $file;
+        return;
+    }
+
     // Nieznaleziona klasa TYLKO do logu — bez wyjątku.
     //
     // Autoloader, który rzuca, psuje class_exists(): funkcja ma zwrócić false, a zamiast
