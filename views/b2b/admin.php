@@ -51,7 +51,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             #modal-order > div { box-shadow: none !important; border: 1px solid #cbd5e1 !important; max-width: 100% !important; max-height: none !important; }
         }
 
-        /* Naprzemienne tło wierszy asortymentu (zebra) oraz ciemniejszy szary na hover */
+        /* Naprzemienne tło wierszy asortymentu */
         #products-tbody tr.prod-row:nth-child(odd),
         #products-tbody tr.prod-row.prod-row-odd {
             background-color: #ffffff;
@@ -66,6 +66,22 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
         #products-tbody tr.prod-row:hover,
         #products-tbody tr.prod-row.prod-row-odd:hover,
         #products-tbody tr.prod-row.prod-row-even:hover {
+            background-color: #e2e8f0 !important;
+        }
+
+        /* Naprzemienne tło wierszy zamówień — czysty kontrast zebra dla widocznych zamówień (bez nth-child) */
+        #orders-tbody tr.order-data-row {
+            transition: background-color 0.15s ease-in-out;
+        }
+        #orders-tbody tr.order-data-row.order-row-odd {
+            background-color: #ffffff !important;
+        }
+        #orders-tbody tr.order-data-row.order-row-even {
+            background-color: #f1f5f9 !important;
+        }
+        #orders-tbody tr.order-data-row:hover,
+        #orders-tbody tr.order-data-row.order-row-odd:hover,
+        #orders-tbody tr.order-data-row.order-row-even:hover {
             background-color: #e2e8f0 !important;
         }
     </style>
@@ -616,8 +632,9 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                         </thead>
                         <tbody class="divide-y divide-slate-100" id="orders-tbody">
                             <?php if (!empty($orders)): ?>
-                                <?php foreach ($orders as $o): ?>
-                                    <tr class="hover:bg-slate-50/80 transition order-data-row" id="order-row-<?= $o['id'] ?>" data-order-status="<?= Tools::h($o['status']) ?>">
+                                <?php foreach ($orders as $idx => $o): ?>
+                                    <?php $orderRowClass = ($idx % 2 === 1) ? 'order-row-even' : 'order-row-odd'; ?>
+                                    <tr class="order-data-row <?= $orderRowClass ?>" id="order-row-<?= $o['id'] ?>" data-order-status="<?= Tools::h($o['status']) ?>">
                                         <td class="py-3.5 px-4">
                                             <div class="flex flex-col items-start gap-1">
                                                 <button type="button" onclick="showOrderModal(<?= $o['id'] ?>)" class="font-extrabold text-blue-700 hover:text-blue-900 hover:underline text-left cursor-pointer transition text-sm order-details-btn-<?= $o['id'] ?>" title="Kliknij, aby otworzyć szczegóły zamówienia">
@@ -644,18 +661,29 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                         <td class="py-3.5 px-4 text-center font-bold text-slate-700"><?= (int)$o['total_items'] ?></td>
                                         <td class="py-3.5 px-4 text-right font-extrabold text-slate-900"><?= number_format((float)$o['total_amount'], 2, '.', ' ') ?> zł</td>
                                         <td class="py-3.5 px-4 text-center">
-                                            <select id="order-status-select-<?= $o['id'] ?>" onchange="updateOrderStatus(<?= $o['id'] ?>, this.value)" class="text-xs font-bold rounded-lg px-2 py-1 border border-slate-200 focus:outline-none">
+                                            <select id="order-status-select-<?= $o['id'] ?>" onchange="handleOrderStatusChange(<?= $o['id'] ?>, this)" data-previous-status="<?= Tools::h($o['status']) ?>" class="text-xs font-bold rounded-lg px-2 py-1 border border-slate-200 focus:outline-none">
                                                 <option value="new" <?= $o['status'] === 'new' ? 'selected' : '' ?>>Nowe</option>
                                                 <option value="processing" <?= $o['status'] === 'processing' ? 'selected' : '' ?>>W kompletacji</option>
                                                 <option value="completed" <?= $o['status'] === 'completed' ? 'selected' : '' ?>>Zrealizowane</option>
                                                 <option value="cancelled" <?= $o['status'] === 'cancelled' ? 'selected' : '' ?>>Anulowane</option>
                                             </select>
                                         </td>
-                                        <td class="py-3.5 px-4 text-center whitespace-nowrap">
-                                            <button type="button" onclick="showOrderModal(<?= $o['id'] ?>)" class="btn-finalize-order inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-2xs hover:shadow transition" title="Otwórz podsumowanie i specyfikację kompletacji zamówienia">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                <span>Finalizuj zamówienie</span>
-                                            </button>
+                                        <td class="py-3.5 px-4 text-center whitespace-nowrap" id="order-action-cell-<?= $o['id'] ?>">
+                                            <?php if ($o['status'] === 'completed'): ?>
+                                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-bold text-xs rounded-xl shadow-2xs" title="Zamówienie zrealizowane">
+                                                    <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                                                    <span>Zamówienie zrealizowane</span>
+                                                </span>
+                                            <?php elseif ($o['status'] === 'cancelled'): ?>
+                                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-500 border border-slate-200 font-bold text-xs rounded-xl shadow-2xs" title="Zamówienie anulowane">
+                                                    <span>Zamówienie anulowane</span>
+                                                </span>
+                                            <?php else: ?>
+                                                <button type="button" onclick="showOrderModal(<?= $o['id'] ?>)" class="btn-finalize-order inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-2xs hover:shadow transition cursor-pointer" title="Otwórz podsumowanie i specyfikację kompletacji zamówienia">
+                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                    <span>Finalizuj zamówienie</span>
+                                                </button>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -1112,16 +1140,27 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             </div>
 
             <!-- Wyróżniona strefa finalizacji zamówienia na samym dole okna modalnego -->
-            <div class="px-6 py-4 bg-gradient-to-b from-emerald-50/90 to-emerald-100/50 border-t border-emerald-200 flex flex-col items-center justify-center text-center gap-1.5">
-                <button type="button" id="btn-modal-finalize-order" onclick="finalizeOrder()" class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black text-sm rounded-xl shadow-md shadow-emerald-700/25 hover:shadow-lg hover:shadow-emerald-700/35 transform hover:-translate-y-0.5 active:translate-y-0 transition flex items-center justify-center gap-2.5 cursor-pointer">
-                    <svg class="w-5 h-5 text-emerald-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>Finalizuj zamówienie</span>
-                </button>
-                <p class="text-xs font-bold text-emerald-900/80" id="btn-modal-finalize-subtext">
-                    Drukuje specyfikację i zmienia status na Zrealizowane
-                </p>
+            <div id="modal-finalize-zone" class="px-6 py-4 bg-gradient-to-b from-emerald-50/90 to-emerald-100/50 border-t border-emerald-200 flex flex-col items-center justify-center text-center gap-1.5">
+                <div id="modal-finalize-active-wrap" class="flex flex-col items-center justify-center text-center gap-1.5 w-full">
+                    <button type="button" id="btn-modal-finalize-order" onclick="finalizeOrder()" class="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-700 hover:to-teal-800 text-white font-black text-sm rounded-xl shadow-md shadow-emerald-700/25 hover:shadow-lg hover:shadow-emerald-700/35 transform hover:-translate-y-0.5 active:translate-y-0 transition flex items-center justify-center gap-2.5 cursor-pointer">
+                        <svg class="w-5 h-5 text-emerald-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Finalizuj zamówienie</span>
+                    </button>
+                    <p class="text-xs font-bold text-emerald-900/80" id="btn-modal-finalize-subtext">
+                        Drukuje specyfikację i zmienia status na Zrealizowane
+                    </p>
+                </div>
+                <div id="modal-finalize-completed-wrap" class="hidden flex flex-col items-center justify-center text-center gap-1.5 w-full">
+                    <div class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-100/90 text-emerald-900 border border-emerald-300 font-extrabold text-sm rounded-xl shadow-2xs">
+                        <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                        <span>Zamówienie zrealizowane</span>
+                    </div>
+                    <p class="text-xs font-semibold text-emerald-800">
+                        To zamówienie jest już oznaczone jako zrealizowane. Aby przywrócić inny status, zmień pole Status w nagłówku okna.
+                    </p>
+                </div>
             </div>
         </div>
     </div>
@@ -1363,6 +1402,9 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                         history.replaceState(null, '', '#' + tab);
                     }
                 } catch(e) {}
+            }
+            if (tab === 'orders') {
+                updateOrderRowStriping();
             }
         }
 
@@ -2845,6 +2887,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     row.classList.add('hidden');
                 }
             });
+            updateOrderRowStriping();
 
             const emptyEl = document.getElementById('orders-filter-empty-row');
             if (emptyEl) {
@@ -2865,6 +2908,27 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             }
         }
 
+        function updateOrderRowStriping() {
+            let visibleIndex = 0;
+            const rows = document.querySelectorAll('#orders-tbody tr.order-data-row');
+            rows.forEach(r => {
+                const isHidden = r.classList.contains('hidden') || r.style.display === 'none';
+                r.classList.remove('order-row-even', 'order-row-odd');
+                if (!isHidden) {
+                    if (visibleIndex % 2 === 1) {
+                        r.classList.add('order-row-even');
+                        r.style.backgroundColor = '#f1f5f9';
+                    } else {
+                        r.classList.add('order-row-odd');
+                        r.style.backgroundColor = '#ffffff';
+                    }
+                    visibleIndex++;
+                } else {
+                    r.style.backgroundColor = '';
+                }
+            });
+        }
+
         function refreshOrdersFilterCounts() {
             const rows = document.querySelectorAll('.order-data-row');
             const counts = { new: 0, processing: 0, completed: 0, cancelled: 0, all: rows.length };
@@ -2882,6 +2946,97 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             if (cComp) cComp.textContent = counts.completed;
             if (cCanc) cCanc.textContent = counts.cancelled;
             if (cAll) cAll.textContent = counts.all;
+            updateOrderRowStriping();
+        }
+
+        const STATUS_LABELS = {
+            'new': 'Nowe',
+            'processing': 'W kompletacji',
+            'completed': 'Zrealizowane',
+            'cancelled': 'Anulowane'
+        };
+
+        function updateOrderActionCell(id, status) {
+            const cell = document.getElementById('order-action-cell-' + id);
+            if (!cell) return;
+            if (status === 'completed') {
+                cell.innerHTML = `
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-bold text-xs rounded-xl shadow-2xs" title="Zamówienie zrealizowane">
+                        <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                        <span>Zamówienie zrealizowane</span>
+                    </span>
+                `;
+            } else if (status === 'cancelled') {
+                cell.innerHTML = `
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-500 border border-slate-200 font-bold text-xs rounded-xl shadow-2xs" title="Zamówienie anulowane">
+                        <span>Zamówienie anulowane</span>
+                    </span>
+                `;
+            } else {
+                cell.innerHTML = `
+                    <button type="button" onclick="showOrderModal(${id})" class="btn-finalize-order inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-2xs hover:shadow transition cursor-pointer" title="Otwórz podsumowanie i specyfikację kompletacji zamówienia">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <span>Finalizuj zamówienie</span>
+                    </button>
+                `;
+            }
+        }
+
+        function updateModalFinalizeZone(status) {
+            const activeWrap = document.getElementById('modal-finalize-active-wrap');
+            const compWrap = document.getElementById('modal-finalize-completed-wrap');
+            if (!activeWrap || !compWrap) return;
+
+            if (status === 'completed') {
+                activeWrap.classList.add('hidden');
+                compWrap.classList.remove('hidden');
+            } else {
+                compWrap.classList.add('hidden');
+                activeWrap.classList.remove('hidden');
+                updateFinalizeButtonSubtext();
+            }
+        }
+
+        function handleOrderStatusChange(id, selectEl) {
+            const newStatus = selectEl.value;
+            const prevStatus = selectEl.getAttribute('data-previous-status') || selectEl.closest('tr')?.getAttribute('data-order-status') || 'new';
+
+            if (newStatus === prevStatus) return;
+
+            let confirmMsg = '';
+            if (prevStatus === 'completed') {
+                confirmMsg = `Czy na pewno chcesz przywrócić to zamówienie ze statusu „Zrealizowane” do statusu „${STATUS_LABELS[newStatus] || newStatus}”?`;
+            } else {
+                confirmMsg = `Czy na pewno chcesz zmienić status zamówienia na „${STATUS_LABELS[newStatus] || newStatus}”?`;
+            }
+
+            if (!confirm(confirmMsg)) {
+                selectEl.value = prevStatus;
+                return;
+            }
+
+            updateOrderStatus(id, newStatus);
+        }
+
+        function changeModalOrderStatus(status) {
+            if (!currentModalOrderId) return;
+            const prevStatus = (currentOrderDetails && currentOrderDetails.order && currentOrderDetails.order.status) || 'new';
+            if (status === prevStatus) return;
+
+            let confirmMsg = '';
+            if (prevStatus === 'completed') {
+                confirmMsg = `Czy na pewno chcesz przywrócić to zamówienie ze statusu „Zrealizowane” do statusu „${STATUS_LABELS[status] || status}”?`;
+            } else {
+                confirmMsg = `Czy na pewno chcesz zmienić status zamówienia na „${STATUS_LABELS[status] || status}”?`;
+            }
+
+            if (!confirm(confirmMsg)) {
+                const modalStatus = document.getElementById('modal-order-status');
+                if (modalStatus) modalStatus.value = prevStatus;
+                return;
+            }
+
+            updateOrderStatus(currentModalOrderId, status);
         }
 
         function updateOrderStatus(id, status) {
@@ -2900,7 +3055,10 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                             row.setAttribute('data-order-status', status);
                         }
                         const rowSelect = document.getElementById('order-status-select-' + id);
-                        if (rowSelect) rowSelect.value = status;
+                        if (rowSelect) {
+                            rowSelect.value = status;
+                            rowSelect.setAttribute('data-previous-status', status);
+                        }
                         const modalStatus = document.getElementById('modal-order-status');
                         if (modalStatus && currentModalOrderId === id) {
                             modalStatus.value = status;
@@ -2908,16 +3066,15 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                         if (currentOrderDetails && currentOrderDetails.order && currentOrderDetails.order.id == id) {
                             currentOrderDetails.order.status = status;
                         }
+                        updateOrderActionCell(id, status);
+                        if (currentModalOrderId === id) {
+                            updateModalFinalizeZone(status);
+                        }
                         refreshOrdersFilterCounts();
                         refreshNewOrdersBadge();
                         filterOrdersByStatus(currentOrderStatusFilter);
                     }
                 });
-        }
-
-        function changeModalOrderStatus(status) {
-            if (!currentModalOrderId) return;
-            updateOrderStatus(currentModalOrderId, status);
         }
 
         function refreshNewOrdersBadge() {
@@ -2999,6 +3156,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                         tbody.appendChild(row);
                     });
                     updateFinalizeButtonSubtext();
+                    updateModalFinalizeZone(d.order.status || 'new');
                     document.getElementById('modal-order').classList.remove('hidden');
                 });
         }

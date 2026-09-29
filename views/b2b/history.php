@@ -14,6 +14,20 @@ $title  = $view['title'] ?? 'Historia Zamówień — Hurtownia Magdy';
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
+        
+        /* Naprzemienne tło wierszy zamówień (zebra) oraz ciemniejszy szary na hover */
+        table tbody tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+        table tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        table tbody tr {
+            transition: background-color 0.15s ease-in-out;
+        }
+        table tbody tr:hover {
+            background-color: #e2e8f0 !important;
+        }
     </style>
 </head>
 <body class="min-h-full flex flex-col bg-slate-100 text-slate-800">
