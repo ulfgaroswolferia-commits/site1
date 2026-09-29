@@ -720,7 +720,9 @@ class B2bRepository
 
         // Jeśli zaktualizowano opakowanie lub jednostkę, zapisz w regułach
         if ($ok) {
-            $prod = $this->pdo->query("SELECT name, unit, package_size, package_unit FROM b2b_products WHERE id = " . (int)$id)->fetch();
+            $stmtProd = $this->pdo->prepare("SELECT name, unit, package_size, package_unit FROM b2b_products WHERE id = :id");
+            $stmtProd->execute([':id' => (int)$id]);
+            $prod = $stmtProd->fetch();
             if ($prod) {
                 $pkgUnit = $data['package_unit'] ?? $prod['package_unit'];
                 $unit    = $data['unit'] ?? $prod['unit'];
