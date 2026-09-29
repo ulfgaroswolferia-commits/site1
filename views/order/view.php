@@ -252,6 +252,23 @@ $appName   = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
             font-size: 1.05rem;
             border-top: 2px solid var(--border);
         }
+
+        .badge-custom {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+        }
+
+        .tr-custom {
+            background: rgba(254, 243, 199, 0.28);
+        }
     </style>
 </head>
 <body>
@@ -339,14 +356,32 @@ $appName   = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
                         </thead>
                         <tbody>
                             <?php $lp = 1; foreach ($items as $it): ?>
-                                <tr>
+                                <?php $isCustom = !empty($it['is_custom']); ?>
+                                <tr class="<?= $isCustom ? 'tr-custom' : '' ?>">
                                     <td style="color: var(--muted);"><?= $lp++ ?></td>
-                                    <td style="font-weight: 700;"><?= Tools::h($it['product_name']) ?></td>
-                                    <td><?= number_format((float)$it['unit_price'], 2, '.', ' ') ?> zł</td>
-                                    <td><strong style="color: var(--blue); font-size: 1rem;"><?= (float)$it['quantity'] ?></strong></td>
+                                    <td style="font-weight: 700;">
+                                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                            <span><?= Tools::h($it['product_name']) ?></span>
+                                            <?php if ($isCustom): ?>
+                                                <span class="badge-custom">Spoza cennika</span>
+                                            <?php endif; ?>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <?php if ($isCustom): ?>
+                                            <span style="color: var(--muted); font-style: italic; font-size: 0.88rem;">Do wyceny</span>
+                                        <?php else: ?>
+                                            <?= number_format((float)$it['unit_price'], 2, '.', ' ') ?> zł
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><strong style="color: <?= $isCustom ? '#b45309' : 'var(--blue)' ?>; font-size: 1rem;"><?= (float)$it['quantity'] ?></strong></td>
                                     <td><?= Tools::h($it['unit']) ?></td>
-                                    <td style="text-align: right; font-weight: 700; color: #1e3a8a;">
-                                        <?= number_format((float)$it['item_total'], 2, '.', ' ') ?> zł
+                                    <td style="text-align: right; font-weight: 700; color: <?= $isCustom ? '#b45309' : '#1e3a8a' ?>;">
+                                        <?php if ($isCustom): ?>
+                                            <span style="font-size: 0.88rem; font-style: italic; color: #b45309;">Do wyceny</span>
+                                        <?php else: ?>
+                                            <?= number_format((float)$it['item_total'], 2, '.', ' ') ?> zł
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

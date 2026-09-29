@@ -42,12 +42,13 @@ echo "=== TEST: Order Save With Email Option ===\n";
 
 // 1. Zaloguj się
 $resLoginGet = httpReq('http://localhost/home/login');
-preg_match('/name="_csrf" value="([^"]+)"/', $resLoginGet['body'], $m);
+preg_match('/name="(?:csrf_token|_csrf)" value="([^"]+)"/', $resLoginGet['body'], $m);
 $loginCsrf = $m[1] ?? '';
 
 httpReq('http://localhost/home/login', [
     'login' => APP_LOGIN,
     'password' => APP_PASSWORD,
+    'csrf_token' => $loginCsrf,
     '_csrf' => $loginCsrf
 ], [], true);
 
@@ -76,6 +77,7 @@ $resSave = httpReq('http://localhost/order/save', [
     'items' => json_encode($items),
     'send_email' => 1,
     'recipient_email' => 'hurtownia@example.com',
+    'csrf_token' => $orderCsrf,
     '_csrf' => $orderCsrf
 ], ['X-Requested-With: XMLHttpRequest', 'Accept: application/json']);
 
@@ -94,6 +96,7 @@ $resSaveStandard = httpReq('http://localhost/order/save', [
     'supplier_name' => 'Hurtownia Standard',
     'original_filename' => 'cennik_std.xlsx',
     'items' => json_encode($items),
+    'csrf_token' => $orderCsrf,
     '_csrf' => $orderCsrf
 ], ['X-Requested-With: XMLHttpRequest', 'Accept: application/json']);
 $dataStd = json_decode($resSaveStandard['body'], true);

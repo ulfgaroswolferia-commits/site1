@@ -106,25 +106,49 @@ class Mailer
         $totalAmount  = number_format((float)($orderData['total_amount'] ?? 0), 2, '.', ' ');
         $totalCount   = count($items);
 
+        $hasCustomItems = false;
         $rowsHtml = '';
         foreach ($items as $idx => $item) {
             $num       = $idx + 1;
-            $name      = htmlspecialchars($item['name'] ?? '');
+            $isCustom  = !empty($item['is_custom']);
+            if ($isCustom) {
+                $hasCustomItems = true;
+            }
+            $rawName   = $item['name'] ?? $item['product_name'] ?? '';
+            $name      = htmlspecialchars($rawName);
             $qty       = (float)($item['quantity'] ?? 0);
             $unit      = htmlspecialchars($item['unit'] ?? 'kg');
-            $price     = number_format((float)($item['price'] ?? 0), 2, '.', ' ');
-            $itemTotal = number_format((float)($item['item_total'] ?? ($qty * (float)($item['price'] ?? 0))), 2, '.', ' ');
-            $bg        = ($num % 2 === 0) ? '#f8fafc' : '#ffffff';
+
+            if ($isCustom) {
+                $nameHtml = "{$name} <span style=\"display: inline-block; font-size: 10px; font-weight: 700; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; border-radius: 4px; padding: 1px 6px; margin-left: 6px;\">Spoza cennika</span>";
+                $priceDisplay = "<span style=\"color: #64748b; font-style: italic; font-size: 12px;\">Do wyceny</span>";
+                $totalDisplay = "<span style=\"color: #b45309; font-style: italic; font-size: 12px;\">Do wyceny</span>";
+                $qtyColor = '#b45309';
+                $bg = '#fffdf5';
+            } else {
+                $nameHtml = $name;
+                $price     = number_format((float)($item['price'] ?? $item['unit_price'] ?? 0), 2, '.', ' ');
+                $itemTotal = number_format((float)($item['item_total'] ?? ($qty * (float)($item['price'] ?? $item['unit_price'] ?? 0))), 2, '.', ' ');
+                $priceDisplay = "{$price} zł";
+                $totalDisplay = "{$itemTotal} zł";
+                $qtyColor = '#2563eb';
+                $bg = ($num % 2 === 0) ? '#f8fafc' : '#ffffff';
+            }
 
             $rowsHtml .= "
                 <tr style=\"background: {$bg};\">
                     <td style=\"padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: #64748b;\">{$num}</td>
-                    <td style=\"padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #1e293b;\">{$name}</td>
-                    <td style=\"padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #334155;\">{$price} zł</td>
-                    <td style=\"padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: center; font-weight: 700; color: #2563eb;\">{$qty} {$unit}</td>
-                    <td style=\"padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 700; color: #1e3a8a;\">{$itemTotal} zł</td>
+                    <td style=\"padding: 10px 12px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #1e293b;\">{$nameHtml}</td>
+                    <td style=\"padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #334155;\">{$priceDisplay}</td>
+                    <td style=\"padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: center; font-weight: 700; color: {$qtyColor};\">{$qty} {$unit}</td>
+                    <td style=\"padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 700; color: #1e3a8a;\">{$totalDisplay}</td>
                 </tr>";
         }
+
+        $customNotice = $hasCustomItems ? "
+            <div style=\"margin-top: 14px; padding: 12px 16px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; font-size: 13px; color: #92400e;\">
+                <strong>Uwaga:</strong> Zamówienie zawiera pozycje spoza cennika. Dostępność oraz wycena tych towarów zostaną potwierdzone przy realizacji.
+            </div>" : "";
 
         $supplierRow = $supplierName !== '' ? "<tr><td style=\"padding: 4px 0; color: #64748b; width: 140px;\">Dostawca / cennik:</td><td style=\"padding: 4px 0; font-weight: 600; color: #1e293b;\">{$supplierName}</td></tr>" : "";
 
@@ -165,7 +189,8 @@ class Mailer
         <!-- Specyfikacja produktów -->
         <div style=\"padding: 28px;\">
             <h2 style=\"margin: 0 0 16px; font-size: 16px; font-weight: 700; color: #0f172a;\">Specyfikacja zamawianych pozycji:</h2>
-            <table style=\"width: 100%; border-collapse: collapse; font-size: 13px;\">
+            {$customNotice}
+            <table style=\"width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px;\">
                 <thead>
                     <tr style=\"background: #e2e8f0; color: #475569;\">
                         <th style=\"padding: 10px 12px; text-align: center; border-radius: 8px 0 0 0; width: 40px;\">Lp.</th>

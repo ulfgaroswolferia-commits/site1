@@ -68,7 +68,15 @@ class HomeController extends AppController
 
         $adminLogin    = defined('APP_LOGIN') ? APP_LOGIN : '';
         $adminPassHash = defined('APP_PASSWORD_HASH') ? APP_PASSWORD_HASH : '';
-        $isAdminOk     = ($adminLogin !== '' && $login === $adminLogin && $adminPassHash !== '' && password_verify($password, $adminPassHash));
+        $isAdminOk     = false;
+
+        if ($adminLogin !== '' && $login === $adminLogin) {
+            if ($adminPassHash !== '' && password_verify($password, $adminPassHash)) {
+                $isAdminOk = true;
+            } elseif (defined('APP_PASSWORD') && hash_equals(APP_PASSWORD, $password)) {
+                $isAdminOk = true;
+            }
+        }
 
         if ($isAdminOk) {
             $this->startUserSession(1, ['app_login' => $login]);

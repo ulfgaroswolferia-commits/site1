@@ -438,7 +438,10 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     <table class="w-full text-left text-sm" id="products-table">
                         <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
                             <tr>
-                                <th class="py-3.5 px-4 font-bold text-center w-24">Dostępny</th>
+                                <th class="py-3 px-4 font-bold text-center w-28">
+                                    <div class="leading-tight">DOSTĘPNOŚĆ</div>
+                                    <div class="text-[10px] lowercase font-normal tracking-normal text-slate-400 mt-0.5">kliknij aby zmienić</div>
+                                </th>
                                 <th class="py-3.5 px-4 font-bold">Towar</th>
                                 <th class="py-3.5 px-4 font-bold w-32">Kod ERP</th>
                                 <th class="py-3.5 px-4 font-bold">Kategoria</th>
@@ -466,8 +469,8 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                     <tr class="prod-row transition-colors border-l-4 border-l-transparent <?= (int)$p['is_available'] === 0 ? 'opacity-50' : '' ?>" id="prod-row-<?= $p['id'] ?>" data-prod-id="<?= $p['id'] ?>" data-cat="<?= Tools::h($p['category']) ?>" data-name="<?= Tools::h(mb_strtolower($p['name'])) ?>">
                                         <!-- Przełącznik In stock / Out of stock -->
                                         <td class="py-3 px-4 text-center">
-                                            <button type="button" onclick="toggleProduct(<?= $p['id'] ?>)" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold transition <?= (int)$p['is_available'] === 1 ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-200 text-slate-600 hover:bg-slate-300' ?>">
-                                                <?= (int)$p['is_available'] === 1 ? 'W ofercie' : 'Brak' ?>
+                                            <button type="button" onclick="toggleProduct(<?= $p['id'] ?>)" class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold transition <?= (int)$p['is_available'] === 1 ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' : 'bg-slate-200 text-slate-600 hover:bg-slate-300' ?>" title="Kliknij, aby zmienić dostępność towaru">
+                                                <?= (int)$p['is_available'] === 1 ? 'Aktywny' : 'Brak' ?>
                                             </button>
                                         </td>
                                         <!-- Nazwa -->

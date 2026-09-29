@@ -60,6 +60,7 @@ class OrderModel extends \Model
             CREATE TABLE IF NOT EXISTS order_items (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 order_id INTEGER NOT NULL,
+                is_custom INTEGER NOT NULL DEFAULT 0,
                 product_name TEXT NOT NULL,
                 unit_price REAL NOT NULL,
                 quantity REAL NOT NULL,
@@ -68,6 +69,11 @@ class OrderModel extends \Model
                 FOREIGN KEY (order_id) REFERENCES orders (id) ON DELETE CASCADE
             );
         ');
+
+        // Migracja w locie dla istniejących baz danych
+        try {
+            $pdo->exec("ALTER TABLE order_items ADD COLUMN is_custom INTEGER NOT NULL DEFAULT 0");
+        } catch (\Throwable $e) {}
 
         return $pdo;
     }
@@ -109,7 +115,8 @@ class OrderModel extends \Model
                 $qty = (float)($item['quantity'] ?? 0);
                 if ($qty > 0) {
                     $totalItems++;
-                    $price = (float)($item['price'] ?? $item['unit_price'] ?? 0);
+                    $isCustom = !empty($item['is_custom']);
+                    $price = $isCustom ? 0.00 : (float)($item['price'] ?? $item['unit_price'] ?? 0);
                     $totalAmount += round($qty * $price, 2);
                 }
             }
@@ -132,8 +139,8 @@ class OrderModel extends \Model
             $orderId = (int)$pdo->lastInsertId();
 
             $stmtItem = $pdo->prepare('
-                INSERT INTO order_items (order_id, product_name, unit_price, quantity, unit, item_total)
-                VALUES (:order_id, :prod_name, :price, :qty, :unit, :item_total)
+                INSERT INTO order_items (order_id, is_custom, product_name, unit_price, quantity, unit, item_total)
+                VALUES (:order_id, :is_custom, :prod_name, :price, :qty, :unit, :item_total)
             ');
 
             foreach ($items as $item) {
@@ -142,13 +149,15 @@ class OrderModel extends \Model
                     continue; // Zapisujemy tylko zamówione pozycje
                 }
 
+                $isCustom = !empty($item['is_custom']) ? 1 : 0;
                 $name  = trim((string)($item['name'] ?? $item['product_name'] ?? ''));
-                $price = (float)($item['price'] ?? $item['unit_price'] ?? 0);
+                $price = $isCustom ? 0.00 : (float)($item['price'] ?? $item['unit_price'] ?? 0);
                 $unit  = trim((string)($item['unit'] ?? 'kg'));
                 $itemTotal = round($qty * $price, 2);
 
                 $stmtItem->execute([
                     ':order_id'   => $orderId,
+                    ':is_custom'  => $isCustom,
                     ':prod_name'  => $name,
                     ':price'      => $price,
                     ':qty'        => $qty,

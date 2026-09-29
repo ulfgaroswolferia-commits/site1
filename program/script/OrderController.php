@@ -56,14 +56,22 @@ class OrderController extends AppController
 
         $items = $model->getOrderItems($orderId);
         $products = [];
+        $customProducts = [];
         foreach ($items as $item) {
-            $products[] = [
+            $isCustom = !empty($item['is_custom']);
+            $entry = [
                 'name'          => $item['product_name'],
                 'price'         => (float)$item['unit_price'],
                 'unit'          => $item['unit'],
+                'is_custom'     => $isCustom ? 1 : 0,
                 'quantity'      => 0,
                 'prev_quantity' => (float)$item['quantity'],
             ];
+            if ($isCustom) {
+                $customProducts[] = $entry;
+            } else {
+                $products[] = $entry;
+            }
         }
 
         App::json([
@@ -74,6 +82,7 @@ class OrderController extends AppController
             'original_filename' => $order['original_filename'] ?? 'cennik.xlsx',
             'created_at'        => $order['created_at'],
             'products'          => $products,
+            'custom_products'   => $customProducts,
             'total_products'    => count($products),
         ]);
     }
@@ -233,19 +242,22 @@ class OrderController extends AppController
         foreach ($items as $item) {
             $qty = (float)($item['quantity'] ?? 0);
             if ($qty > 0) {
-                $price = (float)($item['price'] ?? 0);
-                $unit  = trim((string)($item['unit'] ?? 'kg'));
-                $name  = trim((string)($item['name'] ?? ''));
-
+                $isCustom = !empty($item['is_custom']) ? 1 : 0;
+                $name = trim(strip_tags((string)($item['name'] ?? $item['product_name'] ?? '')));
                 if ($name === '') {
                     continue;
                 }
-
+                if (mb_strlen($name, 'UTF-8') > 150) {
+                    $name = mb_substr($name, 0, 150, 'UTF-8');
+                }
+                $price = $isCustom ? 0.00 : (float)($item['price'] ?? $item['unit_price'] ?? 0);
+                $unit  = trim(strip_tags((string)($item['unit'] ?? 'kg'))) ?: 'kg';
                 $itemTotal = round($qty * $price, 2);
                 $totalAmount += $itemTotal;
 
                 $validItems[] = [
                     'name'       => $name,
+                    'is_custom'  => $isCustom,
                     'price'      => $price,
                     'quantity'   => $qty,
                     'unit'       => $unit,

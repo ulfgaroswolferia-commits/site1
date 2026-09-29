@@ -307,28 +307,203 @@ $appName       = 'Zamawiarka Magdy';
             border-color: #cbd5e1;
         }
 
+        .submit-actions-wrap {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-icon-cradle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+            flex-shrink: 0;
+            transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                        color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-icon-cradle-primary {
+            background: rgba(255, 255, 255, 0.18);
+            color: #ffffff;
+        }
+
+        .btn-icon-cradle-secondary {
+            background: #ecfdf5;
+            color: #059669;
+        }
+
+        .btn-icon-cradle-amber {
+            background: rgba(255, 255, 255, 0.22);
+            color: #ffffff;
+        }
+
+        /* Przycisk Główny - Zatwierdź i wyślij */
+        .btn-submit-send {
+            position: relative;
+            height: 42px;
+            padding: 0 18px 0 12px;
+            background-color: #059669;
+            background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(0, 0, 0, 0.04) 100%);
+            color: #ffffff;
+            border: 1px solid #047857;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 3px 8px -2px rgba(5, 150, 105, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+            transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                        border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                        box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.1s cubic-bezier(0.16, 1, 0.3, 1);
+            text-decoration: none;
+            white-space: nowrap;
+            user-select: none;
+            box-sizing: border-box;
+        }
+
+        .btn-submit-send:hover {
+            background-color: #047857;
+            border-color: #065f46;
+            box-shadow: 0 2px 4px rgba(15, 23, 42, 0.1), 0 6px 16px -2px rgba(5, 150, 105, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-submit-send:hover .btn-icon-cradle-primary {
+            background: rgba(255, 255, 255, 0.28);
+        }
+
+        .btn-submit-send:active {
+            background-color: #065f46;
+            border-color: #064e3b;
+            transform: scale(0.98);
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-submit-send:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #10b981;
+        }
+
+        .btn-submit-send:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Przycisk Pobierz Excel - Zatwierdź i pobierz Excel */
         .btn-download-order {
-            background: #e0f2fe;
-            border: 1px solid #bae6fd;
-            color: #0284c7;
-            border-radius: 10px;
-            padding: 7px 16px;
-            font-size: 0.84rem;
-            font-weight: 700;
+            position: relative;
+            height: 42px;
+            padding: 0 18px 0 12px;
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #1e293b;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+            transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                        border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                        color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                        box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.1s cubic-bezier(0.16, 1, 0.3, 1);
+            text-decoration: none;
+            white-space: nowrap;
+            user-select: none;
+            box-sizing: border-box;
+        }
+
+        .btn-download-order:hover {
+            background-color: #f8fafc;
+            border-color: #94a3b8;
+            color: #0f172a;
+            box-shadow: 0 2px 6px -1px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04);
+        }
+
+        .btn-download-order:hover .btn-icon-cradle-secondary {
+            background-color: #d1fae5;
+            color: #047857;
+        }
+
+        .btn-download-order:active {
+            background-color: #f1f5f9;
+            border-color: #94a3b8;
+            transform: scale(0.98);
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), inset 0 1px 2px rgba(0, 0, 0, 0.04);
+        }
+
+        .btn-download-order:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #059669;
+        }
+
+        .btn-download-order:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Przycisk Powrotu - Zmień cennik */
+        .btn-change-pricelist {
+            height: 42px;
+            padding: 0 16px;
+            background-color: #ffffff;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 7px;
-            transition: all 0.15s ease;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                        border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                        color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                        box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.1s cubic-bezier(0.16, 1, 0.3, 1);
             text-decoration: none;
+            white-space: nowrap;
+            user-select: none;
+            box-sizing: border-box;
         }
 
-        .btn-download-order:hover {
-            background: #bae6fd;
-            border-color: #7dd3fc;
-            color: #0369a1;
-            transform: translateY(-1px);
+        .btn-change-pricelist:hover {
+            background-color: #f8fafc;
+            border-color: #cbd5e1;
+            color: #0f172a;
+            box-shadow: 0 2px 5px -1px rgba(15, 23, 42, 0.06);
+        }
+
+        .btn-change-pricelist:active {
+            background-color: #f1f5f9;
+            transform: scale(0.98);
+        }
+
+        .btn-change-pricelist:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #94a3b8;
         }
 
         /* Mapping Preview Table */
@@ -388,8 +563,9 @@ $appName       = 'Zamawiarka Magdy';
 
         .search-box {
             position: relative;
-            flex: 1;
-            min-width: 260px;
+            flex: 1 1 260px;
+            max-width: 320px;
+            min-width: 220px;
         }
 
         .search-input {
@@ -783,6 +959,233 @@ $appName       = 'Zamawiarka Magdy';
             .bg-deco-item { animation: none !important; }
         }
 
+        /* Sekcja produktu spoza cennika (Zamawiarka Magdy) */
+        .custom-product-box {
+            background: #ffffff;
+            border: 1px solid #fde68a;
+            border-radius: var(--radius-inner);
+            padding: 24px;
+            box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.08);
+            margin-top: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .custom-box-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid #fef3c7;
+        }
+
+        .custom-box-title-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .custom-box-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: #fef3c7;
+            color: #b45309;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .custom-box-icon svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .custom-box-title {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .badge-amber-pill {
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .custom-disclaimer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #92400e;
+        }
+
+        .custom-disclaimer svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            color: #d97706;
+        }
+
+        .custom-prod-form {
+            display: grid;
+            grid-template-columns: 1fr 105px 125px minmax(225px, max-content);
+            gap: 12px;
+            align-items: flex-end;
+        }
+
+        @media (max-width: 900px) {
+            .custom-prod-form {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .custom-prod-form {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .custom-field-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+
+        .btn-add-custom {
+            position: relative;
+            height: 42px;
+            padding: 0 20px 0 14px;
+            background-color: #d97706;
+            background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(0, 0, 0, 0.04) 100%);
+            color: #ffffff;
+            border: 1px solid #b45309;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 3px 8px -2px rgba(217, 119, 6, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+            transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                        border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                        box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.1s cubic-bezier(0.16, 1, 0.3, 1);
+            text-decoration: none;
+            white-space: nowrap;
+            user-select: none;
+            box-sizing: border-box;
+            width: 100%;
+        }
+
+        .btn-add-custom:hover {
+            background-color: #b45309;
+            border-color: #92400e;
+            box-shadow: 0 2px 4px rgba(15, 23, 42, 0.1), 0 6px 16px -2px rgba(217, 119, 6, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-add-custom:hover .btn-icon-cradle-amber {
+            background: rgba(255, 255, 255, 0.32);
+        }
+
+        .btn-add-custom:active {
+            background-color: #92400e;
+            border-color: #78350f;
+            transform: scale(0.985);
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-add-custom:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #f59e0b;
+        }
+
+        .btn-add-custom:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .custom-items-draft {
+            margin-top: 8px;
+            border: 1px solid #fde68a;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fffdf5;
+        }
+
+        .custom-items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+
+        .custom-items-table th {
+            background: #fef3c7;
+            color: #78350f;
+            padding: 10px 14px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-align: left;
+            border-bottom: 1px solid #fde68a;
+        }
+
+        .custom-items-table td {
+            padding: 11px 14px;
+            border-bottom: 1px solid #fef9c3;
+            vertical-align: middle;
+        }
+
+        .custom-items-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .btn-del-custom {
+            background: transparent;
+            border: 1px solid #fecaca;
+            color: #ef4444;
+            padding: 4px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.78rem;
+            font-weight: 700;
+            transition: all 0.15s ease;
+        }
+
+        .btn-del-custom:hover {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
         .hidden { display: none !important; }
     </style>
 </head>
@@ -1134,26 +1537,30 @@ $appName       = 'Zamawiarka Magdy';
                     </div>
                 </div>
 
-                <button type="button" class="btn-secondary" style="padding: 11px 16px; font-size: 0.88rem; font-weight: 600;" onclick="resetToStep1()">
-                    ← Zmień cennik
-                </button>
-
-                <div class="submit-actions-wrap" style="display: flex; flex-direction: column; gap: 6px; align-items: stretch;">
-                    <button type="button" id="btn-submit-send-order" class="btn-primary" style="padding: 11px 22px; background: linear-gradient(135deg, #059669 0%, #10b981 100%); box-shadow: 0 10px 20px -8px rgba(16, 185, 129, 0.6); justify-content: center;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                            <polyline points="22,6 12,13 2,6"></polyline>
-                        </svg>
-                        <span>Zatwierdź i wyślij</span>
+                <div class="submit-actions-wrap">
+                    <button type="button" class="btn-secondary btn-change-pricelist" onclick="resetToStep1()" title="Wróć do wyboru cennika">
+                        ← Zmień cennik
                     </button>
 
-                    <button type="button" id="btn-submit-order" class="btn-download-order">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
+                    <button type="button" id="btn-submit-order" class="btn-download-order" title="Zatwierdź zamówienie i pobierz arkusz Excel (.xlsx)">
+                        <span class="btn-icon-cradle btn-icon-cradle-secondary">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </span>
                         <span>Zatwierdź i pobierz Excel</span>
+                    </button>
+
+                    <button type="button" id="btn-submit-send-order" class="btn-submit-send" title="Zatwierdź zamówienie i wyślij e-mail do hurtowni">
+                        <span class="btn-icon-cradle btn-icon-cradle-primary">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                <polyline points="22,6 12,13 2,6"></polyline>
+                            </svg>
+                        </span>
+                        <span>Zatwierdź i wyślij</span>
                     </button>
                 </div>
             </div>
@@ -1175,6 +1582,104 @@ $appName       = 'Zamawiarka Magdy';
                         <!-- Wiersze produktów wstawiane dynamicznie -->
                     </tbody>
                 </table>
+            </div>
+
+            <!-- Sekcja: Dodaj produkt spoza cennika (na zapytanie) -->
+            <div id="custom-product-section" class="custom-product-box">
+                <div class="custom-box-header">
+                    <div class="custom-box-title-group">
+                        <div class="custom-box-icon">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="custom-box-title">
+                                Dodaj produkt spoza cennika
+                                <span class="badge-amber-pill">Na zapytanie</span>
+                            </h3>
+                            <span style="font-size: 0.82rem; color: var(--muted); display: block; margin-top: 2px;">
+                                Potrzebujesz towaru, którego nie ma w powyższym arkuszu? Dopisz go bezpośrednio do zamówienia.
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="custom-disclaimer">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Zamówienie produktów spoza cennika nie gwarantuje ich dostawy</span>
+                    </div>
+                </div>
+
+                <!-- Formularz dodawania pozycji -->
+                <form id="custom-product-form" class="custom-prod-form" onsubmit="event.preventDefault(); addCustomProduct();">
+                    <div>
+                        <label for="custom-prod-name" class="custom-field-label">
+                            Nazwa towaru <span style="color: var(--danger);">*</span>
+                        </label>
+                        <input type="text" id="custom-prod-name" class="form-input" style="height: 42px;" placeholder="np. Koper włoski, Awokado Hass, Kurki świeże...">
+                    </div>
+
+                    <div>
+                        <label for="custom-prod-qty" class="custom-field-label">
+                            Ilość <span style="color: var(--danger);">*</span>
+                        </label>
+                        <input type="number" id="custom-prod-qty" class="form-input" style="height: 42px; font-weight: 700;" min="0.1" step="0.5" placeholder="np. 5">
+                    </div>
+
+                    <div>
+                        <label for="custom-prod-unit" class="custom-field-label">Jednostka</label>
+                        <select id="custom-prod-unit" class="form-select" style="height: 42px; font-weight: 600;">
+                            <option value="kg">kg</option>
+                            <option value="szt.">szt.</option>
+                            <option value="op.">op.</option>
+                            <option value="pęczek">pęczek</option>
+                            <option value="skrzynka">skrzynka</option>
+                            <option value="karton">karton</option>
+                            <option value="worek">worek</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <button type="submit" id="btn-add-custom-product" class="btn-add-custom" style="width: 100%;" title="Dodaj produkt spoza cennika do bieżącego zamówienia">
+                            <span class="btn-icon-cradle btn-icon-cradle-amber">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                </svg>
+                            </span>
+                            <span>Dodaj do zamówienia</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Tabela draftu pozycji spoza cennika -->
+                <div id="custom-products-container" class="custom-items-draft hidden">
+                    <div style="padding: 10px 14px; background: #fef3c7; border-bottom: 1px solid #fde68a; display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 0.8rem; font-weight: 800; color: #78350f; text-transform: uppercase; letter-spacing: 0.04em;">
+                            Pozycje spoza cennika w drafcie zamówienia (<span id="custom-items-count">0</span>):
+                        </span>
+                        <span style="font-size: 0.75rem; color: #92400e; font-style: italic;">
+                            Wycena indywidualna przez hurtownię
+                        </span>
+                    </div>
+                    <table class="custom-items-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px; text-align: center;">#</th>
+                                <th>Nazwa towaru</th>
+                                <th style="width: 140px; text-align: center;">Ilość</th>
+                                <th style="width: 180px;">Status dostawy</th>
+                                <th style="width: 140px; text-align: right;">Cena</th>
+                                <th style="width: 70px; text-align: center;">Usuń</th>
+                            </tr>
+                        </thead>
+                        <tbody id="custom-items-table-body">
+                            <!-- Wiersze generowane dynamicznie -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </section>
 
@@ -1240,6 +1745,7 @@ $appName       = 'Zamawiarka Magdy';
         let originalFileName = null;
         let previewRowsData = {};
         let productsList = [];
+        let customItems = [];
 
         // Elementy DOM
         const dropzone = document.getElementById('dropzone');
@@ -1333,6 +1839,12 @@ $appName       = 'Zamawiarka Magdy';
             step1.classList.remove('hidden');
             uploadStatus.classList.add('hidden');
             fileInput.value = '';
+            customItems = [];
+            renderCustomItemsTable();
+            const customName = document.getElementById('custom-prod-name');
+            const customQty = document.getElementById('custom-prod-qty');
+            if (customName) customName.value = '';
+            if (customQty) customQty.value = '';
         }
 
         // 1b. Obsługa wczytywania cennika z historii
@@ -1389,12 +1901,21 @@ $appName       = 'Zamawiarka Magdy';
                         quantity: keepQty ? (parseFloat(p.prev_quantity) || 0) : 0
                     }));
 
+                    customItems = (data.custom_products || []).map(c => ({
+                        name: c.name,
+                        price: 0.00,
+                        unit: c.unit || 'kg',
+                        quantity: keepQty ? (parseFloat(c.prev_quantity) || 0) : 0,
+                        is_custom: 1
+                    })).filter(c => c.quantity > 0 || !keepQty);
+
                     // Przejście od razu do Kroku 3
                     step1.classList.add('hidden');
                     step2.classList.add('hidden');
                     step4.classList.add('hidden');
                     step3.classList.remove('hidden');
                     renderProductsTable();
+                    renderCustomItemsTable();
                 })
                 .catch(err => {
                     btnLoadHistory.disabled = false;
@@ -1611,18 +2132,118 @@ $appName       = 'Zamawiarka Magdy';
         }
 
         function updateSummary() {
-            let itemsCount = 0;
+            let catalogCount = 0;
             let totalAmount = 0.0;
 
             productsList.forEach(p => {
                 if (p.quantity > 0) {
-                    itemsCount++;
+                    catalogCount++;
                     totalAmount += p.quantity * p.price;
                 }
             });
 
-            document.getElementById('summary-items-count').textContent = itemsCount;
+            const customCount = customItems.length;
+            const totalCount = catalogCount + customCount;
+            const summaryCountEl = document.getElementById('summary-items-count');
+
+            if (catalogCount > 0 && customCount > 0) {
+                summaryCountEl.textContent = `${totalCount} (${catalogCount} z cennika + ${customCount} spoza)`;
+            } else if (catalogCount === 0 && customCount > 0) {
+                summaryCountEl.textContent = `${customCount} ${customCount === 1 ? 'pozycja spoza cennika' : (customCount < 5 ? 'pozycje spoza cennika' : 'pozycji spoza cennika')}`;
+            } else {
+                summaryCountEl.textContent = catalogCount;
+            }
+
             document.getElementById('summary-total-amount').textContent = totalAmount.toFixed(2) + ' zł';
+        }
+
+        // Obsługa produktów spoza cennika
+        function addCustomProduct() {
+            const nameEl = document.getElementById('custom-prod-name');
+            const qtyEl  = document.getElementById('custom-prod-qty');
+            const unitEl = document.getElementById('custom-prod-unit');
+
+            const name = nameEl ? nameEl.value.trim() : '';
+            const qty  = qtyEl ? parseFloat(qtyEl.value) : 0;
+            const unit = unitEl ? unitEl.value.trim() : 'kg';
+
+            if (!name) {
+                alert('Proszę podać nazwę produktu spoza cennika.');
+                if (nameEl) nameEl.focus();
+                return;
+            }
+
+            if (!qty || qty <= 0 || isNaN(qty)) {
+                alert('Proszę podać prawidłową ilość (większą od zera).');
+                if (qtyEl) qtyEl.focus();
+                return;
+            }
+
+            customItems.push({
+                name: name,
+                quantity: qty,
+                unit: unit,
+                is_custom: 1,
+                price: 0.00
+            });
+
+            if (nameEl) nameEl.value = '';
+            if (qtyEl) qtyEl.value = '';
+
+            renderCustomItemsTable();
+            updateSummary();
+
+            const container = document.getElementById('custom-products-container');
+            if (container) {
+                container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        function removeCustomProduct(idx) {
+            if (idx >= 0 && idx < customItems.length) {
+                customItems.splice(idx, 1);
+                renderCustomItemsTable();
+                updateSummary();
+            }
+        }
+
+        function renderCustomItemsTable() {
+            const container = document.getElementById('custom-products-container');
+            const tbody     = document.getElementById('custom-items-table-body');
+            const countEl   = document.getElementById('custom-items-count');
+
+            if (!container || !tbody) return;
+
+            if (customItems.length === 0) {
+                container.classList.add('hidden');
+                tbody.innerHTML = '';
+                if (countEl) countEl.textContent = '0';
+                return;
+            }
+
+            container.classList.remove('hidden');
+            if (countEl) countEl.textContent = customItems.length;
+            tbody.innerHTML = '';
+
+            customItems.forEach((c, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="text-align: center; color: #92400e; font-weight: 700;">${idx + 1}</td>
+                    <td style="font-weight: 700; color: #0f172a;">
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <span>${escapeHtml(c.name)}</span>
+                            <span class="badge-amber-pill">Spoza cennika</span>
+                        </div>
+                    </td>
+                    <td style="text-align: center; font-weight: 800; color: #b45309;">${c.quantity} ${escapeHtml(c.unit)}</td>
+                    <td style="font-size: 0.8rem; color: #92400e; font-style: italic;">Do potwierdzenia na rampie</td>
+                    <td style="text-align: right; font-size: 0.82rem; font-style: italic; color: #64748b;">Do wyceny</td>
+                    <td style="text-align: center;">
+                        <button type="button" class="btn-del-custom" onclick="removeCustomProduct(${idx})" title="Usuń pozycję">×</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
         document.getElementById('product-search').addEventListener('input', renderProductsTable);
@@ -1630,9 +2251,26 @@ $appName       = 'Zamawiarka Magdy';
 
         // 4. Zatwierdzenie i generowanie zamówienia (oraz opcjonalna wysyłka e-mail)
         function submitOrder(sendEmail = false) {
-            const orderedItems = productsList.filter(p => p.quantity > 0);
-            if (orderedItems.length === 0) {
-                alert('Wprowadź ilość dla przynajmniej jednego produktu, aby utworzyć zamówienie.');
+            const catalogOrdered = productsList.filter(p => p.quantity > 0).map(p => ({
+                name: p.name,
+                price: p.price,
+                quantity: p.quantity,
+                unit: p.unit,
+                is_custom: 0
+            }));
+
+            const customOrdered = customItems.map(c => ({
+                name: c.name,
+                price: 0.00,
+                quantity: c.quantity,
+                unit: c.unit,
+                is_custom: 1
+            }));
+
+            const allItems = [...catalogOrdered, ...customOrdered];
+
+            if (allItems.length === 0) {
+                alert('Wprowadź ilość dla przynajmniej jednego produktu lub dodaj pozycję spoza cennika, aby utworzyć zamówienie.');
                 return;
             }
 
@@ -1640,7 +2278,7 @@ $appName       = 'Zamawiarka Magdy';
             const formData = new FormData();
             formData.append('supplier_name', supplierName);
             formData.append('original_filename', originalFileName || 'cennik.xlsx');
-            formData.append('items', JSON.stringify(orderedItems));
+            formData.append('items', JSON.stringify(allItems));
             formData.append('_csrf', CSRF_TOKEN);
             formData.append('csrf_token', CSRF_TOKEN);
             if (sendEmail) {
