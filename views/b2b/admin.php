@@ -2969,19 +2969,32 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     const tbody = document.getElementById('modal-order-items');
                     tbody.replaceChildren();
                     d.items.forEach(i => {
+                        const isCustom = Number(i.is_custom) === 1;
                         const row = document.createElement('tr');
+                        if (isCustom) {
+                            row.className = 'bg-amber-50/40';
+                        }
                         const productName = document.createElement('td');
                         productName.className = 'py-2 font-bold text-slate-800';
-                        productName.textContent = i.product_name;
+                        if (isCustom) {
+                            productName.innerHTML = `
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <span>${escapeHtml(i.product_name)}</span>
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">Spoza cennika</span>
+                                </div>
+                            `;
+                        } else {
+                            productName.textContent = i.product_name;
+                        }
                         const quantity = document.createElement('td');
-                        quantity.className = 'py-2 text-right font-bold text-slate-900';
+                        quantity.className = 'py-2 text-right font-bold ' + (isCustom ? 'text-amber-900' : 'text-slate-900');
                         quantity.textContent = `${i.quantity} ${i.unit}`;
                         const packageSummary = document.createElement('td');
-                        packageSummary.className = 'py-2 text-center text-xs font-semibold text-emerald-700 bg-emerald-50 rounded';
+                        packageSummary.className = 'py-2 text-center text-xs font-semibold ' + (isCustom ? 'text-amber-800 bg-amber-100/60' : 'text-emerald-700 bg-emerald-50') + ' rounded';
                         packageSummary.textContent = i.package_summary || '—';
                         const itemTotal = document.createElement('td');
                         itemTotal.className = 'py-2 text-right font-bold text-slate-800';
-                        itemTotal.textContent = `${Number(i.item_total).toFixed(2)} zł`;
+                        itemTotal.textContent = isCustom && Number(i.item_total) === 0 ? 'Do wyceny' : `${Number(i.item_total).toFixed(2)} zł`;
                         row.append(productName, quantity, packageSummary, itemTotal);
                         tbody.appendChild(row);
                     });
@@ -3010,16 +3023,21 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 return;
             }
 
-            const rowsHtml = items.map((it, idx) => `
-                <tr style="border-bottom: 1px solid #e2e8f0;">
+            const rowsHtml = items.map((it, idx) => {
+                const isCustom = Number(it.is_custom) === 1;
+                return `
+                <tr style="border-bottom: 1px solid #e2e8f0; ${isCustom ? 'background: #fffbeb;' : ''}">
                     <td style="padding: 8px 10px; text-align: center; font-size: 12px; color: #64748b;">${idx + 1}</td>
-                    <td style="padding: 8px 10px; font-weight: 700; font-size: 13px; color: #0f172a;">${escapeHtml(it.product_name)}</td>
+                    <td style="padding: 8px 10px; font-weight: 700; font-size: 13px; color: #0f172a;">
+                        ${escapeHtml(it.product_name)}
+                        ${isCustom ? '<span style="display:inline-block; padding:1px 5px; font-size:10px; font-weight:bold; background:#fef3c7; color:#92400e; border:1px solid #fde68a; border-radius:4px; margin-left:4px;">[SPOZA CENNIKA]</span>' : ''}
+                    </td>
                     <td style="padding: 8px 10px; text-align: right; font-weight: 700; font-size: 13px;">${Number(it.quantity)} ${escapeHtml(it.unit)}</td>
-                    <td style="padding: 8px 10px; text-align: center; font-size: 12px; background: #f8fafc; font-weight: 600; color: #047857;">${escapeHtml(it.package_summary || '—')}</td>
+                    <td style="padding: 8px 10px; text-align: center; font-size: 12px; background: ${isCustom ? '#fef3c7' : '#f8fafc'}; font-weight: 600; color: ${isCustom ? '#92400e' : '#047857'};">${escapeHtml(it.package_summary || '—')}</td>
                     <td style="padding: 8px 10px; text-align: right; font-size: 12px; color: #64748b;">${Number(it.price).toFixed(2)} zł</td>
-                    <td style="padding: 8px 10px; text-align: right; font-weight: 700; font-size: 13px; color: #0f172a;">${Number(it.item_total).toFixed(2)} zł</td>
+                    <td style="padding: 8px 10px; text-align: right; font-weight: 700; font-size: 13px; color: #0f172a;">${isCustom && Number(it.item_total) === 0 ? 'Do wyceny' : Number(it.item_total).toFixed(2) + ' zł'}</td>
                 </tr>
-            `).join('');
+            `;}).join('');
 
             const html = `<!DOCTYPE html>
 <html lang="pl">

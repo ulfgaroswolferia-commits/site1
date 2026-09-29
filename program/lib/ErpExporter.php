@@ -98,6 +98,72 @@ class ErpExporter
         return $slug ?: 'TOWAR';
     }
 
+    /**
+     * Przygotowuje dane pozycji do eksportu ERP (uwzględnia produkty z cennika oraz spoza cennika).
+     *
+     * @param array $item Pozycja zamówienia
+     * @param int $codeMaxLength Maksymalna długość kodu towaru (np. 20 dla Subiekta, 24 dla innych)
+     * @return array ['code' => string, 'name' => string, 'unit' => string, 'price' => float, 'summary' => string, 'is_custom' => bool]
+     */
+    public static function prepareItemForErp(array $item, int $codeMaxLength = 20): array
+    {
+        $isCustom = !empty($item['is_custom']);
+        $rawName = trim((string)($item['product_name'] ?? $item['name'] ?? 'Towar'));
+        $unit = trim((string)($item['unit'] ?? 'kg')) ?: 'kg';
+        $price = (float)($item['price'] ?? 0);
+        $summary = trim((string)($item['package_summary'] ?? ''));
+
+        if ($isCustom) {
+            // Bezpieczny symbol z przedrostkiem SPOZA- (np. SPOZA-KOPER-WLOS, max $codeMaxLength znaków)
+            $slug = self::sanitizeSymbol($rawName, null, max(6, $codeMaxLength - 7));
+            $code = 'SPOZA-' . $slug;
+            if (strlen($code) > $codeMaxLength) {
+                $code = substr($code, 0, $codeMaxLength);
+            }
+
+            $name = $rawName;
+            if (strpos($name, '[SPOZA CENNIKA]') === false) {
+                $name .= ' [SPOZA CENNIKA]';
+            }
+            $price = 0.00;
+            if ($summary === '' || $summary === '-') {
+                $summary = 'Produkt spoza cennika (do potwierdzenia/wyceny)';
+            }
+        } else {
+            $code = self::sanitizeSymbol($rawName, $item['erp_code'] ?? null, $codeMaxLength);
+            $name = $rawName;
+        }
+
+        return [
+            'code'      => $code,
+            'name'      => $name,
+            'unit'      => $unit,
+            'price'     => $price,
+            'summary'   => $summary,
+            'is_custom' => $isCustom,
+        ];
+    }
+
+    /**
+     * Formatuje uwagi do zamówienia dla dokumentu ERP (dodaje informację o pozycjach spoza cennika).
+     */
+    public static function formatOrderNotes(array $order): string
+    {
+        $notes = trim((string)($order['notes'] ?? ''));
+        $hasCustom = false;
+        foreach ($order['items'] ?? [] as $it) {
+            if (!empty($it['is_custom'])) {
+                $hasCustom = true;
+                break;
+            }
+        }
+        if ($hasCustom) {
+            $notice = 'UWAGA: Zamówienie zawiera pozycje spoza cennika (wymaga potwierdzenia dostawy i wyceny)';
+            $notes = $notes !== '' ? ($notes . ' | ' . $notice) : $notice;
+        }
+        return $notes;
+    }
+
     // =========================================================================
     // 1. SUBIEKT GT / NEXO (FORMAT EPP / EDI++)
     // =========================================================================
@@ -132,15 +198,16 @@ class ErpExporter
             }
 
             foreach ($ord['items'] ?? [] as $it) {
-                $pName = trim($it['product_name'] ?? $it['name'] ?? 'Towar');
-                $pCode = self::sanitizeSymbol($pName, $it['erp_code'] ?? null, 24);
+                $itemInfo = self::prepareItemForErp($it, 20);
+                $pCode = $itemInfo['code'];
+                $pName = mb_substr($itemInfo['name'], 0, 50, 'UTF-8');
                 if (!isset($productsMap[$pCode])) {
-                    $priceNetto = (float)($it['price'] ?? 0);
+                    $priceNetto = $itemInfo['price'];
                     $productsMap[$pCode] = [
                         'id'          => $prodIdx++,
                         'code'        => $pCode,
                         'name'        => $pName,
-                        'unit'        => $it['unit'] ?? 'kg',
+                        'unit'        => $itemInfo['unit'],
                         'price_netto' => $priceNetto,
                         'price_brutto'=> round($priceNetto * (1 + self::DEFAULT_VAT_RATE / 100), 2),
                     ];
@@ -191,7 +258,7 @@ class ErpExporter
             $totalBrutto = round($totalNetto * (1 + self::DEFAULT_VAT_RATE / 100), 2);
             $totalNettoFmt = number_format($totalNetto, 2, '.', '');
             $totalBruttoFmt = number_format($totalBrutto, 2, '.', '');
-            $notesEsc = str_replace('"', '""', $ord['notes'] ?? '');
+            $notesEsc = str_replace('"', '""', self::formatOrderNotes($ord));
 
             $lines[] = '[DOKUMENT]';
             $lines[] = "{$docId},1,{$cId},\"ZK\",\"{$num}\",\"\",\"\",{$dateCreate},{$dateDelivery},{$totalNettoFmt},{$totalBruttoFmt},\"PLN\",1.0000,\"{$notesEsc}\"";
@@ -200,12 +267,12 @@ class ErpExporter
             $lines[] = '[ZAWARTOSC]';
             $posLp = 1;
             foreach ($ord['items'] ?? [] as $it) {
-                $pName = trim($it['product_name'] ?? $it['name'] ?? 'Towar');
-                $pCode = self::sanitizeSymbol($pName, $it['erp_code'] ?? null, 24);
+                $itemInfo = self::prepareItemForErp($it, 20);
+                $pCode = $itemInfo['code'];
                 $pId = $productsMap[$pCode]['id'] ?? 1;
 
                 $qty = (float)($it['quantity'] ?? 0);
-                $priceNetto = (float)($it['price'] ?? 0);
+                $priceNetto = $itemInfo['price'];
                 $itemNetto = (float)($it['item_total'] ?? ($qty * $priceNetto));
                 $itemBrutto = round($itemNetto * (1 + self::DEFAULT_VAT_RATE / 100), 2);
 
@@ -271,7 +338,7 @@ class ErpExporter
             $nag->appendChild($xml->createElement('WARTOSC_NETTO', number_format($totalNetto, 2, '.', '')));
             $nag->appendChild($xml->createElement('WARTOSC_VAT', number_format($totalVat, 2, '.', '')));
             $nag->appendChild($xml->createElement('WARTOSC_BRUTTO', number_format($totalBrutto, 2, '.', '')));
-            $nag->appendChild($xml->createElement('OPIS', htmlspecialchars($ord['notes'] ?? '')));
+            $nag->appendChild($xml->createElement('OPIS', htmlspecialchars(self::formatOrderNotes($ord))));
 
             $podmiot = $xml->createElement('PODMIOT');
             $nag->appendChild($podmiot);
@@ -292,10 +359,11 @@ class ErpExporter
                 $p = $xml->createElement('POZYCJA');
                 $pozWrapper->appendChild($p);
 
-                $pName = trim($it['product_name'] ?? $it['name'] ?? 'Towar');
-                $pCode = self::sanitizeSymbol($pName, $it['erp_code'] ?? null, 24);
+                $itemInfo = self::prepareItemForErp($it, 24);
+                $pName = $itemInfo['name'];
+                $pCode = $itemInfo['code'];
                 $qty = (float)($it['quantity'] ?? 0);
-                $priceNetto = (float)($it['price'] ?? 0);
+                $priceNetto = $itemInfo['price'];
                 $totNetto = (float)($it['item_total'] ?? ($qty * $priceNetto));
                 $totBrutto = round($totNetto * (1 + self::DEFAULT_VAT_RATE / 100), 2);
                 $totVat = round($totBrutto - $totNetto, 2);
@@ -304,14 +372,16 @@ class ErpExporter
                 $p->appendChild($xml->createElement('TOWAR_KOD', htmlspecialchars($pCode)));
                 $p->appendChild($xml->createElement('TOWAR_NAZWA', htmlspecialchars($pName)));
                 $p->appendChild($xml->createElement('ILOSC', number_format($qty, 3, '.', '')));
-                $p->appendChild($xml->createElement('JEDNOSTKA', htmlspecialchars($it['unit'] ?? 'kg')));
+                $p->appendChild($xml->createElement('JEDNOSTKA', htmlspecialchars($itemInfo['unit'])));
                 $p->appendChild($xml->createElement('CENA_NETTO', number_format($priceNetto, 2, '.', '')));
                 $p->appendChild($xml->createElement('WARTOSC_NETTO', number_format($totNetto, 2, '.', '')));
                 $p->appendChild($xml->createElement('STAWKA_VAT', (string)(int)self::DEFAULT_VAT_RATE));
                 $p->appendChild($xml->createElement('FLAGA_VAT', '1'));
                 $p->appendChild($xml->createElement('WARTOSC_VAT', number_format($totVat, 2, '.', '')));
                 $p->appendChild($xml->createElement('WARTOSC_BRUTTO', number_format($totBrutto, 2, '.', '')));
-                $p->appendChild($xml->createElement('OPIS', htmlspecialchars($it['package_summary'] ?? '')));
+                if (!empty($itemInfo['summary'])) {
+                    $p->appendChild($xml->createElement('OPIS', htmlspecialchars($itemInfo['summary'])));
+                }
             }
         }
 
@@ -353,7 +423,7 @@ class ErpExporter
             $lines[] = '    kurs = 1.0000';
             $lines[] = '    netto = ' . number_format($totalNetto, 2, '.', '');
             $lines[] = '    brutto = ' . number_format($totalBrutto, 2, '.', '');
-            $lines[] = '    opis = "' . str_replace('"', '""', $ord['notes'] ?? '') . '"';
+            $lines[] = '    opis = "' . str_replace('"', '""', self::formatOrderNotes($ord)) . '"';
             $lines[] = '';
             $lines[] = '    DaneKontrahenta {';
             $lines[] = "        kod = \"{$clientCode}\"";
@@ -366,10 +436,11 @@ class ErpExporter
 
             $lp = 1;
             foreach ($ord['items'] ?? [] as $it) {
-                $pName = trim($it['product_name'] ?? $it['name'] ?? 'Towar');
-                $pCode = self::sanitizeSymbol($pName, $it['erp_code'] ?? null, 24);
+                $itemInfo = self::prepareItemForErp($it, 24);
+                $pName = $itemInfo['name'];
+                $pCode = $itemInfo['code'];
                 $qty = (float)($it['quantity'] ?? 0);
-                $priceNetto = (float)($it['price'] ?? 0);
+                $priceNetto = $itemInfo['price'];
                 $totNetto = (float)($it['item_total'] ?? ($qty * $priceNetto));
                 $totBrutto = round($totNetto * (1 + self::DEFAULT_VAT_RATE / 100), 2);
 
@@ -378,13 +449,13 @@ class ErpExporter
                 $lines[] = "        kod = \"{$pCode}\"";
                 $lines[] = '        nazwa = "' . str_replace('"', '""', $pName) . '"';
                 $lines[] = '        ilosc = ' . number_format($qty, 3, '.', '');
-                $lines[] = '        jm = "' . str_replace('"', '""', $it['unit'] ?? 'kg') . '"';
+                $lines[] = '        jm = "' . str_replace('"', '""', $itemInfo['unit']) . '"';
                 $lines[] = '        cena = ' . number_format($priceNetto, 2, '.', '');
                 $lines[] = '        wartosc = ' . number_format($totNetto, 2, '.', '');
                 $lines[] = '        stawka = ' . (int)self::DEFAULT_VAT_RATE;
                 $lines[] = '        brutto = ' . number_format($totBrutto, 2, '.', '');
-                if (!empty($it['package_summary'])) {
-                    $lines[] = '        opis = "' . str_replace('"', '""', $it['package_summary']) . '"';
+                if (!empty($itemInfo['summary'])) {
+                    $lines[] = '        opis = "' . str_replace('"', '""', $itemInfo['summary']) . '"';
                 }
                 $lines[] = '    }';
                 $lp++;
@@ -432,7 +503,7 @@ class ErpExporter
             $z->appendChild($xml->createElement('WARTOSC_NETTO', number_format($totalNetto, 2, '.', '')));
             $z->appendChild($xml->createElement('WARTOSC_VAT', number_format($totalVat, 2, '.', '')));
             $z->appendChild($xml->createElement('WARTOSC_BRUTTO', number_format($totalBrutto, 2, '.', '')));
-            $z->appendChild($xml->createElement('UWAGI', htmlspecialchars($ord['notes'] ?? '')));
+            $z->appendChild($xml->createElement('UWAGI', htmlspecialchars(self::formatOrderNotes($ord))));
 
             $kontrahent = $xml->createElement('KONTRAHENT');
             $z->appendChild($kontrahent);
@@ -450,10 +521,11 @@ class ErpExporter
                 $poz = $xml->createElement('POZYCJA');
                 $pozycje->appendChild($poz);
 
-                $pName = trim($it['product_name'] ?? $it['name'] ?? 'Towar');
-                $pCode = self::sanitizeSymbol($pName, $it['erp_code'] ?? null, 24);
+                $itemInfo = self::prepareItemForErp($it, 24);
+                $pName = $itemInfo['name'];
+                $pCode = $itemInfo['code'];
                 $qty = (float)($it['quantity'] ?? 0);
-                $priceNetto = (float)($it['price'] ?? 0);
+                $priceNetto = $itemInfo['price'];
                 $totItemNetto = (float)($it['item_total'] ?? ($qty * $priceNetto));
                 $totItemBrutto = round($totItemNetto * (1 + self::DEFAULT_VAT_RATE / 100), 2);
 
@@ -461,13 +533,13 @@ class ErpExporter
                 $poz->appendChild($xml->createElement('INDEKS', htmlspecialchars($pCode)));
                 $poz->appendChild($xml->createElement('NAZWA', htmlspecialchars($pName)));
                 $poz->appendChild($xml->createElement('ILOSC', number_format($qty, 3, '.', '')));
-                $poz->appendChild($xml->createElement('JEDNOSTKA', htmlspecialchars($it['unit'] ?? 'kg')));
+                $poz->appendChild($xml->createElement('JEDNOSTKA', htmlspecialchars($itemInfo['unit'])));
                 $poz->appendChild($xml->createElement('CENA_NETTO', number_format($priceNetto, 2, '.', '')));
                 $poz->appendChild($xml->createElement('STAWKA_VAT', (string)(int)self::DEFAULT_VAT_RATE));
                 $poz->appendChild($xml->createElement('WARTOSC_NETTO', number_format($totItemNetto, 2, '.', '')));
                 $poz->appendChild($xml->createElement('WARTOSC_BRUTTO', number_format($totItemBrutto, 2, '.', '')));
-                if (!empty($it['package_summary'])) {
-                    $poz->appendChild($xml->createElement('UWAGI', htmlspecialchars($it['package_summary'])));
+                if (!empty($itemInfo['summary'])) {
+                    $poz->appendChild($xml->createElement('UWAGI', htmlspecialchars($itemInfo['summary'])));
                 }
             }
         }

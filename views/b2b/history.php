@@ -261,23 +261,33 @@ $title  = $view['title'] ?? 'Historia Zamówień — Hurtownia Magdy';
                     tbody.replaceChildren();
                     if (d.items && d.items.length > 0) {
                         d.items.forEach(it => {
+                            const isCustom = Number(it.is_custom) === 1;
                             const tr = document.createElement('tr');
-                            tr.className = 'hover:bg-slate-50 transition';
+                            tr.className = isCustom ? 'bg-amber-50/40 hover:bg-amber-50/70 transition' : 'hover:bg-slate-50 transition';
                             const productName = document.createElement('td');
                             productName.className = 'py-2.5 px-3 font-bold text-slate-800';
-                            productName.textContent = it.product_name;
+                            if (isCustom) {
+                                productName.innerHTML = `
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <span>${escapeHtml(it.product_name)}</span>
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">Spoza cennika</span>
+                                    </div>
+                                `;
+                            } else {
+                                productName.textContent = it.product_name;
+                            }
                             const quantity = document.createElement('td');
-                            quantity.className = 'py-2.5 px-3 text-right font-semibold text-emerald-700';
+                            quantity.className = 'py-2.5 px-3 text-right font-semibold ' + (isCustom ? 'text-amber-800' : 'text-emerald-700');
                             quantity.textContent = `${parseFloat(it.quantity)} ${it.unit}`;
                             const packageCell = document.createElement('td');
                             packageCell.className = 'py-2.5 px-3 text-center';
                             const packageSummary = document.createElement('span');
-                            packageSummary.className = 'inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium text-[11px]';
+                            packageSummary.className = 'inline-block px-2 py-0.5 rounded font-medium text-[11px] ' + (isCustom ? 'bg-amber-100/70 text-amber-800' : 'bg-slate-100 text-slate-700');
                             packageSummary.textContent = it.package_summary || '—';
                             packageCell.appendChild(packageSummary);
                             const itemTotal = document.createElement('td');
                             itemTotal.className = 'py-2.5 px-3 text-right font-black text-slate-900';
-                            itemTotal.textContent = `${parseFloat(it.item_total).toFixed(2)} zł`;
+                            itemTotal.textContent = isCustom && parseFloat(it.item_total) === 0 ? 'Do wyceny' : `${parseFloat(it.item_total).toFixed(2)} zł`;
                             tr.append(productName, quantity, packageCell, itemTotal);
                             tbody.appendChild(tr);
                         });

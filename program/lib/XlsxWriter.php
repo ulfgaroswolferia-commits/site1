@@ -183,7 +183,11 @@ class XlsxWriter
                 continue; // Pomijamy pozycje nie zamówione
             }
 
+            $isCustom = !empty($item['is_custom']);
             $name  = (string)($item['name'] ?? $item['product_name'] ?? 'Produkt');
+            if ($isCustom) {
+                $name = '[SPOZA CENNIKA] ' . $name;
+            }
             $price = (float)($item['price'] ?? $item['unit_price'] ?? 0);
             $unit  = (string)($item['unit'] ?? 'kg');
             $total = round($qty * $price, 2);
@@ -387,7 +391,11 @@ class XlsxWriter
             $qty = (float)($item['quantity'] ?? 0);
             if ($qty <= 0) continue;
 
+            $isCustom = !empty($item['is_custom']);
             $name = (string)($item['product_name'] ?? $item['name'] ?? 'Towar');
+            if ($isCustom) {
+                $name = '[SPOZA CENNIKA] ' . $name;
+            }
             $price = (float)($item['price'] ?? 0);
             $unit = (string)($item['unit'] ?? 'kg');
             $pkgSummary = (string)($item['package_summary'] ?? '-');

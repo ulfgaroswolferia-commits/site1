@@ -125,6 +125,7 @@ class B2bRepository
                 id {$pk},
                 order_id INT NOT NULL,
                 product_id INT DEFAULT NULL,
+                is_custom INT NOT NULL DEFAULT 0,
                 product_name VARCHAR(150) NOT NULL,
                 price REAL NOT NULL,
                 quantity REAL NOT NULL,
@@ -149,6 +150,9 @@ class B2bRepository
         } catch (\Throwable $e) {}
         try {
             $this->pdo->exec("ALTER TABLE b2b_orders ADD COLUMN delivery_date DATE DEFAULT NULL");
+        } catch (\Throwable $e) {}
+        try {
+            $this->pdo->exec("ALTER TABLE b2b_order_items ADD COLUMN is_custom INT NOT NULL DEFAULT 0");
         } catch (\Throwable $e) {}
 
         // Domyślne konfiguracje hurtowni (cut-off, dni dostaw, format ERP, akcja finalizacji)
@@ -608,8 +612,40 @@ class B2bRepository
                 continue;
             }
 
+            $isCustom = !empty($item['is_custom']);
             $product = null;
             $rawProductId = $item['product_id'] ?? null;
+
+            // Obsługa produktów spoza cennika (na zapytanie)
+            if ($isCustom || (empty($rawProductId) && !empty($item['is_custom']))) {
+                $productName = trim(strip_tags((string)($item['product_name'] ?? $item['name'] ?? '')));
+                if ($productName === '') {
+                    throw new \InvalidArgumentException('Podaj nazwę produktu spoza cennika.');
+                }
+                if (mb_strlen($productName, 'UTF-8') > 150) {
+                    $productName = mb_substr($productName, 0, 150, 'UTF-8');
+                }
+
+                $unit = trim(strip_tags((string)($item['unit'] ?? 'kg'))) ?: 'kg';
+                $packageSummary = !empty($item['package_summary'])
+                    ? trim(strip_tags((string)$item['package_summary']))
+                    : 'Produkt spoza cennika (do potwierdzenia)';
+
+                $preparedItems[] = [
+                    'product_id'      => null,
+                    'is_custom'       => 1,
+                    'product_name'    => $productName,
+                    'price'           => 0.00,
+                    'quantity'        => (float)$quantity,
+                    'unit'            => $unit,
+                    'package_size'    => 1.0,
+                    'package_unit'    => $unit,
+                    'package_summary' => $packageSummary,
+                    'item_total'      => 0.00,
+                ];
+                continue;
+            }
+
             if ($rawProductId !== null && $rawProductId !== '') {
                 $productId = filter_var($rawProductId, FILTER_VALIDATE_INT);
                 if ($productId === false || $productId <= 0) {
@@ -639,6 +675,7 @@ class B2bRepository
 
             $preparedItems[] = [
                 'product_id'      => (int)$product['id'],
+                'is_custom'       => 0,
                 'product_name'    => (string)$product['name'],
                 'price'           => $price,
                 'quantity'        => (float)$quantity,
@@ -770,10 +807,10 @@ class B2bRepository
 
             $stmtItem = $this->pdo->prepare("
                 INSERT INTO b2b_order_items (
-                    order_id, product_id, product_name, price, quantity, unit,
+                    order_id, product_id, is_custom, product_name, price, quantity, unit,
                     package_size, package_unit, package_summary, item_total
                 ) VALUES (
-                    :order_id, :product_id, :product_name, :price, :quantity, :unit,
+                    :order_id, :product_id, :is_custom, :product_name, :price, :quantity, :unit,
                     :package_size, :package_unit, :package_summary, :item_total
                 )
             ");
@@ -786,6 +823,7 @@ class B2bRepository
                 $pkgSize = (float)($item['package_size'] ?? 1.0);
                 $pkgUnit = trim($item['package_unit'] ?? 'op.');
                 $unit    = trim($item['unit'] ?? 'kg');
+                $isCustom = !empty($item['is_custom']) ? 1 : 0;
 
                 // Wyliczenie rozbicia na opakowania z poprawną odmianą gramatyczną
                 if (!empty($item['package_summary'])) {
@@ -796,7 +834,8 @@ class B2bRepository
 
                 $stmtItem->execute([
                     ':order_id'        => $orderId,
-                    ':product_id'      => isset($item['product_id']) ? (int)$item['product_id'] : null,
+                    ':product_id'      => (!empty($item['product_id']) && (int)$item['product_id'] > 0) ? (int)$item['product_id'] : null,
+                    ':is_custom'       => $isCustom,
                     ':product_name'    => trim($item['product_name'] ?? $item['name'] ?? ''),
                     ':price'           => $price,
                     ':quantity'        => $qty,

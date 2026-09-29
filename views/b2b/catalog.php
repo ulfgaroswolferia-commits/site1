@@ -279,6 +279,107 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 </table>
             </div>
         </div>
+
+        <!-- Sekcja: Dodaj produkt spoza cennika (na zapytanie) -->
+        <div id="customProductSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-6 transition-all">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 shadow-xs">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                            Dodaj produkt spoza cennika
+                            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100/80 text-amber-800 border border-amber-200">Na zapytanie</span>
+                        </h2>
+                        <p class="text-xs text-slate-500 mt-0.5">Potrzebujesz towaru, którego nie ma w ofercie hurtownika na dziś? Dopisz go do swojego zamówienia.</p>
+                    </div>
+                </div>
+
+                <!-- Zastrzeżenie prawne / informacja o braku gwarancji -->
+                <div class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs font-semibold shadow-2xs">
+                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Zamówienie produktów spoza cennika nie gwarantuje ich dostawy</span>
+                </div>
+            </div>
+
+            <!-- Formularz dodawania pozycji -->
+            <form id="customProductForm" class="mt-4 grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                <div class="sm:col-span-5">
+                    <label for="customProdName" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                        Nazwa towaru <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="text" id="customProdName" placeholder="np. Koper włoski, Awokado Hass, Kurki świeże..."
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="customProdQty" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                        Ilość <span class="text-rose-500">*</span>
+                    </label>
+                    <input type="number" id="customProdQty" min="0.1" step="0.5" placeholder="np. 5"
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
+                </div>
+
+                <div class="sm:col-span-2">
+                    <label for="customProdUnit" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                        Jednostka
+                    </label>
+                    <select id="customProdUnit"
+                        class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
+                        <option value="kg">kg</option>
+                        <option value="szt.">szt.</option>
+                        <option value="op.">op.</option>
+                        <option value="pęczek">pęczek</option>
+                        <option value="skrzynka">skrzynka</option>
+                        <option value="karton">karton</option>
+                        <option value="worek">worek</option>
+                    </select>
+                </div>
+
+                <div class="sm:col-span-3">
+                    <button type="submit" id="btnAddCustomProduct"
+                        class="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-extrabold text-sm shadow-md shadow-amber-500/20 transition flex items-center justify-center gap-2 cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>Dodaj do zamówienia</span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Tabela draftu pozycji spoza cennika na dole -->
+            <div id="customProductsContainer" class="mt-5 hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-extrabold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                        Pozycje spoza cennika w drafcie zamówienia (<span id="customItemsCount">0</span>):
+                    </span>
+                    <span class="text-[11px] text-slate-400">Wycena indywidualna przez hurtownię</span>
+                </div>
+                <div class="border border-amber-200/80 rounded-xl overflow-hidden bg-amber-50/20">
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-amber-100/60 text-amber-950 font-bold border-b border-amber-200/70">
+                            <tr>
+                                <th class="py-2.5 px-4 w-12 text-center">#</th>
+                                <th class="py-2.5 px-4">Nazwa towaru</th>
+                                <th class="py-2.5 px-4 text-center w-32">Ilość</th>
+                                <th class="py-2.5 px-4 w-44">Status dostawy</th>
+                                <th class="py-2.5 px-4 text-right w-32">Szacowana cena</th>
+                                <th class="py-2.5 px-4 text-center w-16">Usuń</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customItemsTableBody" class="divide-y divide-amber-100/80">
+                            <!-- Dynamicznie dodawane wiersze -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </main>
 
     <!-- Floating Bottom Bar (Pływające podsumowanie koszyka) -->
@@ -371,6 +472,17 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     </div>
                 </div>
                 <?php endif; ?>
+
+                <!-- Ostrzeżenie w modalu gdy występują pozycje spoza cennika -->
+                <div id="modalOffCatalogNotice" class="hidden p-3.5 rounded-2xl bg-amber-50 border border-amber-200/90 flex items-start gap-2.5 text-xs text-amber-900 shadow-2xs">
+                    <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                        <span class="font-bold">Uwaga: Zamówienie produktów spoza cennika nie gwarantuje ich dostawy.</span>
+                        <span class="block text-amber-800 mt-0.5">Dostępność towaru oraz ostateczną cenę hurtownia potwierdzi podczas kompletacji na rampie.</span>
+                    </div>
+                </div>
 
                 <!-- Products breakdown list -->
                 <div>
@@ -497,6 +609,24 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
             const successOrderNumber = document.getElementById('successOrderNumber');
             const downloadPackingSheetBtn = document.getElementById('downloadPackingSheetBtn');
             const btnNewOrder = document.getElementById('btnNewOrder');
+
+            // Elementy formularza i tabeli pozycji spoza cennika
+            const customProductForm = document.getElementById('customProductForm');
+            const customProdName = document.getElementById('customProdName');
+            const customProdQty = document.getElementById('customProdQty');
+            const customProdUnit = document.getElementById('customProdUnit');
+            const customProductsContainer = document.getElementById('customProductsContainer');
+            const customItemsTableBody = document.getElementById('customItemsTableBody');
+            const customItemsCount = document.getElementById('customItemsCount');
+            const modalOffCatalogNotice = document.getElementById('modalOffCatalogNotice');
+            let customItems = [];
+
+            function escapeHtml(str) {
+                if (!str) return '';
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
 
             let currentCategory = 'ALL';
 
@@ -647,7 +777,116 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 updateCartTotals();
             }
 
-            // Suma koszyka
+            // Renderowanie tabeli pozycji spoza cennika w drafcie
+            function renderCustomItemsTable() {
+                if (!customProductsContainer || !customItemsTableBody) return;
+
+                if (customItems.length === 0) {
+                    customProductsContainer.classList.add('hidden');
+                    customItemsTableBody.innerHTML = '';
+                    if (customItemsCount) customItemsCount.textContent = '0';
+                    return;
+                }
+
+                customProductsContainer.classList.remove('hidden');
+                if (customItemsCount) customItemsCount.textContent = customItems.length;
+                customItemsTableBody.innerHTML = '';
+
+                customItems.forEach((c, idx) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'bg-amber-50/40 hover:bg-amber-50/70 transition-colors group';
+
+                    const tdLp = document.createElement('td');
+                    tdLp.className = 'py-3 px-4 text-center font-bold text-amber-700 text-xs';
+                    tdLp.textContent = idx + 1;
+
+                    const tdName = document.createElement('td');
+                    tdName.className = 'py-3 px-4 font-bold text-slate-900';
+                    tdName.innerHTML = `
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-sm">${escapeHtml(c.name)}</span>
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">Spoza cennika</span>
+                        </div>
+                    `;
+
+                    const tdQty = document.createElement('td');
+                    tdQty.className = 'py-3 px-4 text-center font-black text-amber-900 text-xs';
+                    tdQty.textContent = `${c.qty} ${c.unit}`;
+
+                    const tdStatus = document.createElement('td');
+                    tdStatus.className = 'py-3 px-4 text-xs font-semibold text-amber-800';
+                    tdStatus.innerHTML = `
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                            <span>Do potwierdzenia na rampie</span>
+                        </span>
+                    `;
+
+                    const tdPrice = document.createElement('td');
+                    tdPrice.className = 'py-3 px-4 text-right text-xs text-slate-500 italic font-medium';
+                    tdPrice.textContent = 'Do ustalenia (0 zł)';
+
+                    const tdAction = document.createElement('td');
+                    tdAction.className = 'py-3 px-4 text-center';
+                    const btnRemove = document.createElement('button');
+                    btnRemove.type = 'button';
+                    btnRemove.className = 'p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition active:scale-95 cursor-pointer';
+                    btnRemove.title = 'Usuń tę pozycję z draftu';
+                    btnRemove.innerHTML = `
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    `;
+                    btnRemove.addEventListener('click', () => {
+                        customItems.splice(idx, 1);
+                        renderCustomItemsTable();
+                        updateCartTotals();
+                    });
+                    tdAction.appendChild(btnRemove);
+
+                    tr.append(tdLp, tdName, tdQty, tdStatus, tdPrice, tdAction);
+                    customItemsTableBody.appendChild(tr);
+                });
+            }
+
+            // Obsługa formularza dodawania produktu spoza cennika
+            if (customProductForm) {
+                customProductForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const name = customProdName ? customProdName.value.trim() : '';
+                    const qty = customProdQty ? parseFloat(customProdQty.value) : 0;
+                    const unit = (customProdUnit ? customProdUnit.value.trim() : 'kg') || 'kg';
+
+                    if (!name) {
+                        alert('Proszę podać nazwę produktu spoza cennika.');
+                        if (customProdName) customProdName.focus();
+                        return;
+                    }
+
+                    if (!qty || qty <= 0 || isNaN(qty)) {
+                        alert('Proszę podać prawidłową ilość (większą od zera).');
+                        if (customProdQty) customProdQty.focus();
+                        return;
+                    }
+
+                    customItems.push({
+                        name: name,
+                        qty: qty,
+                        unit: unit
+                    });
+
+                    if (customProdName) customProdName.value = '';
+                    if (customProdQty) customProdQty.value = '';
+                    renderCustomItemsTable();
+                    updateCartTotals();
+
+                    if (customProductsContainer) {
+                        customProductsContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                });
+            }
+
+            // Suma koszyka uwzględniająca pozycje z cennika oraz spoza cennika
             function updateCartTotals() {
                 let totalAmount = 0.0;
                 let orderedCount = 0;
@@ -662,11 +901,20 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     }
                 });
 
-                cartItemsCount.textContent = `${orderedCount} ${orderedCount === 1 ? 'pozycja' : (orderedCount > 1 && orderedCount < 5 ? 'pozycje' : 'pozycji')}`;
+                const totalItemsCount = orderedCount + customItems.length;
+
+                if (customItems.length > 0 && orderedCount > 0) {
+                    cartItemsCount.textContent = `${totalItemsCount} (${orderedCount} z cennika + ${customItems.length} spoza)`;
+                } else if (customItems.length > 0 && orderedCount === 0) {
+                    cartItemsCount.textContent = `${customItems.length} ${customItems.length === 1 ? 'pozycja spoza cennika' : 'pozycje spoza cennika'}`;
+                } else {
+                    cartItemsCount.textContent = `${orderedCount} ${orderedCount === 1 ? 'pozycja' : (orderedCount > 1 && orderedCount < 5 ? 'pozycje' : 'pozycji')}`;
+                }
+
                 orderedCountLabel.textContent = orderedCount;
                 cartTotalSum.textContent = totalAmount.toFixed(2) + ' zł';
 
-                btnOpenReview.disabled = (orderedCount === 0);
+                btnOpenReview.disabled = (totalItemsCount === 0);
             }
 
             // Filtrowanie widoczności wierszy z zachowaniem naprzemiennego tła
@@ -766,11 +1014,18 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
             });
 
             clearQuantitiesBtn.addEventListener('click', () => {
-                if (confirm('Czy na pewno chcesz wyczyścić wszystkie wpisane ilości?')) {
+                const hasQuantities = rows.some(r => (parseFloat(r.querySelector('.input-qty').value) || 0) > 0);
+                const hasCustom = customItems.length > 0;
+                if (!hasQuantities && !hasCustom) return;
+
+                if (confirm('Czy na pewno chcesz wyczyścić wszystkie wpisane ilości oraz pozycje spoza cennika?')) {
                     rows.forEach(row => {
                         row.querySelector('.input-qty').value = '';
                         updateRow(row);
                     });
+                    customItems = [];
+                    renderCustomItemsTable();
+                    updateCartTotals();
                     filterRows();
                 }
             });
@@ -784,6 +1039,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     if (qty > 0) {
                         items.push({
                             product_id: parseInt(row.dataset.id),
+                            is_custom: 0,
                             product_name: row.dataset.name,
                             price: parseFloat(row.dataset.price),
                             quantity: qty,
@@ -795,6 +1051,22 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                         });
                     }
                 });
+
+                customItems.forEach(c => {
+                    items.push({
+                        product_id: null,
+                        is_custom: 1,
+                        product_name: c.name,
+                        price: 0.00,
+                        quantity: c.qty,
+                        unit: c.unit,
+                        package_size: 1.0,
+                        package_unit: c.unit,
+                        package_summary: 'Produkt spoza cennika (do potwierdzenia)',
+                        item_total: 0.00
+                    });
+                });
+
                 return items;
             }
 
@@ -804,26 +1076,70 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
 
                 modalItemsBody.innerHTML = '';
                 let total = 0;
+                let hasCustomItems = false;
 
                 items.forEach(it => {
                     total += it.item_total;
                     const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-slate-50';
-                    const productName = document.createElement('td');
-                    productName.className = 'py-2.5 px-3 font-semibold text-slate-900';
-                    productName.textContent = it.product_name;
-                    const quantity = document.createElement('td');
-                    quantity.className = 'py-2.5 px-3 text-center font-bold text-emerald-700';
-                    quantity.textContent = `${it.quantity} ${it.unit}`;
-                    const packageSummary = document.createElement('td');
-                    packageSummary.className = 'py-2.5 px-3 text-slate-500';
-                    packageSummary.textContent = it.package_summary;
-                    const itemTotal = document.createElement('td');
-                    itemTotal.className = 'py-2.5 px-3 text-right font-bold text-slate-800';
-                    itemTotal.textContent = `${it.item_total.toFixed(2)} zł`;
-                    tr.append(productName, quantity, packageSummary, itemTotal);
+
+                    if (it.is_custom) {
+                        hasCustomItems = true;
+                        tr.className = 'bg-amber-50/40 hover:bg-amber-50/70 transition-colors';
+
+                        const productName = document.createElement('td');
+                        productName.className = 'py-2.5 px-3 font-semibold text-slate-900';
+                        productName.innerHTML = `
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span>${escapeHtml(it.product_name)}</span>
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">Spoza cennika</span>
+                            </div>
+                        `;
+
+                        const quantity = document.createElement('td');
+                        quantity.className = 'py-2.5 px-3 text-center font-bold text-amber-800';
+                        quantity.textContent = `${it.quantity} ${it.unit}`;
+
+                        const packageSummary = document.createElement('td');
+                        packageSummary.className = 'py-2.5 px-3 text-amber-700 italic text-[11px]';
+                        packageSummary.textContent = 'Do potwierdzenia na rampie';
+
+                        const itemTotal = document.createElement('td');
+                        itemTotal.className = 'py-2.5 px-3 text-right text-xs font-semibold text-slate-400 italic';
+                        itemTotal.textContent = 'Do wyceny';
+
+                        tr.append(productName, quantity, packageSummary, itemTotal);
+                    } else {
+                        tr.className = 'hover:bg-slate-50 transition-colors';
+
+                        const productName = document.createElement('td');
+                        productName.className = 'py-2.5 px-3 font-semibold text-slate-900';
+                        productName.textContent = it.product_name;
+
+                        const quantity = document.createElement('td');
+                        quantity.className = 'py-2.5 px-3 text-center font-bold text-emerald-700';
+                        quantity.textContent = `${it.quantity} ${it.unit}`;
+
+                        const packageSummary = document.createElement('td');
+                        packageSummary.className = 'py-2.5 px-3 text-slate-500';
+                        packageSummary.textContent = it.package_summary;
+
+                        const itemTotal = document.createElement('td');
+                        itemTotal.className = 'py-2.5 px-3 text-right font-bold text-slate-800';
+                        itemTotal.textContent = `${it.item_total.toFixed(2)} zł`;
+
+                        tr.append(productName, quantity, packageSummary, itemTotal);
+                    }
+
                     modalItemsBody.appendChild(tr);
                 });
+
+                if (modalOffCatalogNotice) {
+                    if (hasCustomItems) {
+                        modalOffCatalogNotice.classList.remove('hidden');
+                    } else {
+                        modalOffCatalogNotice.classList.add('hidden');
+                    }
+                }
 
                 modalTotalSum.textContent = total.toFixed(2) + ' zł';
                 checkoutModal.classList.remove('hidden');
@@ -918,6 +1234,9 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     row.querySelector('.input-qty').value = '';
                     updateRow(row);
                 });
+                customItems = [];
+                renderCustomItemsTable();
+                updateCartTotals();
                 filterRows();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             });
