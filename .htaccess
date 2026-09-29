@@ -12,8 +12,8 @@ RewriteRule (^|/)\.well-known(?:/|$) - [F,L,NC]
 RewriteRule (^|/)\. - [F,L,NC]
 
 RewriteRule ^(?:program|views|tests|db|storage|tmp|docs|bin)(?:/|$) - [F,L,NC]
-RewriteRule ^(?:cookies\.txt|README\.md|CLAUDE\.md|skills-lock\.json|\.sftpignore)$ - [F,L,NC]
-RewriteRule (?:^|/)[^/]*\.(?:env|ini|conf|config|log|sql|sqlite3?|db|bak|backup|old|orig|save|swp|dist|sample|pem|key|p12|pfx|crt|cer|csr|yaml|yml|zip|7z|rar|tar|gz|tgz)(?:/|$) - [F,L,NC]
+RewriteRule ^(?:cookies\.txt|README\.md|CLAUDE\.md|skills-lock\.json|\.sftpignore|\.gitignore)$ - [F,L,NC]
+RewriteRule (?:^|/)[^/]*\.(?:env|ini|conf|config|log|sql|sqlite[0-9a-zA-Z_-]*|db|bak|backup|old|orig|save|swp|dist|sample|pem|key|p12|pfx|crt|cer|csr|yaml|yml|zip|7z|rar|tar|gz|tgz|wal|shm)(?:/|$) - [F,L,NC]
 RewriteRule ^(?!index\.php(?:/|$)).*\.(?:php[0-9]*|phtml|phtm?|phar|phps|inc)(?:/.*)?$ - [F,L,NC]
 
 # -----------------------------------------------------------------------------
@@ -69,11 +69,20 @@ RewriteRule ^(.*)$ /index.php [L,QSA]
 # Nie udostępniaj list plików, jeśli w katalogu nie ma pliku indeksu.
 Options -Indexes
 
-# Konfiguracja z sekretami nigdy nie może być serwowana jako plik.
-# Składnia dla Apache 2.4. Na Apache 2.2 "Require" powoduje błąd konfiguracji (HTTP 500) —
-# tam zamiast niego użyj:
-#     Order allow,deny
-#     Deny from all
-<FilesMatch "^data\.php$">
-    Require all denied
+# -----------------------------------------------------------------------------
+# Bezwzględna ochrona plików wrażliwych na poziomie rdzenia Apache (FilesMatch)
+# Działa niezależnie od mod_rewrite (zarówno Apache 2.4, jak i Apache 2.2).
+# -----------------------------------------------------------------------------
+<FilesMatch "(?i:\.(sqlite[0-9a-zA-Z_-]*|db|env|log|sql|ini|conf|bak|backup|shm|wal|md|lock)$|^data\.php$|^\.)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order deny,allow
+        Deny from all
+    </IfModule>
 </FilesMatch>
+
+# Ukryj sygnatury serwera
+ServerSignature Off
+
