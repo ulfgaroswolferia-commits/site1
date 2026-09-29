@@ -1,8 +1,59 @@
-*.md
-.idea/
+# =============================================================================
+# SFTP Ignore Configuration - Protection of sensitive & development files
+# =============================================================================
+
+# Secrets & Credentials
 .vscode/
+.vscode/**
+*.env
+*.pem
+*.key
+
+# Git & VCS
+.git/
+.git/**
+.gitignore
+
+# Agents & AI configuration
 .agent/
+.agent/**
+.agents/
+.agents/**
 .claude/
+.claude/**
 .gemini/
-GEMINI.md
+.gemini/**
+.superpowers/
+.superpowers/**
+.idea/
+.idea/**
+
+# Docs & Specifications
 docs/
+docs/**
+*.md
+CLAUDE.md
+GEMINI.md
+README.md
+
+# Testing & Development files
+tests/
+tests/**
+bin/
+bin/**
+scratch/
+scratch/**
+node_modules/
+node_modules/**
+package.json
+package-lock.json
+skills-lock.json
+
+# Temporary uploaded price lists & generated export files
+tmp/*.xlsx
+tmp/*.xml
+tmp/*.epp
+tmp/*.txt
+storage/orders/*.xlsx
+storage/b2b/*.xlsx
+*.log

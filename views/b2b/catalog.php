@@ -464,7 +464,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="deliveryDateOptions">
                         <?php foreach ($sched['options'] as $idx => $opt): ?>
                             <label class="delivery-date-card relative flex flex-col p-3 rounded-xl border-2 cursor-pointer transition select-none <?= $opt['is_default'] ? 'border-emerald-600 bg-emerald-50/60 shadow-2xs' : 'border-slate-200 hover:border-slate-300 bg-white' ?>">
-                                <input type="radio" name="modal_delivery_date" value="<?= $opt['date'] ?>" <?= $opt['is_default'] ? 'checked' : '' ?> class="sr-only input-delivery-date">
+                                <input type="radio" name="modal_delivery_date" value="<?= htmlspecialchars($opt['date']) ?>" <?= $opt['is_default'] ? 'checked' : '' ?> class="sr-only input-delivery-date">
                                 <span class="text-xs font-black <?= $opt['is_default'] ? 'text-emerald-900' : 'text-slate-800' ?>"><?= htmlspecialchars($opt['short_label']) ?></span>
                                 <span class="text-[11px] <?= $opt['is_default'] ? 'text-emerald-700 font-semibold' : 'text-slate-500' ?> mt-0.5"><?= htmlspecialchars($opt['sub_label']) ?></span>
                             </label>

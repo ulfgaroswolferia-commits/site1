@@ -815,7 +815,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                         <td class="py-3 px-4 text-center whitespace-nowrap">
                                             <div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
                                                 <!-- Kopiuj link -->
-                                                <button type="button" onclick="copyToken('<?= $tokenUrl ?>')" class="copy-token inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-xl hover:bg-sky-100 transition shadow-2xs" title="Skopiuj bezpośredni link logowania klienta do schowka">
+                                                <button type="button" data-token-url="<?= Tools::h($tokenUrl) ?>" onclick="copyToken(this.dataset.tokenUrl)" class="copy-token inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-xl hover:bg-sky-100 transition shadow-2xs" title="Skopiuj bezpośredni link logowania klienta do schowka">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
                                                     <span>Kopiuj</span>
                                                 </button>
