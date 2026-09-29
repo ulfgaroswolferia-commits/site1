@@ -551,11 +551,22 @@ class B2bController extends AppController
             $login = trim((string)($_POST['login'] ?? ''));
             $pass  = (string)($_POST['password'] ?? '');
 
-            // 1. Sprawdź czy to administrator (hurtownik)
+            // 1. Sprawdź czy to administrator / użytkownik panelu hurtowni
             $adminLogin = defined('APP_LOGIN') ? APP_LOGIN : '';
             $adminPass  = defined('APP_PASSWORD') ? APP_PASSWORD : '';
+            $appUsers   = defined('APP_USERS') && is_array(APP_USERS) ? APP_USERS : [];
+            $isAdminOk  = false;
 
-            if ($adminLogin !== '' && $login === $adminLogin && $pass === $adminPass) {
+            if (!empty($appUsers) && isset($appUsers[$login])) {
+                $expectedPass = $appUsers[$login];
+                if (password_verify($pass, (string)$expectedPass) || hash_equals((string)$expectedPass, $pass)) {
+                    $isAdminOk = true;
+                }
+            } elseif ($adminLogin !== '' && $login === $adminLogin && $pass === $adminPass) {
+                $isAdminOk = true;
+            }
+
+            if ($isAdminOk) {
                 $this->startUserSession(1, ['app_login' => $login]);
                 App::redirect('b2b/admin');
                 return;

@@ -68,9 +68,15 @@ class HomeController extends AppController
 
         $adminLogin    = defined('APP_LOGIN') ? APP_LOGIN : '';
         $adminPassHash = defined('APP_PASSWORD_HASH') ? APP_PASSWORD_HASH : '';
+        $appUsers      = defined('APP_USERS') && is_array(APP_USERS) ? APP_USERS : [];
         $isAdminOk     = false;
 
-        if ($adminLogin !== '' && $login === $adminLogin) {
+        if (!empty($appUsers) && isset($appUsers[$login])) {
+            $expectedPass = $appUsers[$login];
+            if (password_verify($password, (string)$expectedPass) || hash_equals((string)$expectedPass, $password)) {
+                $isAdminOk = true;
+            }
+        } elseif ($adminLogin !== '' && $login === $adminLogin) {
             if ($adminPassHash !== '' && password_verify($password, $adminPassHash)) {
                 $isAdminOk = true;
             } elseif (defined('APP_PASSWORD') && hash_equals(APP_PASSWORD, $password)) {
