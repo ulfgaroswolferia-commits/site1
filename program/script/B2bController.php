@@ -65,6 +65,14 @@ class B2bController extends AppController
                 $_SESSION['b2b_client_id']    = (int)$client['id'];
                 $_SESSION['b2b_client_token'] = $client['auth_token'];
                 $_SESSION['b2b_company_name'] = $client['company_name'];
+
+                // Bezpieczne czyszczenie URL z tokenu (PRG pattern):
+                // Usuwa token z paska adresu, historii przeglądarki i nagłówka Referer
+                App::redirect('b2b');
+                return;
+            } else {
+                App::redirect('b2b/login?error=' . urlencode('Nieprawidłowy lub unieważniony link dostępowy. Skontaktuj się z hurtownikiem.'));
+                return;
             }
         }
 
@@ -544,6 +552,10 @@ class B2bController extends AppController
         if (!empty($_SESSION['b2b_client_id'])) {
             App::redirect('b2b/index');
             return;
+        }
+
+        if (!empty($_GET['error'])) {
+            $this->outputData['error'] = trim((string)$_GET['error']);
         }
 
         if (Tools::isPost()) {

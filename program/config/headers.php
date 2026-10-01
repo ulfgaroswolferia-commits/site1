@@ -30,6 +30,10 @@ header('Referrer-Policy: strict-origin-when-cross-origin');
 $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
         || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
 
+if ($isHttps) {
+    header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+}
+
 $lifetime = defined('SESSION_LIFETIME') ? (int) SESSION_LIFETIME : 0;
 
 if ($lifetime > 0) {

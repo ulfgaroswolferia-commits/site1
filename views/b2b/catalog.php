@@ -14,6 +14,15 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
     <title><?= htmlspecialchars($title) ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        // Ochrona przed wyciekiem tokenu: natychmiastowe usunięcie parametru token z adresu i historii
+        if (window.history && window.history.replaceState && window.location.search.includes('token=')) {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('token');
+            const cleanUrl = url.pathname + (url.searchParams.toString() ? '?' + url.searchParams.toString() : '') + url.hash;
+            window.history.replaceState({}, document.title, cleanUrl);
+        }
+    </script>
     <style>
         body { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
         /* Chrome, Safari, Edge, Opera */

@@ -41,14 +41,11 @@ RewriteCond %{HTTP_USER_AGENT} ^.*python-requests.*$ [NC]
 RewriteRule .* - [F,L]
 
 # -----------------------------------------------------------------------------
-# Wymuszenie HTTPS i www. ODKOMENTUJ NA PRODUKCJI.
-# Na localhoscie te reguły zapętlą przekierowania — dlatego domyślnie wyłączone.
+# Wymuszenie HTTPS na produkcji (automatycznie wyklucza środowiska lokalne localhost/127.0.0.1)
 # -----------------------------------------------------------------------------
-# RewriteCond %{HTTPS} off
-# RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-#
-# RewriteCond %{HTTP_HOST} !^www\. [NC]
-# RewriteRule (.*) https://www.%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)(:[0-9]+)?$ [NC]
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # -----------------------------------------------------------------------------
 # Front controller.
