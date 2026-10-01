@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Test TDD dla wczytywania cennika z historii zamĂłwieĹ„.
+ * Test TDD dla wczytywania cennika z historii zamówień.
  */
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', dirname(__DIR__));
@@ -42,32 +42,32 @@ function httpReq($url, $post = null, $headers = [], $follow = false) {
 
 echo "=== TEST: Load Price List From History ===\n";
 
-// 1. Zaloguj siÄ™
+// 1. Zaloguj się
 $resLoginGet = httpReq('http://localhost/home/login');
 preg_match('/name="_csrf" value="([^"]+)"/', $resLoginGet['body'], $m);
 $loginCsrf = $m[1] ?? '';
 
 $resLoginPost = httpReq('http://localhost/home/login', [
     'login' => APP_LOGIN,
-    'password' => APP_PASSWORD,
+    'password' => (getenv('APP_TEST_PASSWORD') ?: 'admin123'),
     '_csrf' => $loginCsrf
 ], [], true);
 
-// 2. Pobierz stronÄ™ /order/index i sprawdĹş czy zawiera recent_orders oraz sekcjÄ™ wyboru
+// 2. Pobierz stronę /order/index i sprawdź czy zawiera recent_orders oraz sekcję wyboru
 $resOrderGet = httpReq('http://localhost/order/index');
 preg_match('/const CSRF_TOKEN = \'([^\']+)\'/', $resOrderGet['body'], $mOrder);
 $orderCsrf = $mOrder[1] ?? '';
 $hasSelect = strpos($resOrderGet['body'], 'id="history-order-select"') !== false;
 echo "2. Select historii w HTML: " . ($hasSelect ? "TAK" : "NIE") . "\n";
 
-// 3. WywoĹ‚aj endpoint /order/load-history dla istniejÄ…cego zamĂłwienia
-// SprawdĹşmy jakie ID zamĂłwienia istnieje w bazie SQLite
+// 3. Wywołaj endpoint /order/load-history dla istniejącego zamówienia
+// Sprawdźmy jakie ID zamówienia istnieje w bazie SQLite
 require_once BASE_PATH . '/program/core/Model.php';
 require_once BASE_PATH . '/program/model/OrderModel.php';
 $model = new \App\OrderModel();
 $orders = $model->getAllOrders(1);
 if (empty($orders)) {
-    // StwĂłrzmy jedno przykĹ‚adowe zamĂłwienie
+    // Stwórzmy jedno przykładowe zamówienie
     $orderId = $model->createOrder([
         'order_number'      => $model->generateOrderNumber(),
         'supplier_name'     => 'Hurtownia Testowa TDD',
@@ -80,7 +80,7 @@ if (empty($orders)) {
     $orderId = (int)$orders[0]['id'];
 }
 
-echo "Wybrane ID zamĂłwienia do testu: $orderId\n";
+echo "Wybrane ID zamówienia do testu: $orderId\n";
 
 $resLoad = httpReq('http://localhost/order/loadhistory', [
     'order_id' => $orderId,
@@ -89,15 +89,15 @@ $resLoad = httpReq('http://localhost/order/loadhistory', [
 
 echo "Status odpowiedzi: " . $resLoad['code'] . "\n";
 echo "Typ odpowiedzi: " . $resLoad['ct'] . "\n";
-echo "TreĹ›Ä‡ odpowiedzi: " . $resLoad['body'] . "\n";
+echo "Treść odpowiedzi: " . $resLoad['body'] . "\n";
 
 $data = json_decode($resLoad['body'], true);
 $ok = ($resLoad['code'] === 200 && ($data['ok'] ?? false) === true && !empty($data['products']));
 
 if ($ok) {
-    echo "[PASS] Endpoint /order/load-history zwrĂłciĹ‚ poprawny asortyment!\n";
+    echo "[PASS] Endpoint /order/load-history zwrócił poprawny asortyment!\n";
 } else {
-    echo "[FAIL] Endpoint nie zadziaĹ‚aĹ‚ poprawnie.\n";
+    echo "[FAIL] Endpoint nie zadziałał poprawnie.\n";
 }
 
 @unlink($cookieFile);

@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Test TDD: PoprawnoĹ›Ä‡ gramatyczna rozbicia opakowaĹ„ (np. "2 klatki", "2 worki + 5 kg", "5 klatek", "5 workĂłw")
+ * Test TDD: Poprawność gramatyczna rozbicia opakowań (np. "2 klatki", "2 worki + 5 kg", "5 klatek", "5 worków")
  */
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', dirname(__DIR__));
@@ -11,7 +11,7 @@ require_once BASE_PATH . '/program/config/includes.php';
 
 use App\B2bRepository;
 
-echo "=== TEST: PoprawnoĹ›Ä‡ jÄ™zykowa rozbicia opakowaĹ„ B2B ===\n";
+echo "=== TEST: Poprawność językowa rozbicia opakowań B2B ===\n";
 
 $repo = new B2bRepository();
 
@@ -27,8 +27,8 @@ $cases = [
     [1, 'worek', 'worek'],
     [2, 'worek', 'worki'],
     [4, 'worek', 'worki'],
-    [5, 'worek', 'workĂłw'],
-    [14, 'worek', 'workĂłw'],
+    [5, 'worek', 'worków'],
+    [14, 'worek', 'worków'],
     [23, 'worek', 'worki'],
 
     [1, 'skrzynka', 'skrzynka'],
@@ -37,7 +37,7 @@ $cases = [
 
     [1, 'karton', 'karton'],
     [2, 'karton', 'kartony'],
-    [5, 'karton', 'kartonĂłw'],
+    [5, 'karton', 'kartonów'],
 
     [1, 'op.', 'op.'],
     [2, 'op.', 'op.'],
@@ -76,8 +76,8 @@ $summaryCases = [
     [17.0, 6.0, 'worek', 'kg', '2 worki + 5 kg'],
     [12.0, 5.0, 'worek', 'kg', '2 worki + 2 kg'],
     [5.0, 5.0, 'worek', 'kg', '1 worek'],
-    [25.0, 5.0, 'worek', 'kg', '5 workĂłw'],
-    [31.0, 5.0, 'worek', 'kg', '6 workĂłw + 1 kg'],
+    [25.0, 5.0, 'worek', 'kg', '5 worków'],
+    [31.0, 5.0, 'worek', 'kg', '6 worków + 1 kg'],
 
     [15.0, 6.0, 'skrzynka', 'kg', '2 skrzynki + 3 kg'],
     [30.0, 6.0, 'skrzynka', 'kg', '5 skrzynek'],
@@ -117,12 +117,12 @@ $loginCsrf = $m[1] ?? '';
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
     'login' => APP_LOGIN,
-    'password' => APP_PASSWORD,
+    'password' => (getenv('APP_TEST_PASSWORD') ?: 'admin123'),
     '_csrf' => $loginCsrf
 ]));
 curl_exec($ch);
 
-// Utworzenie zamĂłwienia z niepoprawnym zapisem w bazie ("2 klatka", "2 worek + 5 kg") i sprawdzenie czy orderdetails to koryguje
+// Utworzenie zamówienia z niepoprawnym zapisem w bazie ("2 klatka", "2 worek + 5 kg") i sprawdzenie czy orderdetails to koryguje
 $orderNumber = $repo->generateOrderNumber();
 $orderId = $repo->createOrder([
     'order_number'              => $orderNumber,
@@ -166,7 +166,7 @@ $items = $detailsData['items'] ?? [];
 $item1Summary = $items[0]['package_summary'] ?? '';
 $item2Summary = $items[1]['package_summary'] ?? '';
 
-echo "4. SzczegĂłĹ‚y zamĂłwienia (ID: {$orderId}):\n";
+echo "4. Szczegóły zamówienia (ID: {$orderId}):\n";
 echo "   - Pozycja 1: {$item1Summary} (oczekiwano '2 klatki')\n";
 echo "   - Pozycja 2: {$item2Summary} (oczekiwano '2 worki + 5 kg')\n";
 
@@ -174,8 +174,8 @@ $detailsOk = ($item1Summary === '2 klatki' && $item2Summary === '2 worki + 5 kg'
 echo "   Wynik korygowania w orderdetails: " . ($detailsOk ? "PASS" : "FAIL") . "\n";
 
 if (!$allCasesOk || !$allSummariesOk || !$hasJsInflection || !$detailsOk) {
-    echo "=== TESTY ZAKOĹCZONE BĹÄDEM ===\n";
+    echo "=== TESTY ZAKOŃCZONE BŁĘDEM ===\n";
     exit(1);
 }
 
-echo "=== WSZYSTKIE TESTY GRAMATYKI ZAKOĹCZONE SUKCESEM ===\n";
+echo "=== WSZYSTKIE TESTY GRAMATYKI ZAKOŃCZONE SUKCESEM ===\n";

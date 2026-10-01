@@ -77,6 +77,45 @@ class AppController extends Controller
         session_destroy();
     }
 
+    /**
+     * Weryfikacja danych logowania użytkownika panelu (APP_USERS lub APP_LOGIN + APP_PASSWORD_HASH).
+     * Jedno źródło prawdy dla wszystkich formularzy logowania. Puste login/hasło są zawsze odrzucane.
+     */
+    protected function verifyAdminCredentials(string $login, string $password): bool
+    {
+        if ($login === '' || $password === '') {
+            return false;
+        }
+
+        $appUsers = defined('APP_USERS') && is_array(APP_USERS) ? APP_USERS : [];
+        if (!empty($appUsers) && isset($appUsers[$login])) {
+            $expected = (string) $appUsers[$login];
+            if ($expected === '') {
+                return false;
+            }
+            // Wpis będący hashem weryfikujemy wyłącznie przez password_verify — inaczej sam
+            // ciąg hasha działałby jak hasło. Jawne hasło (zgodność wstecz) porównujemy w stałym czasie.
+            if (password_get_info($expected)['algo'] !== null) {
+                return password_verify($password, $expected);
+            }
+            return hash_equals($expected, $password);
+        }
+
+        $adminLogin = defined('APP_LOGIN') ? (string) APP_LOGIN : '';
+        if ($adminLogin === '' || !hash_equals($adminLogin, $login)) {
+            return false;
+        }
+
+        $hash = defined('APP_PASSWORD_HASH') ? (string) APP_PASSWORD_HASH : '';
+        if ($hash !== '') {
+            return password_verify($password, $hash);
+        }
+
+        // Zgodność wstecz: jawne hasło w konfiguracji (tylko gdy niepuste).
+        $plain = defined('APP_PASSWORD') ? (string) APP_PASSWORD : '';
+        return $plain !== '' && hash_equals($plain, $password);
+    }
+
     private function authKey(): string
     {
         return defined('AUTH_SESSION_KEY') ? AUTH_SESSION_KEY : 'app_uid';
@@ -133,6 +172,23 @@ class AppController extends Controller
     {
         $ref = $this->safeReferer();
         return $ref !== '' ? $ref : (Config::get('default_route') . '/' . Config::get('default_action'));
+    }
+
+    /**
+     * Kończy żądanie odpowiedzią błędu z kodem HTTP (JSON dla AJAX, prosty tekst w pozostałych przypadkach).
+     * Komunikat trafia do użytkownika — nie przekazuj tu treści wyjątków.
+     */
+    protected function abort(int $status, string $message): void
+    {
+        if ($this->isAjax()) {
+            App::json(['ok' => false, 'error' => $message], $status);
+        }
+        if (!headers_sent()) {
+            http_response_code($status);
+            header('Content-Type: text/plain; charset=utf-8');
+        }
+        echo $message;
+        exit;
     }
 
     /** Parametr ze ścieżki URL (/home/show/id/7 -> $this->param('id')). */

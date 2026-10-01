@@ -57,3 +57,16 @@ tmp/*.txt
 storage/orders/*.xlsx
 storage/b2b/*.xlsx
 *.log
+
+# Local git worktrees (may contain copies of data.php and cookies.txt)
+.worktrees/
+.worktrees/**
+cookies.txt
+
+# Runtime state generated on each machine
+storage/b2b/orders/*.xlsx
+storage/login_throttle.json
+
+# Local databases (SQLite) - never overwrite the server database on upload
+db/
+db/**

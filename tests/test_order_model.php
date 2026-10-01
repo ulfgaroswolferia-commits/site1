@@ -11,13 +11,13 @@ echo "=== TEST ORDER MODEL (SQLITE) ===\n";
 
 $model = new \App\OrderModel();
 $orderNum = $model->generateOrderNumber();
-echo "[OK] Wygenerowany numer zamĂłwienia: $orderNum\n";
+echo "[OK] Wygenerowany numer zamówienia: $orderNum\n";
 
 $testItems = [
     ['name' => 'Pomidory malinowe', 'price' => 8.50, 'quantity' => 10.5, 'unit' => 'kg'],
-    ['name' => 'OgĂłrki gruntowe',   'price' => 5.00, 'quantity' => 20.0, 'unit' => 'kg'],
-    ['name' => 'Koperek Ĺ›wieĹĽy',    'price' => 1.80, 'quantity' => 15,   'unit' => 'pÄ™czek'],
-    ['name' => 'Rzodkiewka',        'price' => 2.50, 'quantity' => 0,    'unit' => 'pÄ™czek'], // nie zamĂłwione
+    ['name' => 'Ogórki gruntowe',   'price' => 5.00, 'quantity' => 20.0, 'unit' => 'kg'],
+    ['name' => 'Koperek świeży',    'price' => 1.80, 'quantity' => 15,   'unit' => 'pęczek'],
+    ['name' => 'Rzodkiewka',        'price' => 2.50, 'quantity' => 0,    'unit' => 'pęczek'], // nie zamówione
 ];
 
 $orderId = $model->createOrder([
@@ -27,28 +27,28 @@ $orderId = $model->createOrder([
     'export_filename'   => 'zamowienie_001.xlsx',
 ], $testItems);
 
-echo "[OK] Utworzono zamĂłwienie o ID: $orderId\n";
+echo "[OK] Utworzono zamówienie o ID: $orderId\n";
 
 $order = $model->getOrderById($orderId);
 if (!$order) {
-    echo "ERROR: Nie znaleziono zapisanego zamĂłwienia!\n";
+    echo "ERROR: Nie znaleziono zapisanego zamówienia!\n";
     exit(1);
 }
-echo "[OK] Odczyt nagĹ‚Ăłwka: {$order['order_number']}, kwota: {$order['total_amount']} zĹ‚, pozycje: {$order['total_items']}\n";
+echo "[OK] Odczyt nagłówka: {$order['order_number']}, kwota: {$order['total_amount']} zł, pozycje: {$order['total_items']}\n";
 
 $items = $model->getOrderItems($orderId);
 echo "[OK] Liczba zapisanych pozycji w bazie: " . count($items) . "\n";
 
 foreach ($items as $it) {
-    echo "  - {$it['product_name']}: {$it['quantity']} {$it['unit']} x {$it['unit_price']} zĹ‚ = {$it['item_total']} zĹ‚\n";
+    echo "  - {$it['product_name']}: {$it['quantity']} {$it['unit']} x {$it['unit_price']} zł = {$it['item_total']} zł\n";
 }
 
 if (count($items) !== 3) {
-    echo "ERROR: Oczekiwano dokĹ‚adnie 3 pozycji o iloĹ›ci > 0, otrzymano: " . count($items) . "\n";
+    echo "ERROR: Oczekiwano dokładnie 3 pozycji o ilości > 0, otrzymano: " . count($items) . "\n";
     exit(1);
 }
 
 $all = $model->getAllOrders();
-echo "[OK] Wszystkich zamĂłwieĹ„ w bazie: " . count($all) . "\n";
+echo "[OK] Wszystkich zamówień w bazie: " . count($all) . "\n";
 
 echo "=== ALL ORDER MODEL TESTS PASSED! ===\n";

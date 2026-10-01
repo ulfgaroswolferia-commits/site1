@@ -66,25 +66,15 @@ class HomeController extends AppController
         $login    = trim((string) ($_POST['login'] ?? ''));
         $password = (string) ($_POST['password'] ?? '');
 
-        $adminLogin    = defined('APP_LOGIN') ? APP_LOGIN : '';
-        $adminPassHash = defined('APP_PASSWORD_HASH') ? APP_PASSWORD_HASH : '';
-        $appUsers      = defined('APP_USERS') && is_array(APP_USERS) ? APP_USERS : [];
-        $isAdminOk     = false;
-
-        if (!empty($appUsers) && isset($appUsers[$login])) {
-            $expectedPass = $appUsers[$login];
-            if (password_verify($password, (string)$expectedPass) || hash_equals((string)$expectedPass, $password)) {
-                $isAdminOk = true;
-            }
-        } elseif ($adminLogin !== '' && $login === $adminLogin) {
-            if ($adminPassHash !== '' && password_verify($password, $adminPassHash)) {
-                $isAdminOk = true;
-            } elseif (defined('APP_PASSWORD') && hash_equals(APP_PASSWORD, $password)) {
-                $isAdminOk = true;
-            }
+        $throttleKey = LoginThrottle::clientKey();
+        if (LoginThrottle::isBlocked($throttleKey)) {
+            $this->outputData['error'] = 'Zbyt wiele nieudanych prób logowania. Spróbuj ponownie za kilkanaście minut.';
+            $this->outputData['login'] = $login;
+            return 'login';
         }
 
-        if ($isAdminOk) {
+        if ($this->verifyAdminCredentials($login, $password)) {
+            LoginThrottle::clear($throttleKey);
             $this->startUserSession(1, ['app_login' => $login]);
             App::redirect('home/index');
         }
@@ -93,6 +83,7 @@ class HomeController extends AppController
         $b2bRepo = new \App\B2bRepository();
         $client  = $b2bRepo->getClientByLogin($login);
         if ($client && !empty($client['password_hash']) && password_verify($password, $client['password_hash'])) {
+            LoginThrottle::clear($throttleKey);
             session_regenerate_id(true); // Ochrona przed Session Fixation
             $_SESSION['b2b_client_id']    = (int)$client['id'];
             $_SESSION['b2b_client_token'] = $client['auth_token'];
@@ -100,6 +91,7 @@ class HomeController extends AppController
             App::redirect('b2b/index');
         }
 
+        LoginThrottle::hit($throttleKey);
         $this->outputData['error'] = 'Nieprawidłowy login lub hasło.';
         $this->outputData['login'] = $login;
 

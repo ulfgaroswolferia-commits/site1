@@ -12,7 +12,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title) ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="<?= Tools::h($base) ?>assets/css/b2b.css?v=<?= (int) @filemtime(BASE_PATH . '/assets/css/b2b.css') ?>">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         // Ochrona przed wyciekiem tokenu: natychmiastowe usunięcie parametru token z adresu i historii
@@ -53,9 +53,42 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
         #catalogTable tbody tr.product-row.prod-row-even:hover {
             background-color: #e2e8f0 !important;
         }
+
+        /* Telefon (< sm): każdy wiersz asortymentu jako karta. Ten sam markup co tabela,
+           więc selektory JS (.product-row, .input-qty, .btn-step-*, data-*) działają bez zmian.
+           Wyświetlanie ustawione tutaj, a nie klasami Tailwind, żeby przełączana przez JS
+           klasa .hidden (filtry, wyszukiwarka) zawsze wygrywała. */
+        @media (max-width: 639.98px) {
+            #catalogTable,
+            #catalogTable tbody { display: block; width: 100%; }
+            #catalogTable tbody tr.product-row {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto;
+                grid-template-areas:
+                    "name name"
+                    "pkg price"
+                    "qty qty"
+                    "summary total";
+                column-gap: 0.75rem;
+                row-gap: 0.625rem;
+                padding: 1rem;
+                align-items: center;
+            }
+            #catalogTable tbody tr.product-row.hidden { display: none; }
+            #catalogTable tbody tr.product-row > td { display: block; padding: 0; }
+            #catalogTable tbody tr.product-row > td.cell-lp { display: none; }
+            #catalogTable tbody tr.product-row > td.cell-name { grid-area: name; }
+            #catalogTable tbody tr.product-row > td.cell-pkg { grid-area: pkg; }
+            #catalogTable tbody tr.product-row > td.cell-price { grid-area: price; }
+            #catalogTable tbody tr.product-row > td.cell-qty { grid-area: qty; }
+            #catalogTable tbody tr.product-row > td.cell-summary { grid-area: summary; align-self: start; }
+            #catalogTable tbody tr.product-row > td.cell-total { grid-area: total; align-self: start; }
+            #catalogTable tbody tr:not(.product-row),
+            #catalogTable tbody tr:not(.product-row) > td { display: block; }
+        }
     </style>
 </head>
-<body class="min-h-full flex flex-col bg-slate-100 text-slate-800 pb-28">
+<body class="min-h-full flex flex-col bg-slate-100 text-slate-800 pb-40 sm:pb-28">
 
     <?php if (!empty($view['isAdmin'])): ?>
     <!-- Pasek informacyjny trybu podglądu dla administratora hurtowni -->
@@ -78,54 +111,54 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <!-- Brand Logo Link -->
-                <a href="<?= $base ?>b2b" class="flex items-center gap-3 group focus:outline-none" title="Przejdź do startu zamówienia">
+                <a href="<?= $base ?>b2b" class="flex items-center gap-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 rounded-xl shrink-0" title="Przejdź do startu zamówienia" aria-label="Hurtownia Magdy — przejdź do startu zamówienia">
                     <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white shadow-md shadow-emerald-600/20 group-hover:bg-emerald-700 transition">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                         </svg>
                     </div>
-                    <div>
+                    <div class="hidden sm:block">
                         <span class="text-lg font-black tracking-tight text-slate-900 block leading-tight group-hover:text-emerald-700 transition">HURTOWNIA MAGDY</span>
                         <span class="text-[11px] font-bold tracking-wider uppercase text-emerald-600">Platforma zamówień B2B</span>
                     </div>
                 </a>
 
                 <!-- Client Info & Actions -->
-                <div class="flex items-center gap-3 sm:gap-6">
-                    <div class="text-right">
+                <div class="flex items-center gap-2 sm:gap-6 min-w-0">
+                    <div class="text-right min-w-0">
                         <div class="flex items-center justify-end gap-1.5">
-                            <span class="inline-block w-2 h-2 rounded-full <?= !empty($view['isAdmin']) ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse' ?>"></span>
-                            <span class="text-xs font-black text-slate-900 uppercase tracking-wide">
+                            <span class="inline-block w-2 h-2 shrink-0 rounded-full <?= !empty($view['isAdmin']) ? 'bg-amber-500' : 'bg-emerald-500 animate-pulse' ?>"></span>
+                            <span class="text-xs font-black text-slate-900 uppercase tracking-wide truncate">
                                 <?= htmlspecialchars($client['company_name'] ?? 'Odbiorca B2B') ?>
                             </span>
                         </div>
-                        <div class="text-[11px] text-slate-500 truncate max-w-[200px] sm:max-w-xs">
+                        <div class="text-[11px] text-slate-500 truncate max-w-[160px] sm:max-w-xs">
                             <?= htmlspecialchars($client['delivery_address'] ?? 'Dostawa hurtowa') ?>
                         </div>
                     </div>
 
                     <?php if (!empty($view['isAdmin'])): ?>
-                    <a href="<?= $base ?>b2b/admin" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-100 border border-amber-300 text-xs font-bold text-amber-900 hover:bg-amber-200 transition" title="Wróć do panelu hurtownika">
-                        <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <a href="<?= $base ?>b2b/admin" class="inline-flex items-center justify-center gap-1.5 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 px-3 py-1.5 rounded-lg bg-amber-100 border border-amber-300 text-xs font-bold text-amber-900 hover:bg-amber-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 transition shrink-0" title="Wróć do panelu hurtownika" aria-label="Panel Hurtownika">
+                        <svg class="w-3.5 h-3.5 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                         </svg>
-                        Panel Hurtownika
+                        <span class="hidden sm:inline">Panel Hurtownika</span>
                     </a>
-                    <a href="<?= $base ?>home/logout" class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Wyloguj administratora">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <a href="<?= $base ?>home/logout" class="p-3 sm:p-2 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 transition shrink-0" title="Wyloguj administratora" aria-label="Wyloguj administratora">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
                     </a>
                     <?php else: ?>
-                    <a href="<?= $base ?>b2b/history" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
-                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <a href="<?= $base ?>b2b/history" class="inline-flex items-center justify-center gap-1.5 w-11 h-11 sm:w-auto sm:h-auto sm:px-3 sm:py-1.5 rounded-lg border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition shrink-0" title="Historia zamówień" aria-label="Historia zamówień">
+                        <svg class="w-5 h-5 sm:w-3.5 sm:h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Historia
+                        <span class="hidden sm:inline">Historia</span>
                     </a>
 
-                    <a href="<?= $base ?>b2b/logout" class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Wyloguj">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <a href="<?= $base ?>b2b/logout" class="p-3 sm:p-2 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 transition shrink-0" title="Wyloguj" aria-label="Wyloguj">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
                     </a>
@@ -148,29 +181,35 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                     </div>
-                    <input type="text" id="searchInput" placeholder="Szukaj towaru (np. mango, ziemniak, pomidor)..."
-                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition">
+                    <input type="text" id="searchInput" placeholder="Szukaj towaru (np. mango, ziemniak, pomidor)..." aria-label="Szukaj towaru"
+                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition">
                 </div>
 
                 <!-- Fast Filter Toggle (Tylko zamawiane) -->
-                <div class="flex items-center gap-3">
-                    <label class="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none">
-                        <input type="checkbox" id="filterOrderedOnly" class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                <div class="flex flex-wrap items-center justify-between sm:justify-start gap-3">
+                    <label class="flex items-center gap-2 min-h-[44px] sm:min-h-0 text-xs font-bold text-slate-700 cursor-pointer select-none">
+                        <input type="checkbox" id="filterOrderedOnly" class="w-5 h-5 sm:w-4 sm:h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
                         <span>Pokaż tylko wybrane pozycje (<span id="orderedCountLabel">0</span>)</span>
                     </label>
-                    <button type="button" id="clearQuantitiesBtn" class="text-xs text-rose-500 hover:text-rose-700 font-semibold px-2 py-1 rounded hover:bg-rose-50 transition">
+                    <button type="button" id="clearQuantitiesBtn" class="text-xs text-rose-600 hover:text-rose-700 font-semibold px-3 py-2.5 sm:px-2 sm:py-1 rounded hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 transition">
                         Wyczyść koszyk
                     </button>
+                    <!-- Potwierdzenie czyszczenia koszyka w miejscu (zamiast confirm()) -->
+                    <div id="clearConfirmBox" class="hidden flex items-center gap-2 text-xs" role="group" aria-labelledby="clearConfirmText">
+                        <span id="clearConfirmText" class="font-bold text-rose-700">Wyczyścić cały koszyk?</span>
+                        <button type="button" id="clearConfirmYes" class="px-3 py-2.5 sm:py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 transition">Tak, wyczyść</button>
+                        <button type="button" id="clearConfirmNo" class="px-3 py-2.5 sm:py-1 rounded-lg border border-slate-300 text-slate-700 font-bold hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition">Anuluj</button>
+                    </div>
                 </div>
             </div>
 
             <!-- Categories pills -->
             <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none text-xs font-semibold">
-                <button type="button" class="category-pill active px-3.5 py-1.5 rounded-xl bg-emerald-600 text-white shadow-sm transition" data-category="ALL">
+                <button type="button" class="category-pill active shrink-0 whitespace-nowrap px-3.5 py-2.5 sm:py-1.5 rounded-xl bg-emerald-600 text-white shadow-sm transition" data-category="ALL">
                     Wszystkie towary
                 </button>
                 <?php foreach (($categories ?? []) as $cat): ?>
-                    <button type="button" class="category-pill px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition" data-category="<?= htmlspecialchars($cat) ?>">
+                    <button type="button" class="category-pill shrink-0 whitespace-nowrap px-3.5 py-2.5 sm:py-1.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition" data-category="<?= htmlspecialchars($cat) ?>">
                         <?= htmlspecialchars($cat) ?>
                     </button>
                 <?php endforeach; ?>
@@ -181,7 +220,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm" id="catalogTable">
-                    <thead class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
+                    <thead class="hidden sm:table-header-group bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
                         <tr>
                             <th class="py-3 px-4 w-12 text-center">Lp.</th>
                             <th class="py-3 px-4">Towar</th>
@@ -195,7 +234,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     <tbody class="divide-y divide-slate-100" id="tableBody">
                         <?php if (empty($products)): ?>
                             <tr>
-                                <td colspan="7" class="py-12 text-center text-slate-400">
+                                <td colspan="7" class="py-12 px-4 text-center text-slate-500">
                                     Brak dostępnych produktów w ofercie na dziś.
                                 </td>
                             </tr>
@@ -215,71 +254,74 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                                     data-pkg-size="<?= $pkgSize ?>"
                                     data-pkg-unit="<?= $pkgUnit ?>">
                                     
-                                    <!-- Lp -->
-                                    <td class="py-3.5 px-4 text-center text-xs font-semibold text-slate-400">
+                                    <!-- Lp (ukryta w widoku kart na telefonie) -->
+                                    <td class="cell-lp py-3.5 px-4 text-center text-xs font-semibold text-slate-500">
                                         <?= $lp++ ?>
                                     </td>
 
                                     <!-- Nazwa towaru -->
-                                    <td class="py-3.5 px-4">
-                                        <div class="font-bold text-slate-900 group-hover:text-emerald-700 transition">
+                                    <td class="cell-name py-3.5 px-4">
+                                        <div class="font-bold text-base sm:text-sm text-slate-900 group-hover:text-emerald-700 transition">
                                             <?= htmlspecialchars($p['name']) ?>
                                         </div>
-                                        <div class="text-[11px] text-slate-400">
+                                        <div class="text-[11px] text-slate-500">
                                             <?= htmlspecialchars($p['category'] ?? 'Świeże') ?>
                                         </div>
                                     </td>
 
                                     <!-- Opakowanie i asystent -->
-                                    <td class="py-3.5 px-3 whitespace-nowrap">
+                                    <td class="cell-pkg py-3.5 px-3 sm:whitespace-nowrap">
                                         <?php if ($pkgSize > 1.0): ?>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold whitespace-nowrap">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold sm:whitespace-nowrap">
                                                 <?= $pkgUnit ?> (<?= $pkgSize ?> <?= $unit ?>)
                                             </span>
                                         <?php else: ?>
-                                            <span class="text-slate-400 text-xs whitespace-nowrap">luzem (<?= $unit ?>)</span>
+                                            <span class="text-slate-500 text-xs sm:whitespace-nowrap">luzem (<?= $unit ?>)</span>
                                         <?php endif; ?>
                                     </td>
 
                                     <!-- Cena -->
-                                    <td class="py-3.5 px-3 text-right whitespace-nowrap">
+                                    <td class="cell-price py-3.5 px-3 text-right whitespace-nowrap">
                                         <div class="font-bold text-slate-800">
-                                            <?= number_format($price, 2, '.', ' ') ?> <span class="text-xs font-normal text-slate-500">zł</span>
+                                            <?= Tools::h(Tools::money($price, false)) ?>&nbsp;<span class="text-xs font-normal text-slate-500">zł</span>
                                         </div>
-                                        <div class="text-[10px] text-slate-400">za <?= $unit ?></div>
+                                        <div class="text-[10px] text-slate-500">za <?= $unit ?></div>
                                     </td>
 
                                     <!-- Pole ilości z klawiaturą i asystentem zaokrąglenia -->
-                                    <td class="py-3.5 px-4">
-                                        <div class="flex items-center justify-center gap-1.5">
-                                            <button type="button" class="btn-step-down w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center justify-center active:scale-95 transition">
+                                    <td class="cell-qty py-3.5 px-4">
+                                        <div class="flex items-center justify-center gap-2 sm:gap-1.5">
+                                            <button type="button" aria-label="Zmniejsz ilość: <?= htmlspecialchars($p['name']) ?>" class="btn-step-down w-11 h-11 sm:w-8 sm:h-8 shrink-0 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-lg sm:text-base font-bold flex items-center justify-center active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition">
                                                 -
                                             </button>
-                                            <div class="relative w-24">
-                                                <input type="number" step="<?= $unit === 'szt.' ? '1' : '0.5' ?>" min="0" value="" placeholder="0"
-                                                    class="input-qty w-full text-center py-1.5 px-2 rounded-lg border border-slate-300 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition">
-                                                <span class="absolute right-2 top-2 text-[10px] font-bold text-slate-400 pointer-events-none"><?= $unit ?></span>
+                                            <div class="relative flex-1 sm:flex-none sm:w-24">
+                                                <input type="number" inputmode="decimal" step="<?= $unit === 'szt.' ? '1' : '0.5' ?>" min="0" value="" placeholder="0"
+                                                    aria-label="Ilość: <?= htmlspecialchars($p['name']) ?>"
+                                                    class="input-qty w-full h-11 sm:h-auto text-center py-1.5 px-2 rounded-lg border border-slate-300 font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-base sm:text-sm transition">
+                                                <span class="absolute inset-y-0 right-2 flex items-center text-[10px] font-bold text-slate-500 pointer-events-none" aria-hidden="true"><?= $unit ?></span>
                                             </div>
-                                            <button type="button" class="btn-step-up w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold flex items-center justify-center active:scale-95 transition">
+                                            <button type="button" aria-label="Zwiększ ilość: <?= htmlspecialchars($p['name']) ?>" class="btn-step-up w-11 h-11 sm:w-8 sm:h-8 shrink-0 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-lg sm:text-base font-bold flex items-center justify-center active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition">
                                                 +
                                             </button>
                                         </div>
                                         <!-- Przycisk asystenta optymalizacji klatki/worka -->
-                                        <div class="optimizer-hint mt-1 text-center hidden">
-                                            <button type="button" class="btn-round-up text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-0.5 hover:bg-emerald-100 transition">
+                                        <div class="optimizer-hint mt-1.5 sm:mt-1 text-center hidden">
+                                            <button type="button" class="btn-round-up text-xs sm:text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg sm:rounded px-3 py-2.5 sm:px-2 sm:py-0.5 w-full sm:w-auto hover:bg-emerald-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition">
                                                 Zaokrąglij do pełnej skrzynki
                                             </button>
                                         </div>
                                     </td>
 
                                     <!-- Rozbicie logistyczne -->
-                                    <td class="py-3.5 px-3 whitespace-nowrap">
-                                        <span class="package-summary-label text-xs font-medium text-slate-600 whitespace-nowrap">-</span>
+                                    <td class="cell-summary py-3.5 px-3 sm:whitespace-nowrap">
+                                        <span class="sm:hidden block text-[11px] font-bold uppercase tracking-wider text-slate-500">Opakowania</span>
+                                        <span class="package-summary-label text-xs font-medium text-slate-600 sm:whitespace-nowrap">-</span>
                                     </td>
 
                                     <!-- Wartość -->
-                                    <td class="py-3.5 px-4 text-right">
-                                        <span class="item-total-label font-bold text-slate-900 text-sm">0.00 zł</span>
+                                    <td class="cell-total py-3.5 px-4 text-right">
+                                        <span class="sm:hidden block text-[11px] font-bold uppercase tracking-wider text-slate-500">Wartość</span>
+                                        <span class="item-total-label font-bold text-slate-900 text-sm whitespace-nowrap">0,00&nbsp;zł</span>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -293,7 +335,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
         <div id="customProductSection" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-6 transition-all">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-100">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 shadow-xs">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 shadow-sm">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
@@ -308,7 +350,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 </div>
 
                 <!-- Zastrzeżenie prawne / informacja o braku gwarancji -->
-                <div class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs font-semibold shadow-2xs">
+                <div class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs font-semibold shadow-sm">
                     <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -317,21 +359,23 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
             </div>
 
             <!-- Formularz dodawania pozycji -->
-            <form id="customProductForm" class="mt-4 grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+            <form id="customProductForm" class="mt-4 grid grid-cols-1 sm:grid-cols-12 gap-3 items-start" novalidate>
                 <div class="sm:col-span-5">
                     <label for="customProdName" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                        Nazwa towaru <span class="text-rose-500">*</span>
+                        Nazwa towaru <span class="text-rose-500" aria-hidden="true">*</span>
                     </label>
-                    <input type="text" id="customProdName" placeholder="np. Koper włoski, Awokado Hass, Kurki świeże..."
-                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
+                    <input type="text" id="customProdName" placeholder="np. Koper włoski, Awokado Hass, Kurki świeże..." maxlength="200" aria-required="true"
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 aria-[invalid=true]:border-rose-500 text-base sm:text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
+                    <p id="customProdNameError" class="hidden mt-1 text-xs font-semibold text-rose-600"></p>
                 </div>
 
                 <div class="sm:col-span-2">
                     <label for="customProdQty" class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                        Ilość <span class="text-rose-500">*</span>
+                        Ilość <span class="text-rose-500" aria-hidden="true">*</span>
                     </label>
-                    <input type="number" id="customProdQty" min="0.1" step="0.5" placeholder="np. 5"
-                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
+                    <input type="text" id="customProdQty" placeholder="np. 4,5 lub 5" inputmode="decimal" aria-required="true" autocomplete="off"
+                        class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 aria-[invalid=true]:border-rose-500 text-base sm:text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
+                    <p id="customProdQtyError" class="hidden mt-1 text-xs font-semibold text-rose-600"></p>
                 </div>
 
                 <div class="sm:col-span-2">
@@ -339,7 +383,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                         Jednostka
                     </label>
                     <select id="customProdUnit"
-                        class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
+                        class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-base sm:text-sm font-semibold text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition">
                         <option value="kg">kg</option>
                         <option value="szt.">szt.</option>
                         <option value="op.">op.</option>
@@ -351,8 +395,9 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 </div>
 
                 <div class="sm:col-span-3">
+                    <span class="hidden sm:block text-xs font-bold uppercase tracking-wider mb-1.5 invisible" aria-hidden="true">&nbsp;</span>
                     <button type="submit" id="btnAddCustomProduct"
-                        class="w-full py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-extrabold text-sm shadow-md shadow-amber-500/20 transition flex items-center justify-center gap-2 cursor-pointer">
+                        class="w-full min-h-[44px] py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-extrabold text-sm shadow-md shadow-amber-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 transition flex items-center justify-center gap-2 cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
@@ -361,25 +406,25 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 </div>
             </form>
 
-            <!-- Tabela draftu pozycji spoza cennika na dole -->
+            <!-- Tabela pozycji spoza cennika (lista zamówienia) na dole -->
             <div id="customProductsContainer" class="mt-5 hidden">
-                <div class="flex items-center justify-between mb-2">
+                <div class="flex flex-wrap items-center justify-between gap-1 mb-2">
                     <span class="text-xs font-extrabold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
                         <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                        Pozycje spoza cennika w drafcie zamówienia (<span id="customItemsCount">0</span>):
+                        Pozycje spoza cennika na liście zamówienia (<span id="customItemsCount">0</span>):
                     </span>
-                    <span class="text-[11px] text-slate-400">Wycena indywidualna przez hurtownię</span>
+                    <span class="text-[11px] text-slate-500">Wycena indywidualna przez hurtownię</span>
                 </div>
-                <div class="border border-amber-200/80 rounded-xl overflow-hidden bg-amber-50/20">
+                <div class="border border-amber-200/80 rounded-xl overflow-x-auto bg-amber-50/20">
                     <table class="w-full text-xs text-left">
                         <thead class="bg-amber-100/60 text-amber-950 font-bold border-b border-amber-200/70">
                             <tr>
-                                <th class="py-2.5 px-4 w-12 text-center">#</th>
-                                <th class="py-2.5 px-4">Nazwa towaru</th>
-                                <th class="py-2.5 px-4 text-center w-32">Ilość</th>
-                                <th class="py-2.5 px-4 w-44">Status dostawy</th>
-                                <th class="py-2.5 px-4 text-right w-32">Szacowana cena</th>
-                                <th class="py-2.5 px-4 text-center w-16">Usuń</th>
+                                <th class="hidden sm:table-cell py-2.5 px-4 w-12 text-center">#</th>
+                                <th class="py-2.5 px-3 sm:px-4">Nazwa towaru</th>
+                                <th class="py-2.5 px-3 sm:px-4 text-center sm:w-32">Ilość</th>
+                                <th class="hidden sm:table-cell py-2.5 px-4 w-44">Status dostawy</th>
+                                <th class="hidden sm:table-cell py-2.5 px-4 text-right w-32">Szacowana cena</th>
+                                <th class="py-2.5 px-3 sm:px-4 text-center sm:w-16">Usuń</th>
                             </tr>
                         </thead>
                         <tbody id="customItemsTableBody" class="divide-y divide-amber-100/80">
@@ -393,8 +438,8 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
 
     <!-- Floating Bottom Bar (Pływające podsumowanie koszyka) -->
     <div id="floatingCart" class="fixed bottom-0 inset-x-0 bg-slate-900/95 backdrop-blur text-white py-3.5 px-4 sm:px-8 border-t border-slate-800 shadow-2xl z-40 transition-transform duration-300 translate-y-0">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div class="flex items-center gap-6 text-sm">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
+            <div class="flex items-center gap-4 sm:gap-6 text-sm">
                 <div>
                     <span class="text-xs text-slate-400 block uppercase font-bold tracking-wider">Wybrane pozycje:</span>
                     <span id="cartItemsCount" class="font-extrabold text-emerald-400 text-lg">0 pozycji</span>
@@ -402,13 +447,13 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 <div class="h-8 w-px bg-slate-700"></div>
                 <div>
                     <span class="text-xs text-slate-400 block uppercase font-bold tracking-wider">Łączna wartość:</span>
-                    <span id="cartTotalSum" class="font-black text-white text-xl">0.00 zł</span>
+                    <span id="cartTotalSum" class="font-black text-white text-xl whitespace-nowrap">0,00&nbsp;zł</span>
                 </div>
             </div>
 
             <div class="flex items-center gap-3 w-full sm:w-auto">
                 <button type="button" id="btnOpenReview" disabled
-                    class="w-full sm:w-auto px-8 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed font-extrabold text-white text-sm shadow-lg shadow-emerald-500/20 active:scale-95 transition flex items-center justify-center gap-2">
+                    class="w-full sm:w-auto min-h-[44px] px-8 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed font-extrabold text-white text-sm shadow-lg shadow-emerald-500/20 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition flex items-center justify-center gap-2">
                     <span>Złóż zamówienie</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
@@ -419,7 +464,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
     </div>
 
     <!-- Review & Checkout Modal -->
-    <div id="checkoutModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div id="checkoutModal" role="dialog" aria-modal="true" aria-label="Podsumowanie zamówienia" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <!-- Header -->
             <div class="px-6 py-5 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between">
@@ -427,8 +472,8 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     <h3 class="text-lg font-black tracking-tight">Podsumowanie zamówienia B2B</h3>
                     <p class="text-xs text-emerald-100 mt-0.5">Sprawdź specyfikację przed wysłaniem</p>
                 </div>
-                <button type="button" id="btnCloseModal" class="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10 transition">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button type="button" id="btnCloseModal" aria-label="Zamknij" class="text-white/80 hover:text-white p-2 rounded-lg hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
@@ -439,19 +484,19 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 <!-- Client Details Snapshot -->
                 <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 text-xs grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <span class="text-slate-400 font-semibold block">Odbiorca:</span>
+                        <span class="text-slate-500 font-semibold block">Odbiorca:</span>
                         <strong class="text-slate-900 text-sm"><?= htmlspecialchars($client['company_name'] ?? '') ?></strong>
                     </div>
                     <div>
-                        <span class="text-slate-400 font-semibold block">Adres dostawy:</span>
+                        <span class="text-slate-500 font-semibold block">Adres dostawy:</span>
                         <span class="text-slate-700"><?= htmlspecialchars($client['delivery_address'] ?? '') ?></span>
                     </div>
                     <div>
-                        <span class="text-slate-400 font-semibold block">Telefon kontaktowy:</span>
+                        <span class="text-slate-500 font-semibold block">Telefon kontaktowy:</span>
                         <span class="text-slate-700"><?= htmlspecialchars($client['phone'] ?? '-') ?></span>
                     </div>
                     <div>
-                        <span class="text-slate-400 font-semibold block">Data złożenia:</span>
+                        <span class="text-slate-500 font-semibold block">Data złożenia:</span>
                         <span class="text-slate-700"><?= date('d.m.Y H:i') ?></span>
                     </div>
                 </div>
@@ -462,7 +507,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 <div>
                     <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Termin realizacji dostawy:</h4>
                     <?php if (!empty($sched['is_cutoff_passed'])): ?>
-                        <div class="mb-3 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2.5 text-xs text-amber-900 shadow-2xs">
+                        <div class="mb-3 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2.5 text-xs text-amber-900 shadow-sm">
                             <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             <div>
                                 <span class="font-bold">Zamówienia na jutrzejszy poranek zostały zamknięte o <?= htmlspecialchars($sched['cutoff_time']) ?>.</span>
@@ -472,7 +517,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     <?php endif; ?>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="deliveryDateOptions">
                         <?php foreach ($sched['options'] as $idx => $opt): ?>
-                            <label class="delivery-date-card relative flex flex-col p-3 rounded-xl border-2 cursor-pointer transition select-none <?= $opt['is_default'] ? 'border-emerald-600 bg-emerald-50/60 shadow-2xs' : 'border-slate-200 hover:border-slate-300 bg-white' ?>">
+                            <label class="delivery-date-card relative flex flex-col p-3 rounded-xl border-2 cursor-pointer transition select-none <?= $opt['is_default'] ? 'border-emerald-600 bg-emerald-50/60 shadow-sm' : 'border-slate-200 hover:border-slate-300 bg-white' ?>">
                                 <input type="radio" name="modal_delivery_date" value="<?= htmlspecialchars($opt['date']) ?>" <?= $opt['is_default'] ? 'checked' : '' ?> class="sr-only input-delivery-date">
                                 <span class="text-xs font-black <?= $opt['is_default'] ? 'text-emerald-900' : 'text-slate-800' ?>"><?= htmlspecialchars($opt['short_label']) ?></span>
                                 <span class="text-[11px] <?= $opt['is_default'] ? 'text-emerald-700 font-semibold' : 'text-slate-500' ?> mt-0.5"><?= htmlspecialchars($opt['sub_label']) ?></span>
@@ -483,7 +528,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 <?php endif; ?>
 
                 <!-- Ostrzeżenie w modalu gdy występują pozycje spoza cennika -->
-                <div id="modalOffCatalogNotice" class="hidden p-3.5 rounded-2xl bg-amber-50 border border-amber-200/90 flex items-start gap-2.5 text-xs text-amber-900 shadow-2xs">
+                <div id="modalOffCatalogNotice" class="hidden p-3.5 rounded-2xl bg-amber-50 border border-amber-200/90 flex items-start gap-2.5 text-xs text-amber-900 shadow-sm">
                     <svg class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
@@ -512,7 +557,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                             <tfoot class="bg-slate-50 font-black text-slate-900 border-t border-slate-200">
                                 <tr>
                                     <td colspan="3" class="py-3 px-3 text-right text-xs uppercase">Łącznie do zapłaty:</td>
-                                    <td id="modalTotalSum" class="py-3 px-3 text-right text-emerald-600 text-sm font-extrabold">0.00 zł</td>
+                                    <td id="modalTotalSum" class="py-3 px-3 text-right text-emerald-600 text-sm font-extrabold whitespace-nowrap">0,00&nbsp;zł</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -525,18 +570,21 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                         Uwagi dla hurtowni i kierowcy (opcjonalnie):
                     </label>
                     <textarea id="orderNotes" rows="2"
-                        class="w-full p-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
+                        class="w-full p-3 rounded-xl border border-slate-200 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"
                         placeholder="np. prosimy o dostawę przed 6:30 rano; skrzynki na wymianę"></textarea>
                 </div>
             </div>
 
+            <!-- Komunikat błędu wysyłki zamówienia (zamiast alert()) -->
+            <div id="checkoutError" role="alert" class="hidden mx-6 mb-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700"></div>
+
             <!-- Footer -->
-            <div class="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
-                <button type="button" id="btnCancelModal" class="px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-600 hover:bg-slate-100 transition">
+            <div class="px-4 sm:px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3">
+                <button type="button" id="btnCancelModal" class="min-h-[44px] sm:min-h-0 px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-600 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition">
                     Wróć do edycji
                 </button>
                 <button type="button" id="btnConfirmOrder"
-                    class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-lg shadow-emerald-600/30 active:scale-95 transition flex items-center gap-2">
+                    class="min-h-[44px] sm:min-h-0 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-lg shadow-emerald-600/30 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 transition flex items-center justify-center gap-2">
                     <span id="confirmBtnText">Zatwierdź i wyślij zamówienie</span>
                     <svg id="confirmSpinner" class="w-4 h-4 animate-spin hidden" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -548,30 +596,30 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
     </div>
 
     <!-- Success Modal -->
-    <div id="successModal" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-md w-full p-8 text-center shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+    <div id="successModal" role="dialog" aria-modal="true" aria-labelledby="successModalTitle" class="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 text-center shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
             <div class="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4">
-                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
             </div>
-            <h3 class="text-xl font-black text-slate-900">Zamówienie przyjęte!</h3>
+            <h3 id="successModalTitle" class="text-xl font-black text-slate-900">Zamówienie przyjęte!</h3>
             <p class="text-xs text-slate-500 mt-1">Twoje zamówienie zostało przekazane do działu kompletacji hurtowni.</p>
 
             <div class="my-6 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-                <div class="text-[11px] uppercase font-bold text-slate-400">Numer zamówienia</div>
+                <div class="text-[11px] uppercase font-bold text-slate-500">Numer zamówienia</div>
                 <div id="successOrderNumber" class="text-lg font-black text-emerald-600 mt-0.5">ZAM/B2B/...</div>
             </div>
 
             <div class="space-y-3">
-                <a id="downloadPackingSheetBtn" href="#" target="_blank"
+                <a id="downloadPackingSheetBtn" href="#" target="_blank" rel="noopener"
                     class="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold shadow-md shadow-emerald-600/20 transition">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    Pobierz plik
+                    Pobierz specyfikację (Excel .xlsx)
                 </a>
-                <button type="button" id="btnNewOrder" class="w-full py-2.5 px-4 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">
+                <button type="button" id="btnNewOrder" class="w-full min-h-[44px] py-2.5 px-4 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition">
                     Złóż kolejne zamówienie
                 </button>
                 <a href="<?= $base ?>b2b/logout" id="btnLogoutAfterOrder"
@@ -585,10 +633,81 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
         </div>
     </div>
 
+    <!-- Powiadomienia (toast) — zamiast alert() -->
+    <div id="toastRegion" role="status" aria-live="polite" class="fixed z-[60] inset-x-4 bottom-44 sm:bottom-28 sm:left-auto sm:right-6 sm:w-96 flex flex-col gap-2 pointer-events-none"></div>
+
     <!-- CSRF & JavaScript Controller -->
     <script>
         const CSRF_TOKEN = '<?= $csrfToken ?>';
         const BASE_URL   = '<?= $base ?>';
+        const LOGIN_URL  = BASE_URL + 'b2b/login';
+        // Szkic koszyka w localStorage — klucz osobny dla każdego klienta (i dla podglądu admina)
+        const CART_DRAFT_KEY = 'b2b_cart_draft_' + '<?= !empty($view['isAdmin']) ? 'admin_' : '' ?>' + '<?= (int) ($client['id'] ?? 0) ?>';
+        const CART_DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+        // Kwota do WYŚWIETLENIA w formacie polskim (1 234,50 zł). Nie używać do wartości wysyłanych na serwer.
+        const formatPLN = (v) => new Intl.NumberFormat('pl-PL', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(Number(v) || 0) + ' zł';
+
+        // Toast: krótki komunikat w rogu ekranu. opts: { type: 'info'|'success'|'error', linkHref, linkText, duration }
+        function showToast(message, opts) {
+            const o = opts || {};
+            const region = document.getElementById('toastRegion');
+            if (!region) return;
+            const colors = {
+                success: 'bg-emerald-700 text-white',
+                error: 'bg-rose-700 text-white',
+                info: 'bg-slate-800 text-white'
+            };
+            const toast = document.createElement('div');
+            toast.className = 'pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-semibold ' + (colors[o.type] || colors.info);
+            const text = document.createElement('div');
+            text.className = 'flex-1';
+            text.textContent = message;
+            if (o.linkHref) {
+                const link = document.createElement('a');
+                link.href = o.linkHref;
+                link.className = 'block mt-1 underline font-extrabold focus:outline-none focus-visible:ring-2 focus-visible:ring-white rounded';
+                link.textContent = o.linkText || o.linkHref;
+                text.appendChild(link);
+            }
+            const close = document.createElement('button');
+            close.type = 'button';
+            close.className = 'shrink-0 -m-1 p-1 rounded-lg text-white/80 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white';
+            close.setAttribute('aria-label', 'Zamknij powiadomienie');
+            close.textContent = '×';
+            close.addEventListener('click', () => toast.remove());
+            toast.append(text, close);
+            region.appendChild(toast);
+            const duration = (o.duration === undefined) ? (o.linkHref ? 0 : 5000) : o.duration;
+            if (duration > 0) setTimeout(() => toast.remove(), duration);
+        }
+
+        // Odpowiedź fetch → JSON, z rozpoznaniem wygasłej sesji (401/403/419, przekierowanie na logowanie, HTML zamiast JSON).
+        function sessionExpiredError() {
+            const err = new Error('Sesja wygasła — zaloguj się ponownie.');
+            err.sessionExpired = true;
+            return err;
+        }
+        async function readJsonResponse(res) {
+            const contentType = (res.headers.get('content-type') || '').toLowerCase();
+            if (res.status === 401 || res.status === 403 || res.status === 419 || res.redirected) {
+                throw sessionExpiredError();
+            }
+            if (contentType.indexOf('application/json') === -1) {
+                if (res.ok) throw sessionExpiredError();
+                const httpErr = new Error('Błąd serwera (HTTP ' + res.status + '). Spróbuj ponownie za chwilę.');
+                httpErr.httpError = true;
+                throw httpErr;
+            }
+            return res.json();
+        }
+        function showSessionExpired() {
+            showToast('Sesja wygasła — zaloguj się ponownie. Twój koszyk zostanie przywrócony po zalogowaniu.', {
+                type: 'error',
+                linkHref: LOGIN_URL,
+                linkText: 'Przejdź do logowania'
+            });
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             const rows = Array.from(document.querySelectorAll('.product-row'));
@@ -628,7 +747,17 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
             const customItemsTableBody = document.getElementById('customItemsTableBody');
             const customItemsCount = document.getElementById('customItemsCount');
             const modalOffCatalogNotice = document.getElementById('modalOffCatalogNotice');
+            const customProdNameError = document.getElementById('customProdNameError');
+            const customProdQtyError = document.getElementById('customProdQtyError');
+            const checkoutError = document.getElementById('checkoutError');
+            const clearConfirmBox = document.getElementById('clearConfirmBox');
+            const clearConfirmYes = document.getElementById('clearConfirmYes');
+            const clearConfirmNo = document.getElementById('clearConfirmNo');
             let customItems = [];
+            let isSubmittingOrder = false;
+            let orderCompleted = false;
+            let skipUnloadWarning = false;
+            let lastFocusBeforeModal = null;
 
             function escapeHtml(str) {
                 if (!str) return '';
@@ -763,7 +892,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 const optimizerHint = row.querySelector('.optimizer-hint');
 
                 summaryLabel.textContent = computePackageSummary(qty, pkgSize, pkgUnit, unit);
-                totalLabel.textContent = total.toFixed(2) + ' zł';
+                totalLabel.textContent = formatPLN(total);
 
                 // Asystent zaokrąglenia (Box Optimizer - min. 65% napełnienia opakowania)
                 if (pkgSize > 1.0 && qty > 0) {
@@ -786,7 +915,43 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 updateCartTotals();
             }
 
-            // Renderowanie tabeli pozycji spoza cennika w drafcie
+            // Pomocnik parsowania ilości: obsługuje liczby całkowite, ułamki dziesiętne z kropką i przecinkiem (np. 4,5),
+            // ułamki zwykłe (np. 1/2), a także opcjonalną jednostkę wpisaną przez klienta w polu ilości (np. "4,5 kg").
+            function parseQuantityInput(val) {
+                if (typeof val === 'number') {
+                    return (Number.isFinite(val) && val > 0 && val < 100000) ? Math.round(val * 1000) / 1000 : null;
+                }
+                if (!val || typeof val !== 'string') return null;
+                let s = val.trim().replace(/\s+/g, ' ').replace(',', '.');
+                // Opcjonalne usunięcie dopisku jednostki na końcu, np. "4,5 kg" -> "4.5"
+                s = s.replace(/\s*(kg|szt\.?|op\.?|pęczek|skrzynka|karton|worek|g|l|litr)\s*$/i, '').trim();
+                // Obsługa ułamków zwykłych, np. "1/2" -> 0.5
+                if (/^\d+\/\d+$/.test(s)) {
+                    const parts = s.split('/');
+                    const den = parseFloat(parts[1]);
+                    if (den > 0) {
+                        const res = parseFloat(parts[0]) / den;
+                        return (Number.isFinite(res) && res > 0 && res < 100000) ? Math.round(res * 1000) / 1000 : null;
+                    }
+                    return null;
+                }
+                if (!/^\d+(\.\d+)?$/.test(s) && !/^\.\d+$/.test(s)) {
+                    return null;
+                }
+                const num = parseFloat(s);
+                if (!Number.isFinite(num) || num <= 0 || num >= 100000) {
+                    return null;
+                }
+                return Math.round(num * 1000) / 1000;
+            }
+
+            // Formatowanie ilości do wyświetlenia z polskim przecinkiem (np. 4,5 kg)
+            function formatQty(val) {
+                if (typeof val !== 'number' || !Number.isFinite(val)) return String(val || '');
+                return String(val).replace('.', ',');
+            }
+
+            // Renderowanie tabeli pozycji spoza cennika (lista zamówienia)
             function renderCustomItemsTable() {
                 if (!customProductsContainer || !customItemsTableBody) return;
 
@@ -806,11 +971,11 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     tr.className = 'bg-amber-50/40 hover:bg-amber-50/70 transition-colors group';
 
                     const tdLp = document.createElement('td');
-                    tdLp.className = 'py-3 px-4 text-center font-bold text-amber-700 text-xs';
+                    tdLp.className = 'hidden sm:table-cell py-3 px-4 text-center font-bold text-amber-700 text-xs';
                     tdLp.textContent = idx + 1;
 
                     const tdName = document.createElement('td');
-                    tdName.className = 'py-3 px-4 font-bold text-slate-900';
+                    tdName.className = 'py-3 px-3 sm:px-4 font-bold text-slate-900';
                     tdName.innerHTML = `
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="text-sm">${escapeHtml(c.name)}</span>
@@ -819,11 +984,11 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     `;
 
                     const tdQty = document.createElement('td');
-                    tdQty.className = 'py-3 px-4 text-center font-black text-amber-900 text-xs';
-                    tdQty.textContent = `${c.qty} ${c.unit}`;
+                    tdQty.className = 'py-3 px-3 sm:px-4 text-center font-black text-amber-900 text-xs whitespace-nowrap';
+                    tdQty.textContent = `${formatQty(c.qty)} ${c.unit}`;
 
                     const tdStatus = document.createElement('td');
-                    tdStatus.className = 'py-3 px-4 text-xs font-semibold text-amber-800';
+                    tdStatus.className = 'hidden sm:table-cell py-3 px-4 text-xs font-semibold text-amber-800';
                     tdStatus.innerHTML = `
                         <span class="inline-flex items-center gap-1.5">
                             <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
@@ -832,17 +997,18 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     `;
 
                     const tdPrice = document.createElement('td');
-                    tdPrice.className = 'py-3 px-4 text-right text-xs text-slate-500 italic font-medium';
+                    tdPrice.className = 'hidden sm:table-cell py-3 px-4 text-right text-xs text-slate-500 italic font-medium';
                     tdPrice.textContent = 'Do ustalenia (0 zł)';
 
                     const tdAction = document.createElement('td');
-                    tdAction.className = 'py-3 px-4 text-center';
+                    tdAction.className = 'py-2 sm:py-3 px-2 sm:px-4 text-center';
                     const btnRemove = document.createElement('button');
                     btnRemove.type = 'button';
-                    btnRemove.className = 'p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition active:scale-95 cursor-pointer';
-                    btnRemove.title = 'Usuń tę pozycję z draftu';
+                    btnRemove.className = 'p-3 sm:p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 transition active:scale-95 cursor-pointer';
+                    btnRemove.title = 'Usuń tę pozycję z listy';
+                    btnRemove.setAttribute('aria-label', 'Usuń z listy: ' + c.name);
                     btnRemove.innerHTML = `
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                     `;
@@ -858,22 +1024,60 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 });
             }
 
+            // Walidacja pól formularza: komunikat pod polem + aria-invalid / aria-describedby
+            function setFieldError(input, errorEl, message) {
+                if (!input || !errorEl) return;
+                if (message) {
+                    errorEl.textContent = message;
+                    errorEl.classList.remove('hidden');
+                    input.setAttribute('aria-invalid', 'true');
+                    input.setAttribute('aria-describedby', errorEl.id);
+                } else {
+                    errorEl.textContent = '';
+                    errorEl.classList.add('hidden');
+                    input.removeAttribute('aria-invalid');
+                    input.removeAttribute('aria-describedby');
+                }
+            }
+            if (customProdName) customProdName.addEventListener('input', () => setFieldError(customProdName, customProdNameError, ''));
+            if (customProdQty) customProdQty.addEventListener('input', () => setFieldError(customProdQty, customProdQtyError, ''));
+
             // Obsługa formularza dodawania produktu spoza cennika
             if (customProductForm) {
                 customProductForm.addEventListener('submit', (e) => {
                     e.preventDefault();
                     const name = customProdName ? customProdName.value.trim() : '';
-                    const qty = customProdQty ? parseFloat(customProdQty.value) : 0;
+                    const rawQty = customProdQty ? customProdQty.value : '';
+
+                    // Jeśli użytkownik wpisał jednostkę bezpośrednio w polu ilości (np. "4,5 kg"), zsynchronizuj selektor jednostki
+                    const unitMatch = String(rawQty).trim().match(/\s*(kg|szt\.?|op\.?|pęczek|skrzynka|karton|worek)\s*$/i);
+                    if (unitMatch && customProdUnit) {
+                        const rawU = unitMatch[1].toLowerCase();
+                        let normU = rawU;
+                        if (normU.startsWith('szt')) normU = 'szt.';
+                        else if (normU.startsWith('op')) normU = 'op.';
+                        for (let opt of customProdUnit.options) {
+                            if (opt.value === normU) {
+                                customProdUnit.value = normU;
+                                break;
+                            }
+                        }
+                    }
+
+                    const qty = parseQuantityInput(rawQty);
                     const unit = (customProdUnit ? customProdUnit.value.trim() : 'kg') || 'kg';
 
-                    if (!name) {
-                        alert('Proszę podać nazwę produktu spoza cennika.');
+                    const nameError = name ? '' : 'Podaj nazwę produktu spoza cennika.';
+                    const qtyError = (qty === null) ? 'Podaj prawidłową ilość (np. 5 lub 4,5).' : '';
+                    setFieldError(customProdName, customProdNameError, nameError);
+                    setFieldError(customProdQty, customProdQtyError, qtyError);
+
+                    if (nameError) {
                         if (customProdName) customProdName.focus();
                         return;
                     }
 
-                    if (!qty || qty <= 0 || isNaN(qty)) {
-                        alert('Proszę podać prawidłową ilość (większą od zera).');
+                    if (qtyError) {
                         if (customProdQty) customProdQty.focus();
                         return;
                     }
@@ -917,13 +1121,122 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 } else if (customItems.length > 0 && orderedCount === 0) {
                     cartItemsCount.textContent = `${customItems.length} ${customItems.length === 1 ? 'pozycja spoza cennika' : 'pozycje spoza cennika'}`;
                 } else {
-                    cartItemsCount.textContent = `${orderedCount} ${orderedCount === 1 ? 'pozycja' : (orderedCount > 1 && orderedCount < 5 ? 'pozycje' : 'pozycji')}`;
+                    cartItemsCount.textContent = `${orderedCount} ${orderedCount === 1 ? 'pozycja' : ([2, 3, 4].includes(orderedCount % 10) && ![12, 13, 14].includes(orderedCount % 100) ? 'pozycje' : 'pozycji')}`;
                 }
 
                 orderedCountLabel.textContent = orderedCount;
-                cartTotalSum.textContent = totalAmount.toFixed(2) + ' zł';
+                cartTotalSum.textContent = formatPLN(totalAmount);
 
                 btnOpenReview.disabled = (totalItemsCount === 0);
+                scheduleDraftSave();
+            }
+
+            // ---- Szkic koszyka w localStorage (odświeżenie / cofnięcie strony nie gubi listy) ----
+            let draftSaveTimer = null;
+            let draftRestoring = false;
+
+            function cartHasItems() {
+                if (customItems.length > 0) return true;
+                return rows.some(r => (parseFloat(r.querySelector('.input-qty').value) || 0) > 0);
+            }
+
+            function saveDraftNow() {
+                if (draftSaveTimer) { clearTimeout(draftSaveTimer); draftSaveTimer = null; }
+                if (draftRestoring || orderCompleted) return;
+                try {
+                    if (!cartHasItems()) {
+                        window.localStorage.removeItem(CART_DRAFT_KEY);
+                        return;
+                    }
+                    const qty = {};
+                    rows.forEach(r => {
+                        const v = parseFloat(r.querySelector('.input-qty').value) || 0;
+                        if (v > 0) qty[r.dataset.id] = v;
+                    });
+                    const draft = {
+                        v: 1,
+                        savedAt: Date.now(),
+                        qty: qty,
+                        custom: customItems.map(c => ({ name: c.name, qty: c.qty, unit: c.unit })),
+                        notes: orderNotes ? orderNotes.value : ''
+                    };
+                    window.localStorage.setItem(CART_DRAFT_KEY, JSON.stringify(draft));
+                } catch (e) {
+                    // Brak dostępu do localStorage (tryb prywatny, blokada) — koszyk działa bez szkicu
+                }
+            }
+
+            function scheduleDraftSave() {
+                if (draftRestoring) return;
+                if (draftSaveTimer) clearTimeout(draftSaveTimer);
+                draftSaveTimer = setTimeout(saveDraftNow, 300);
+            }
+
+            function clearDraft() {
+                if (draftSaveTimer) { clearTimeout(draftSaveTimer); draftSaveTimer = null; }
+                try {
+                    window.localStorage.removeItem(CART_DRAFT_KEY);
+                } catch (e) {
+                    // ignorujemy — brak dostępu do localStorage
+                }
+            }
+
+            function restoreDraft() {
+                let draft = null;
+                try {
+                    const raw = window.localStorage.getItem(CART_DRAFT_KEY);
+                    if (!raw) return;
+                    draft = JSON.parse(raw);
+                } catch (e) {
+                    return;
+                }
+                if (!draft || typeof draft !== 'object') return;
+                if (typeof draft.savedAt === 'number' && (Date.now() - draft.savedAt) > CART_DRAFT_MAX_AGE_MS) {
+                    clearDraft();
+                    return;
+                }
+
+                const allowedUnits = customProdUnit ? Array.from(customProdUnit.options).map(o => o.value) : ['kg'];
+                let restoredCount = 0;
+                draftRestoring = true;
+                try {
+                    const qtyMap = (draft.qty && typeof draft.qty === 'object') ? draft.qty : {};
+                    rows.forEach(r => {
+                        const v = Number(qtyMap[r.dataset.id]);
+                        if (Number.isFinite(v) && v > 0 && v < 100000) {
+                            r.querySelector('.input-qty').value = String(v);
+                            updateRow(r);
+                            restoredCount++;
+                        }
+                    });
+
+                    if (Array.isArray(draft.custom)) {
+                        draft.custom.forEach(c => {
+                            if (!c || typeof c.name !== 'string') return;
+                            const name = c.name.trim().slice(0, 200);
+                            const q = parseQuantityInput(c.qty);
+                            if (!name || q === null) return;
+                            const unit = allowedUnits.indexOf(c.unit) !== -1 ? c.unit : 'kg';
+                            customItems.push({ name: name, qty: q, unit: unit });
+                            restoredCount++;
+                        });
+                        renderCustomItemsTable();
+                    }
+
+                    if (orderNotes && typeof draft.notes === 'string' && !orderNotes.value) {
+                        orderNotes.value = draft.notes.slice(0, 2000);
+                    }
+                } finally {
+                    draftRestoring = false;
+                }
+
+                updateCartTotals();
+                filterRows();
+                if (restoredCount > 0) {
+                    showToast('Przywrócono niezapisaną listę zamówienia (' + restoredCount + ' poz.).', { type: 'info' });
+                } else {
+                    clearDraft();
+                }
             }
 
             // Filtrowanie widoczności wierszy z zachowaniem naprzemiennego tła
@@ -963,7 +1276,9 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 const btnUp = row.querySelector('.btn-step-up');
                 const btnRound = row.querySelector('.btn-round-up');
                 const unit = row.dataset.unit || 'kg';
-                const step = (unit === 'szt.' ? 1 : 1);
+                // Krok przycisków +/- zgodny z atrybutem step pola: 1 dla 'szt.', 0.5 dla pozostałych jednostek
+                const step = (unit === 'szt.' ? 1 : 0.5);
+                const roundQty = (v) => Math.round(v * 1000) / 1000;
 
                 input.addEventListener('input', () => updateRow(row));
 
@@ -981,14 +1296,14 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 });
 
                 btnDown.addEventListener('click', () => {
-                    let val = (parseFloat(input.value) || 0) - step;
+                    let val = roundQty((parseFloat(input.value) || 0) - step);
                     if (val < 0) val = 0;
                     input.value = val === 0 ? '' : val;
                     updateRow(row);
                 });
 
                 btnUp.addEventListener('click', () => {
-                    let val = (parseFloat(input.value) || 0) + step;
+                    let val = roundQty((parseFloat(input.value) || 0) + step);
                     input.value = val;
                     updateRow(row);
                 });
@@ -1022,21 +1337,41 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 });
             });
 
-            clearQuantitiesBtn.addEventListener('click', () => {
-                const hasQuantities = rows.some(r => (parseFloat(r.querySelector('.input-qty').value) || 0) > 0);
-                const hasCustom = customItems.length > 0;
-                if (!hasQuantities && !hasCustom) return;
+            // Czyszczenie koszyka z potwierdzeniem w miejscu (zamiast confirm())
+            function hideClearConfirm(restoreFocus) {
+                clearConfirmBox.classList.add('hidden');
+                clearQuantitiesBtn.classList.remove('hidden');
+                if (restoreFocus) clearQuantitiesBtn.focus();
+            }
 
-                if (confirm('Czy na pewno chcesz wyczyścić wszystkie wpisane ilości oraz pozycje spoza cennika?')) {
-                    rows.forEach(row => {
-                        row.querySelector('.input-qty').value = '';
-                        updateRow(row);
-                    });
-                    customItems = [];
-                    renderCustomItemsTable();
-                    updateCartTotals();
-                    filterRows();
+            clearQuantitiesBtn.addEventListener('click', () => {
+                if (!cartHasItems()) {
+                    showToast('Koszyk jest już pusty.', { type: 'info', duration: 2500 });
+                    return;
                 }
+                clearQuantitiesBtn.classList.add('hidden');
+                clearConfirmBox.classList.remove('hidden');
+                clearConfirmNo.focus();
+            });
+
+            clearConfirmNo.addEventListener('click', () => hideClearConfirm(true));
+            clearConfirmBox.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') hideClearConfirm(true);
+            });
+
+            clearConfirmYes.addEventListener('click', () => {
+                rows.forEach(row => {
+                    row.querySelector('.input-qty').value = '';
+                    updateRow(row);
+                });
+                customItems = [];
+                if (orderNotes) orderNotes.value = '';
+                renderCustomItemsTable();
+                updateCartTotals();
+                filterRows();
+                clearDraft();
+                hideClearConfirm(true);
+                showToast('Koszyk został wyczyszczony.', { type: 'success', duration: 3000 });
             });
 
             // Obsługa Modala podsumowania
@@ -1106,14 +1441,14 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
 
                         const quantity = document.createElement('td');
                         quantity.className = 'py-2.5 px-3 text-center font-bold text-amber-800';
-                        quantity.textContent = `${it.quantity} ${it.unit}`;
+                        quantity.textContent = `${formatQty(it.quantity)} ${it.unit}`;
 
                         const packageSummary = document.createElement('td');
                         packageSummary.className = 'py-2.5 px-3 text-amber-700 italic text-[11px]';
                         packageSummary.textContent = 'Do potwierdzenia na rampie';
 
                         const itemTotal = document.createElement('td');
-                        itemTotal.className = 'py-2.5 px-3 text-right text-xs font-semibold text-slate-400 italic';
+                        itemTotal.className = 'py-2.5 px-3 text-right text-xs font-semibold text-slate-500 italic';
                         itemTotal.textContent = 'Do wyceny';
 
                         tr.append(productName, quantity, packageSummary, itemTotal);
@@ -1126,15 +1461,15 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
 
                         const quantity = document.createElement('td');
                         quantity.className = 'py-2.5 px-3 text-center font-bold text-emerald-700';
-                        quantity.textContent = `${it.quantity} ${it.unit}`;
+                        quantity.textContent = `${formatQty(it.quantity)} ${it.unit}`;
 
                         const packageSummary = document.createElement('td');
                         packageSummary.className = 'py-2.5 px-3 text-slate-500';
                         packageSummary.textContent = it.package_summary;
 
                         const itemTotal = document.createElement('td');
-                        itemTotal.className = 'py-2.5 px-3 text-right font-bold text-slate-800';
-                        itemTotal.textContent = `${it.item_total.toFixed(2)} zł`;
+                        itemTotal.className = 'py-2.5 px-3 text-right font-bold text-slate-800 whitespace-nowrap';
+                        itemTotal.textContent = formatPLN(it.item_total);
 
                         tr.append(productName, quantity, packageSummary, itemTotal);
                     }
@@ -1150,28 +1485,62 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     }
                 }
 
-                modalTotalSum.textContent = total.toFixed(2) + ' zł';
+                modalTotalSum.textContent = formatPLN(total);
+                hideCheckoutError();
+                lastFocusBeforeModal = document.activeElement;
                 checkoutModal.classList.remove('hidden');
+                btnCloseModal.focus();
             });
 
             function closeModal() {
                 checkoutModal.classList.add('hidden');
+                if (lastFocusBeforeModal && typeof lastFocusBeforeModal.focus === 'function') lastFocusBeforeModal.focus();
+            }
+
+            function hideCheckoutError() {
+                if (!checkoutError) return;
+                checkoutError.classList.add('hidden');
+                checkoutError.replaceChildren();
+            }
+
+            function showCheckoutError(message, withLoginLink) {
+                if (!checkoutError) return;
+                checkoutError.replaceChildren();
+                const text = document.createElement('span');
+                text.textContent = message;
+                checkoutError.appendChild(text);
+                if (withLoginLink) {
+                    const link = document.createElement('a');
+                    link.href = LOGIN_URL;
+                    link.className = 'ml-1 underline font-extrabold text-rose-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 rounded';
+                    link.textContent = 'Zaloguj się';
+                    checkoutError.appendChild(link);
+                }
+                checkoutError.classList.remove('hidden');
             }
 
             btnCloseModal.addEventListener('click', closeModal);
+            btnCancelModal.addEventListener('click', closeModal);
+            // Zamknięcie kliknięciem w tło i klawiszem Esc (nie w trakcie wysyłania zamówienia)
+            checkoutModal.addEventListener('click', (e) => {
+                if (e.target === checkoutModal && !btnConfirmOrder.disabled) closeModal();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !checkoutModal.classList.contains('hidden') && !btnConfirmOrder.disabled) closeModal();
+            });
             // Przełączanie kafelków daty dostawy
             const deliveryCards = document.querySelectorAll('.delivery-date-card');
             deliveryCards.forEach(card => {
                 card.addEventListener('click', () => {
                     deliveryCards.forEach(c => {
-                        c.classList.remove('border-emerald-600', 'bg-emerald-50/60', 'shadow-2xs');
+                        c.classList.remove('border-emerald-600', 'bg-emerald-50/60', 'shadow-sm');
                         c.classList.add('border-slate-200', 'bg-white');
                         const title = c.querySelector('span:first-of-type');
                         if (title) { title.classList.remove('text-emerald-900'); title.classList.add('text-slate-800'); }
                         const sub = c.querySelector('span:last-of-type');
                         if (sub) { sub.classList.remove('text-emerald-700', 'font-semibold'); sub.classList.add('text-slate-500'); }
                     });
-                    card.classList.add('border-emerald-600', 'bg-emerald-50/60', 'shadow-2xs');
+                    card.classList.add('border-emerald-600', 'bg-emerald-50/60', 'shadow-sm');
                     card.classList.remove('border-slate-200', 'bg-white');
                     const title = card.querySelector('span:first-of-type');
                     if (title) { title.classList.add('text-emerald-900'); title.classList.remove('text-slate-800'); }
@@ -1188,6 +1557,8 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 if (items.length === 0) return;
 
                 btnConfirmOrder.disabled = true;
+                isSubmittingOrder = true;
+                hideCheckoutError();
                 confirmBtnText.textContent = 'Wysyłanie zamówienia...';
                 confirmSpinner.classList.remove('hidden');
 
@@ -1213,7 +1584,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                             'Accept': 'application/json'
                         }
                     }).then(async res => {
-                        const data = await res.json();
+                        const data = await readJsonResponse(res);
                         return { resOk: res.ok, data };
                     });
 
@@ -1221,16 +1592,30 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     const { resOk, data } = result;
 
                     if (resOk && data.ok) {
+                        orderCompleted = true;
+                        clearDraft();
                         checkoutModal.classList.add('hidden');
                         successOrderNumber.textContent = data.order_number;
                         downloadPackingSheetBtn.href = `${BASE_URL}b2b/download?id=${data.order_id}`;
                         successModal.classList.remove('hidden');
+                        btnNewOrder.focus();
                     } else {
-                        alert(data.error || 'Wystąpił błąd podczas zapisywania zamówienia.');
+                        showCheckoutError(data.error || 'Wystąpił błąd podczas zapisywania zamówienia.', false);
                     }
                 } catch (err) {
-                    alert('Błąd sieciowy: ' + err.message);
+                    if (err && err.sessionExpired) {
+                        saveDraftNow();
+                        // Szkic jest zapisany — przejście do logowania nie wymaga ostrzeżenia beforeunload
+                        skipUnloadWarning = true;
+                        showCheckoutError('Sesja wygasła — zaloguj się ponownie. Koszyk zostanie przywrócony po zalogowaniu.', true);
+                        showSessionExpired();
+                    } else if (err && err.httpError) {
+                        showCheckoutError(err.message, false);
+                    } else {
+                        showCheckoutError('Błąd sieciowy: ' + (err && err.message ? err.message : 'brak połączenia') + '. Sprawdź internet i spróbuj ponownie.', false);
+                    }
                 } finally {
+                    isSubmittingOrder = false;
                     btnConfirmOrder.disabled = false;
                     confirmBtnText.textContent = 'Zatwierdź i wyślij zamówienie';
                     confirmSpinner.classList.add('hidden');
@@ -1244,11 +1629,37 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     updateRow(row);
                 });
                 customItems = [];
+                if (orderNotes) orderNotes.value = '';
                 renderCustomItemsTable();
+                orderCompleted = false;
                 updateCartTotals();
                 filterRows();
+                clearDraft();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+                searchInput.focus({ preventScroll: true });
             });
+
+            // Esc w oknie sukcesu = „Złóż kolejne zamówienie” (zamówienie jest już zapisane)
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !successModal.classList.contains('hidden')) btnNewOrder.click();
+            });
+
+            // Uwagi do zamówienia również trafiają do szkicu
+            if (orderNotes) orderNotes.addEventListener('input', scheduleDraftSave);
+
+            // Ostrzeżenie przed opuszczeniem strony z niewysłanym koszykiem
+            window.addEventListener('beforeunload', (e) => {
+                if (isSubmittingOrder || orderCompleted || skipUnloadWarning) return;
+                if (!cartHasItems()) return;
+                saveDraftNow();
+                e.preventDefault();
+                e.returnValue = '';
+            });
+            window.addEventListener('pagehide', () => {
+                if (!orderCompleted) saveDraftNow();
+            });
+
+            restoreDraft();
         });
     </script>
 </body>

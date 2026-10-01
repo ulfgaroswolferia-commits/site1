@@ -214,7 +214,7 @@ curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile);
 
 // Logowanie
 $adminLogin = defined('APP_LOGIN') ? APP_LOGIN : 'admin';
-$adminPass  = defined('APP_PASSWORD') ? APP_PASSWORD : 'admin123';
+$adminPass  = (getenv('APP_TEST_PASSWORD') ?: 'admin123');
 
 curl_setopt($ch, CURLOPT_URL, 'http://localhost/home/login');
 $bodyLoginGet = curl_exec($ch);

@@ -271,6 +271,15 @@ $errorText  = Tools::h($view['error'] ?? '');
                 padding: 28px 20px 20px;
             }
         }
+
+        /* Spójny wskaźnik fokusu klawiatury (pola tekstowe mają własny styl :focus) */
+        a:focus-visible,
+        button:focus-visible,
+        input[type="checkbox"]:focus-visible {
+            outline: 3px solid var(--blue);
+            outline-offset: 2px;
+            border-radius: 6px;
+        }
     </style>
 </head>
 <body>

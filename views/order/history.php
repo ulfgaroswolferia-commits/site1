@@ -19,6 +19,7 @@ $appName   = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
             --bg: #f8fafc;
             --fg: #0f172a;
             --muted: #64748b;
+            --muted-strong: #475569;
             --card: rgba(255, 255, 255, 0.88);
             --card-inner: rgba(255, 255, 255, 0.96);
             --border: rgba(226, 232, 240, 0.85);
@@ -200,7 +201,7 @@ $appName   = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
         .table-wrap {
             border: 1px solid var(--border);
             border-radius: var(--radius-inner);
-            overflow: hidden;
+            overflow-x: auto;
             background: #fff;
         }
 
@@ -250,6 +251,87 @@ $appName   = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
             text-align: center;
             padding: 60px 20px;
             color: var(--muted);
+        }
+
+        /* Drobny tekst (≤ 0.8rem) — ciemniejszy odcień dla kontrastu WCAG AA na jasnym tle */
+        .table th,
+        .text-small-muted {
+            color: var(--muted-strong);
+        }
+
+        .text-small-muted {
+            font-size: 0.75rem;
+            display: block;
+        }
+
+        /* Spójny wskaźnik fokusu klawiatury */
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible {
+            outline: 3px solid var(--blue);
+            outline-offset: 2px;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 720px) {
+            .shell {
+                padding: 16px 16px 48px;
+                gap: 16px;
+            }
+
+            .topbar {
+                padding: 10px 14px;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                gap: 4px;
+                width: 100%;
+            }
+
+            .nav-btn {
+                padding: 8px 10px;
+            }
+
+            .card {
+                padding: 18px 16px;
+                border-radius: var(--radius-inner);
+            }
+
+            .card-header {
+                flex-direction: column;
+                align-items: stretch;
+                margin-bottom: 16px;
+            }
+
+            .card-header .btn-primary {
+                justify-content: center;
+            }
+
+            .card-title {
+                font-size: 1.2rem;
+            }
+
+            .table th {
+                padding: 10px 10px;
+            }
+
+            .table td {
+                padding: 10px 10px;
+            }
+
+            .table td:last-child {
+                white-space: nowrap;
+            }
+
+            .table td:last-child .btn-sm {
+                margin: 2px 0;
+            }
+
+            .empty-state {
+                padding: 36px 8px;
+            }
         }
     </style>
 </head>
@@ -328,19 +410,19 @@ $appName   = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
                                     </td>
                                     <td>
                                         <?= Tools::h($o['supplier_name'] ?: 'Hurtownia') ?>
-                                        <span style="font-size: 0.75rem; color: var(--muted); display: block;">plik: <?= Tools::h($o['original_filename']) ?></span>
+                                        <span class="text-small-muted">plik: <?= Tools::h($o['original_filename']) ?></span>
                                     </td>
                                     <td>
                                         <span style="font-weight: 700;"><?= (int)$o['total_items'] ?></span> poz.
                                     </td>
                                     <td>
-                                        <span class="order-amount"><?= number_format((float)$o['total_amount'], 2, '.', ' ') ?> zł</span>
+                                        <span class="order-amount" style="white-space: nowrap;"><?= Tools::h(Tools::money($o['total_amount'])) ?></span>
                                     </td>
                                     <td style="text-align: right;">
                                         <a href="<?= $base ?>order/view/id/<?= (int)$o['id'] ?>" class="btn-sm btn-sm-view" title="Zobacz pozycje">
                                             Szczegóły
                                         </a>
-                                        <a href="<?= $base ?>order/download/id/<?= (int)$o['id'] ?>" class="btn-sm btn-sm-download" title="Pobierz plik Excela">
+                                        <a href="<?= $base ?>order/download/id/<?= (int)$o['id'] ?>" class="btn-sm btn-sm-download" title="Pobierz plik Excela" aria-label="Pobierz plik Excela zamówienia <?= Tools::h($o['order_number']) ?>">
                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                             Excel
                                         </a>

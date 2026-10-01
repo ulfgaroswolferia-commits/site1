@@ -23,6 +23,20 @@ header('X-Frame-Options: SAMEORIGIN');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 
+// Content Security Policy: skrypty, style i połączenia wyłącznie z własnej domeny (plus Google Fonts).
+// 'unsafe-inline' dla skryptów jest konieczne, dopóki widoki mają inline <script> i atrybuty onclick —
+// mimo to CSP blokuje ładowanie kodu z obcych domen, wtyczki, <base> i wysyłkę formularzy na zewnątrz.
+header("Content-Security-Policy: default-src 'self'; "
+    . "script-src 'self' 'unsafe-inline'; "
+    . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+    . "font-src 'self' https://fonts.gstatic.com; "
+    . "img-src 'self' data:; "
+    . "connect-src 'self'; "
+    . "object-src 'none'; "
+    . "base-uri 'self'; "
+    . "form-action 'self'; "
+    . "frame-ancestors 'self'");
+
 // -----------------------------------------------------------------------------
 // Sesja
 // -----------------------------------------------------------------------------
@@ -33,6 +47,9 @@ $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
 if ($isHttps) {
     header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 }
+
+// Odrzucaj identyfikatory sesji, których serwer nie wydał (ochrona przed session fixation).
+ini_set('session.use_strict_mode', '1');
 
 $lifetime = defined('SESSION_LIFETIME') ? (int) SESSION_LIFETIME : 0;
 

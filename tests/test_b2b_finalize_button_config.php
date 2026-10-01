@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Test TDD: Konfiguracja akcji przycisku "Finalizuj zamĂłwienie" w panelu hurtownika
+ * Test TDD: Konfiguracja akcji przycisku "Finalizuj zamówienie" w panelu hurtownika
  */
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', dirname(__DIR__));
@@ -11,15 +11,15 @@ require_once BASE_PATH . '/program/config/includes.php';
 
 use App\B2bRepository;
 
-echo "=== TEST: Konfiguracja akcji przycisku Finalizacja zamĂłwienia ===\n";
+echo "=== TEST: Konfiguracja akcji przycisku Finalizacja zamówienia ===\n";
 
 $repo = new B2bRepository();
 
-// 1. Sprawdzenie domyĹ›lnych wartoĹ›ci w bazie
+// 1. Sprawdzenie domyślnych wartości w bazie
 $finalizeAction = $repo->getSetting('finalize_action', 'print');
 $finalizeErp = $repo->getSetting('finalize_erp_format', 'default');
-echo "1. DomyĹ›lna akcja finalizacji: '{$finalizeAction}' (oczekiwano: print): " . ($finalizeAction === 'print' ? "PASS" : "FAIL") . "\n";
-assert($finalizeAction === 'print', "BĹ‚Ä™dna domyĹ›lna akcja finalizacji");
+echo "1. Domyślna akcja finalizacji: '{$finalizeAction}' (oczekiwano: print): " . ($finalizeAction === 'print' ? "PASS" : "FAIL") . "\n";
+assert($finalizeAction === 'print', "Błędna domyślna akcja finalizacji");
 
 // 2. Test zapisu przez API POST /b2b/savesettings
 $cookieAdmin = tempnam(sys_get_temp_dir(), 'cook_fin_');
@@ -37,7 +37,7 @@ $csrf = $mCsrf[1] ?? '';
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
     'login'    => APP_LOGIN,
-    'password' => APP_PASSWORD,
+    'password' => (getenv('APP_TEST_PASSWORD') ?: 'admin123'),
     '_csrf'    => $csrf
 ]));
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -82,7 +82,7 @@ $json2 = json_decode($resp2, true);
 $okErp = (!empty($json2['ok']) && $repo->getSetting('finalize_action') === 'erp' && $repo->getSetting('finalize_erp_format') === 'optima');
 echo "3. Zapis akcji 'erp' z formatem 'optima': " . ($okErp ? "PASS" : "FAIL") . "\n";
 
-// 3. Sprawdzenie obecnoĹ›ci kontrolek w widoku panelu admina
+// 3. Sprawdzenie obecności kontrolek w widoku panelu admina
 curl_setopt($ch, CURLOPT_HTTPGET, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, []);
 curl_setopt($ch, CURLOPT_URL, 'http://localhost/b2b/admin?tab=settings');
@@ -100,13 +100,13 @@ echo "5. Dynamiczny opis przycisku w oknie modalnym (btn-modal-finalize-subtext)
 curl_close($ch);
 @unlink($cookieAdmin);
 
-// PrzywrĂłcenie domyĹ›lnych
+// Przywrócenie domyślnych
 $repo->setSetting('finalize_action', 'print');
 $repo->setSetting('finalize_erp_format', 'default');
 
 if (!$okExcel || !$okErp || !$hasRadioPrint || !$hasRadioExcel || !$hasRadioErp || !$hasErpSelect || !$hasSubtext) {
-    echo "=== TEST ZAKOĹCZONY BĹÄDEM (Stan RED) ===\n";
+    echo "=== TEST ZAKOŃCZONY BŁĘDEM (Stan RED) ===\n";
     exit(1);
 }
 
-echo "=== TEST ZAKOĹCZONY SUKCESEM (Stan GREEN) ===\n";
+echo "=== TEST ZAKOŃCZONY SUKCESEM (Stan GREEN) ===\n";

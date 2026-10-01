@@ -68,6 +68,17 @@ class ErpExporter
     }
 
     /**
+     * Wartość do wstawienia między cudzysłowy w formatach tekstowych (EPP, Symfonia).
+     * Usuwa znaki sterujące (CR/LF/TAB itd.) — inaczej dane klienta (uwagi, nazwy)
+     * mogłyby dopisać do pliku własne sekcje/pozycje — i podwaja cudzysłowy.
+     */
+    private static function quoteText(string $text): string
+    {
+        $text = preg_replace('/[\x00-\x1F\x7F]+/u', ' ', $text) ?? '';
+        return str_replace('"', '""', trim($text));
+    }
+
+    /**
      * Konwersja UTF-8 na Windows-1250 dla systemów wymagających kodowania ANSI (Subiekt, Symfonia).
      */
     private static function toWin1250(string $text): string
@@ -223,18 +234,18 @@ class ErpExporter
         // Sekcja [KONTRAHENCI]
         $lines[] = '[KONTRAHENCI]';
         foreach ($clientsMap as $c) {
-            $nameEsc = str_replace('"', '""', $c['name']);
-            $addrEsc = str_replace('"', '""', $c['address']);
-            $lines[] = "{$c['id']},\"{$c['key']}\",\"{$nameEsc}\",\"{$nameEsc}\",\"\",\"\",\"{$addrEsc}\",\"{$c['nip']}\",\"{$c['phone']}\",0";
+            $nameEsc = self::quoteText($c['name']);
+            $addrEsc = self::quoteText($c['address']);
+            $lines[] = "{$c['id']},\"" . self::quoteText((string)$c['key']) . "\",\"{$nameEsc}\",\"{$nameEsc}\",\"\",\"\",\"{$addrEsc}\",\"{$c['nip']}\",\"" . self::quoteText((string)$c['phone']) . "\",0";
         }
         $lines[] = '';
 
         // Sekcja [TOWARY]
         $lines[] = '[TOWARY]';
         foreach ($productsMap as $p) {
-            $codeEsc = str_replace('"', '""', $p['code']);
-            $nameEsc = str_replace('"', '""', $p['name']);
-            $unitEsc = str_replace('"', '""', $p['unit']);
+            $codeEsc = self::quoteText($p['code']);
+            $nameEsc = self::quoteText($p['name']);
+            $unitEsc = self::quoteText($p['unit']);
             $priceNettoFmt  = number_format($p['price_netto'], 2, '.', '');
             $priceBruttoFmt = number_format($p['price_brutto'], 2, '.', '');
             $vatRateFmt     = number_format(self::DEFAULT_VAT_RATE, 2, '.', '');
@@ -258,10 +269,10 @@ class ErpExporter
             $totalBrutto = round($totalNetto * (1 + self::DEFAULT_VAT_RATE / 100), 2);
             $totalNettoFmt = number_format($totalNetto, 2, '.', '');
             $totalBruttoFmt = number_format($totalBrutto, 2, '.', '');
-            $notesEsc = str_replace('"', '""', self::formatOrderNotes($ord));
+            $notesEsc = self::quoteText(self::formatOrderNotes($ord));
 
             $lines[] = '[DOKUMENT]';
-            $lines[] = "{$docId},1,{$cId},\"ZK\",\"{$num}\",\"\",\"\",{$dateCreate},{$dateDelivery},{$totalNettoFmt},{$totalBruttoFmt},\"PLN\",1.0000,\"{$notesEsc}\"";
+            $lines[] = "{$docId},1,{$cId},\"ZK\",\"" . self::quoteText((string)$num) . "\",\"\",\"\",{$dateCreate},{$dateDelivery},{$totalNettoFmt},{$totalBruttoFmt},\"PLN\",1.0000,\"{$notesEsc}\"";
             $lines[] = '';
 
             $lines[] = '[ZAWARTOSC]';
@@ -416,21 +427,21 @@ class ErpExporter
             $lines[] = 'Dokument {';
             $lines[] = '    kod = "ZO"';
             $lines[] = '    rodzaj = "ZO"';
-            $lines[] = "    numer = \"{$num}\"";
+            $lines[] = "    numer = \"" . self::quoteText((string)$num) . "\"";
             $lines[] = "    data = \"{$dateCreate}\"";
             $lines[] = "    termin = \"{$dateDelivery}\"";
             $lines[] = '    waluta = "PLN"';
             $lines[] = '    kurs = 1.0000';
             $lines[] = '    netto = ' . number_format($totalNetto, 2, '.', '');
             $lines[] = '    brutto = ' . number_format($totalBrutto, 2, '.', '');
-            $lines[] = '    opis = "' . str_replace('"', '""', self::formatOrderNotes($ord)) . '"';
+            $lines[] = '    opis = "' . self::quoteText(self::formatOrderNotes($ord)) . '"';
             $lines[] = '';
             $lines[] = '    DaneKontrahenta {';
             $lines[] = "        kod = \"{$clientCode}\"";
             $lines[] = "        nip = \"{$clientNip}\"";
-            $lines[] = '        nazwa = "' . str_replace('"', '""', $ord['client_name_snapshot'] ?? '') . '"';
-            $lines[] = '        adres = "' . str_replace('"', '""', $ord['delivery_address_snapshot'] ?? '') . '"';
-            $lines[] = '        telefon = "' . str_replace('"', '""', $ord['client_phone_snapshot'] ?? '') . '"';
+            $lines[] = '        nazwa = "' . self::quoteText($ord['client_name_snapshot'] ?? '') . '"';
+            $lines[] = '        adres = "' . self::quoteText($ord['delivery_address_snapshot'] ?? '') . '"';
+            $lines[] = '        telefon = "' . self::quoteText($ord['client_phone_snapshot'] ?? '') . '"';
             $lines[] = '    }';
             $lines[] = '';
 
@@ -447,15 +458,15 @@ class ErpExporter
                 $lines[] = '    Pozycja {';
                 $lines[] = "        lp = {$lp}";
                 $lines[] = "        kod = \"{$pCode}\"";
-                $lines[] = '        nazwa = "' . str_replace('"', '""', $pName) . '"';
+                $lines[] = '        nazwa = "' . self::quoteText($pName) . '"';
                 $lines[] = '        ilosc = ' . number_format($qty, 3, '.', '');
-                $lines[] = '        jm = "' . str_replace('"', '""', $itemInfo['unit']) . '"';
+                $lines[] = '        jm = "' . self::quoteText($itemInfo['unit']) . '"';
                 $lines[] = '        cena = ' . number_format($priceNetto, 2, '.', '');
                 $lines[] = '        wartosc = ' . number_format($totNetto, 2, '.', '');
                 $lines[] = '        stawka = ' . (int)self::DEFAULT_VAT_RATE;
                 $lines[] = '        brutto = ' . number_format($totBrutto, 2, '.', '');
                 if (!empty($itemInfo['summary'])) {
-                    $lines[] = '        opis = "' . str_replace('"', '""', $itemInfo['summary']) . '"';
+                    $lines[] = '        opis = "' . self::quoteText($itemInfo['summary']) . '"';
                 }
                 $lines[] = '    }';
                 $lp++;

@@ -9,8 +9,8 @@ echo "=== TEST XLSX WRITER & PARSER ===\n";
 
 $testItems = [
     ['name' => 'Pomidory malinowe', 'price' => 8.50, 'quantity' => 15.5, 'unit' => 'kg'],
-    ['name' => 'Ziemniaki mĹ‚ode',   'price' => 2.20, 'quantity' => 50.0, 'unit' => 'kg'],
-    ['name' => 'SaĹ‚ata masĹ‚owa',    'price' => 3.00, 'quantity' => 20,   'unit' => 'szt.'],
+    ['name' => 'Ziemniaki młode',   'price' => 2.20, 'quantity' => 50.0, 'unit' => 'kg'],
+    ['name' => 'Sałata masłowa',    'price' => 3.00, 'quantity' => 20,   'unit' => 'szt.'],
 ];
 
 $testFile = sys_get_temp_dir() . '/test_order_out.xlsx';
@@ -26,10 +26,10 @@ $saved = XlsxWriter::saveToFile($testFile, $testItems, [
 ]);
 
 if (!$saved || !file_exists($testFile)) {
-    echo "ERROR: Nie udaĹ‚o siÄ™ zapisaÄ‡ pliku XLSX!\n";
+    echo "ERROR: Nie udało się zapisać pliku XLSX!\n";
     exit(1);
 }
-echo "[OK] Plik XLSX wygenerowany pomyĹ›lnie (" . filesize($testFile) . " bajtĂłw).\n";
+echo "[OK] Plik XLSX wygenerowany pomyślnie (" . filesize($testFile) . " bajtów).\n";
 
 // 2. Odczyt przez XlsxParser
 $parser = XlsxParser::open($testFile);
@@ -37,18 +37,18 @@ $rows = $parser->getRawRows(15);
 echo "[OK] Liczba sparsowanych wierszy: " . count($rows) . "\n";
 
 $candidates = $parser->detectCandidateColumns($rows);
-echo "[OK] Wykryty nagĹ‚Ăłwek na wierszu: " . ($candidates['headerRow'] ?? 'brak') . "\n";
+echo "[OK] Wykryty nagłówek na wierszu: " . ($candidates['headerRow'] ?? 'brak') . "\n";
 echo "[OK] Kolumna towaru: " . $candidates['productCol'] . ", ceny: " . $candidates['priceCol'] . "\n";
 
 $products = $parser->extractProducts($candidates['headerRow'], $candidates['productCol'], $candidates['priceCol'], $candidates['unitCol']);
-echo "[OK] Liczba wyciÄ…gniÄ™tych produktĂłw: " . count($products) . "\n";
+echo "[OK] Liczba wyciągniętych produktów: " . count($products) . "\n";
 
 foreach ($products as $p) {
-    echo "  - {$p['name']}: {$p['price']} zĹ‚ ({$p['unit']})\n";
+    echo "  - {$p['name']}: {$p['price']} zł ({$p['unit']})\n";
 }
 
 if (count($products) < 3) {
-    echo "ERROR: Za maĹ‚o produktĂłw wyekstrahowanych!\n";
+    echo "ERROR: Za mało produktów wyekstrahowanych!\n";
     exit(1);
 }
 

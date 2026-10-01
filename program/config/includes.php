@@ -8,6 +8,7 @@ require_once BASE_PATH . '/program/lib/Db.php';
 require_once BASE_PATH . '/program/lib/Tools.php';
 require_once BASE_PATH . '/program/lib/Crypt.php';
 require_once BASE_PATH . '/program/lib/PaginationHelper.php';
+require_once BASE_PATH . '/program/lib/LoginThrottle.php';
 require_once BASE_PATH . '/program/lib/XlsxParser.php';
 require_once BASE_PATH . '/program/lib/XlsxWriter.php';
 require_once BASE_PATH . '/program/lib/ErpExporter.php';

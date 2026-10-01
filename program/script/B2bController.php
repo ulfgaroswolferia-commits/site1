@@ -13,35 +13,36 @@ class B2bController extends AppController
     }
 
     /**
-     * Pomocnicza metoda sprawdzająca autoryzację klienta B2B.
+     * Klient B2B zalogowany w bieżącej sesji — weryfikowany przy KAŻDYM żądaniu.
+     * Sesja traci ważność, gdy klient został usunięty, zablokowany albo hurtownik
+     * wygenerował mu nowy token (unieważnienie dostępu). Wtedy czyści dane klienta z sesji.
      */
-    private function requireClientAuth(): array
+    private function sessionClient(): ?array
     {
-        // Sprawdź czy w URL przekazano token autoryzacyjny
-        if (!empty($_GET['token'])) {
-            $token = trim((string)$_GET['token']);
-            $client = $this->repo->getClientByToken($token);
-            if ($client) {
-                session_regenerate_id(true); // Ochrona przed Session Fixation
-                $_SESSION['b2b_client_id']    = (int)$client['id'];
-                $_SESSION['b2b_client_token'] = $client['auth_token'];
-                $_SESSION['b2b_company_name'] = $client['company_name'];
-                return $client;
-            }
-        }
-
-        // Sprawdź sesję
         $clientId = (int)($_SESSION['b2b_client_id'] ?? 0);
-        if ($clientId > 0) {
-            $client = $this->repo->getClientById($clientId);
-            if ($client && (int)$client['is_active'] === 1) {
-                return $client;
-            }
+        if ($clientId <= 0) {
+            return null;
         }
 
-        // Brak autoryzacji — przekieruj do logowania klienta B2B
-        App::redirect('b2b/login');
-        exit;
+        $client = $this->repo->getClientById($clientId);
+        $sessionToken = (string)($_SESSION['b2b_client_token'] ?? '');
+        if ($client
+            && (int)$client['is_active'] === 1
+            && $sessionToken !== ''
+            && hash_equals((string)$client['auth_token'], $sessionToken)
+        ) {
+            return $client;
+        }
+
+        unset($_SESSION['b2b_client_id'], $_SESSION['b2b_client_token'], $_SESSION['b2b_company_name']);
+        return null;
+    }
+
+    /** Czy zamówienie należy do klienta zalogowanego w bieżącej (ważnej) sesji. */
+    private function isSessionClientOwner(int $orderClientId): bool
+    {
+        $client = $this->sessionClient();
+        return $client !== null && (int)$client['id'] === $orderClientId;
     }
 
     // =========================================================================
@@ -108,7 +109,7 @@ class B2bController extends AppController
                 return;
             }
         } else {
-            $client = $this->repo->getClientById($clientId);
+            $client = $this->sessionClient();
             if (!$client || (int)$client['is_active'] !== 1) {
                 if ($this->isLoggedIn()) {
                     $client = [
@@ -158,7 +159,7 @@ class B2bController extends AppController
         $clientId = (int)($_SESSION['b2b_client_id'] ?? 0);
         $client = null;
         if ($clientId > 0) {
-            $client = $this->repo->getClientById($clientId);
+            $client = $this->sessionClient();
         } elseif ($this->isLoggedIn()) {
             // Administrator w trybie podglądu sklepu B2B
             $client = $this->repo->getClientByLogin('magda');
@@ -210,7 +211,16 @@ class B2bController extends AppController
 
         $deliverySchedule = $this->getDeliverySchedule();
         $rawDeliveryDate = trim((string)($_POST['delivery_date'] ?? ''));
-        $deliveryDate = preg_match('/^\d{4}-\d{2}-\d{2}$/', $rawDeliveryDate) ? $rawDeliveryDate : ($deliverySchedule['default_date'] ?? date('Y-m-d', strtotime('+1 day')));
+        // Akceptujemy wyłącznie terminy oferowane w harmonogramie (pilnuje godziny granicznej i dni dostaw).
+        $allowedDates = array_column($deliverySchedule['options'] ?? [], 'date');
+        if ($rawDeliveryDate === '') {
+            $deliveryDate = $deliverySchedule['default_date'] ?? date('Y-m-d', strtotime('+1 day'));
+        } elseif (in_array($rawDeliveryDate, $allowedDates, true)) {
+            $deliveryDate = $rawDeliveryDate;
+        } else {
+            App::json(['ok' => false, 'error' => 'Wybrany termin dostawy jest już niedostępny. Odśwież stronę i wybierz nowy termin.'], 400);
+            return;
+        }
 
         // Generowanie karty kompletacji magazynowej .xlsx
         $safeNumber = str_replace(['/', '\\'], '_', $orderNumber);
@@ -311,24 +321,24 @@ class B2bController extends AppController
      */
     public function actionDownload()
     {
-        $id = (int)($_GET['id'] ?? $this->getParam('id', 0));
+        $id = (int)($_GET['id'] ?? $this->param('id', 0));
         if ($id <= 0) {
-            App::error(404, 'Brak identyfikatora zamówienia.');
+            $this->abort(404, 'Brak identyfikatora zamówienia.');
             return;
         }
 
         $order = $this->repo->getOrderById($id);
         if (!$order) {
-            App::error(404, 'Zamówienie nie istnieje.');
+            $this->abort(404, 'Zamówienie nie istnieje.');
             return;
         }
 
         // Sprawdź uprawnienia: admin hurtowni LUB klient właściciel
         $isAdmin = $this->isLoggedIn();
-        $isOwner = isset($_SESSION['b2b_client_id']) && (int)$_SESSION['b2b_client_id'] === (int)$order['client_id'];
+        $isOwner = $this->isSessionClientOwner((int)$order['client_id']);
 
         if (!$isAdmin && !$isOwner) {
-            App::error(403, 'Brak uprawnień do pobrania tego zamówienia.');
+            $this->abort(403, 'Brak uprawnień do pobrania tego zamówienia.');
             return;
         }
 
@@ -362,7 +372,7 @@ class B2bController extends AppController
             readfile($filePath);
             exit;
         } else {
-            App::error(500, 'Nie udało się odnaleźć ani wygenerować pliku zamówienia.');
+            $this->abort(500, 'Nie udało się odnaleźć ani wygenerować pliku zamówienia.');
         }
     }
 
@@ -372,22 +382,22 @@ class B2bController extends AppController
      */
     public function actionExporterp()
     {
-        $id = (int)($_GET['id'] ?? $this->getParam('id', 0));
+        $id = (int)($_GET['id'] ?? $this->param('id', 0));
         if ($id <= 0) {
-            App::error(404, 'Brak identyfikatora zamówienia.');
+            $this->abort(404, 'Brak identyfikatora zamówienia.');
             return;
         }
 
         $order = $this->repo->getOrderForErpExport($id);
         if (!$order) {
-            App::error(404, 'Zamówienie nie istnieje.');
+            $this->abort(404, 'Zamówienie nie istnieje.');
             return;
         }
 
         $isAdmin = $this->isLoggedIn();
-        $isOwner = isset($_SESSION['b2b_client_id']) && (int)$_SESSION['b2b_client_id'] === (int)$order['client_id'];
+        $isOwner = $this->isSessionClientOwner((int)$order['client_id']);
         if (!$isAdmin && !$isOwner) {
-            App::error(403, 'Brak uprawnień do pobrania tego zamówienia.');
+            $this->abort(403, 'Brak uprawnień do pobrania tego zamówienia.');
             return;
         }
 
@@ -404,7 +414,8 @@ class B2bController extends AppController
             echo $exported['content'];
             exit;
         } catch (\Throwable $e) {
-            App::error(400, 'Błąd generowania eksportu ERP: ' . $e->getMessage());
+            error_log('ERP export: ' . $e->getMessage());
+            $this->abort(400, 'Błąd generowania eksportu ERP.');
         }
     }
 
@@ -423,7 +434,7 @@ class B2bController extends AppController
 
         $orders = $this->repo->getOrdersBatchForErpExport($date, $status);
         if (empty($orders)) {
-            App::error(404, 'Brak zamówień spełniających kryteria eksportu.');
+            $this->abort(404, 'Brak zamówień spełniających kryteria eksportu.');
             return;
         }
 
@@ -437,7 +448,8 @@ class B2bController extends AppController
             echo $exported['content'];
             exit;
         } catch (\Throwable $e) {
-            App::error(400, 'Błąd generowania paczki ERP: ' . $e->getMessage());
+            error_log('ERP batch export: ' . $e->getMessage());
+            $this->abort(400, 'Błąd generowania paczki ERP.');
         }
     }
 
@@ -509,7 +521,7 @@ class B2bController extends AppController
             return;
         }
 
-        $client = $this->repo->getClientById($clientId);
+        $client = $this->sessionClient();
         if (!$client) {
             App::redirect('b2b/login');
             return;
@@ -563,22 +575,16 @@ class B2bController extends AppController
             $login = trim((string)($_POST['login'] ?? ''));
             $pass  = (string)($_POST['password'] ?? '');
 
-            // 1. Sprawdź czy to administrator / użytkownik panelu hurtowni
-            $adminLogin = defined('APP_LOGIN') ? APP_LOGIN : '';
-            $adminPass  = defined('APP_PASSWORD') ? APP_PASSWORD : '';
-            $appUsers   = defined('APP_USERS') && is_array(APP_USERS) ? APP_USERS : [];
-            $isAdminOk  = false;
-
-            if (!empty($appUsers) && isset($appUsers[$login])) {
-                $expectedPass = $appUsers[$login];
-                if (password_verify($pass, (string)$expectedPass) || hash_equals((string)$expectedPass, $pass)) {
-                    $isAdminOk = true;
-                }
-            } elseif ($adminLogin !== '' && $login === $adminLogin && $pass === $adminPass) {
-                $isAdminOk = true;
+            $throttleKey = LoginThrottle::clientKey();
+            if (LoginThrottle::isBlocked($throttleKey)) {
+                $this->outputData['error'] = 'Zbyt wiele nieudanych prób logowania. Spróbuj ponownie za kilkanaście minut.';
+                $this->outputData['csrfToken'] = Tools::csrfToken();
+                return 'login';
             }
 
-            if ($isAdminOk) {
+            // 1. Sprawdź czy to administrator / użytkownik panelu hurtowni
+            if ($this->verifyAdminCredentials($login, $pass)) {
+                LoginThrottle::clear($throttleKey);
                 $this->startUserSession(1, ['app_login' => $login]);
                 App::redirect('b2b/admin');
                 return;
@@ -587,12 +593,15 @@ class B2bController extends AppController
             // 2. Sprawdź czy to odbiorca / sklep B2B
             $client = $this->repo->getClientByLogin($login);
             if ($client && !empty($client['password_hash']) && password_verify($pass, $client['password_hash'])) {
+                LoginThrottle::clear($throttleKey);
+                session_regenerate_id(true); // Ochrona przed Session Fixation
                 $_SESSION['b2b_client_id']    = (int)$client['id'];
                 $_SESSION['b2b_client_token'] = $client['auth_token'];
                 $_SESSION['b2b_company_name'] = $client['company_name'];
                 App::redirect('b2b/index');
                 return;
             } else {
+                LoginThrottle::hit($throttleKey);
                 $this->outputData['error'] = 'Nieprawidłowy login lub hasło dostępu.';
             }
         }
@@ -607,6 +616,7 @@ class B2bController extends AppController
     public function actionLogout()
     {
         unset($_SESSION['b2b_client_id'], $_SESSION['b2b_client_token'], $_SESSION['b2b_company_name']);
+        session_regenerate_id(true);
         App::redirect('b2b/login');
     }
 
@@ -650,9 +660,9 @@ class B2bController extends AppController
         }
 
         $file = $_FILES['cennik'];
-        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-        if ($ext !== 'xlsx') {
-            App::json(['ok' => false, 'error' => 'Obsługiwany jest wyłącznie format .xlsx (Excel).'], 400);
+        $uploadError = Tools::validateXlsxUpload($file);
+        if ($uploadError !== null) {
+            App::json(['ok' => false, 'error' => $uploadError], 400);
             return;
         }
 
@@ -1054,6 +1064,7 @@ class B2bController extends AppController
         }
 
         $updatedClient = $this->repo->getClientById($id);
+        unset($updatedClient['password_hash']); // hash nie wychodzi poza serwer
         $tokenUrl = App::baseUrl() . 'b2b?token=' . $updatedClient['auth_token'];
 
         App::json([
@@ -1219,7 +1230,7 @@ class B2bController extends AppController
      */
     public function actionOrderdetails()
     {
-        $id = (int)($_REQUEST['id'] ?? $this->getParam('id', 0));
+        $id = (int)($_REQUEST['id'] ?? $this->param('id', 0));
         $order = $this->repo->getOrderById($id);
         if (!$order) {
             App::json(['ok' => false, 'error' => 'Zamówienie nie istnieje.'], 404);
@@ -1228,7 +1239,7 @@ class B2bController extends AppController
 
         // Sprawdź uprawnienia: admin hurtowni LUB klient właściciel
         $isAdmin = $this->isLoggedIn();
-        $isOwner = isset($_SESSION['b2b_client_id']) && (int)$_SESSION['b2b_client_id'] === (int)$order['client_id'];
+        $isOwner = $this->isSessionClientOwner((int)$order['client_id']);
 
         if (!$isAdmin && !$isOwner) {
             App::json(['ok' => false, 'error' => 'Brak uprawnień do podglądu tego zamówienia.'], 403);

@@ -19,42 +19,42 @@ $repo->setSetting('delivery_days', 'mon,tue,wed,thu,fri,sat'); // niedziela woln
 
 $ctrl = new B2bController();
 
-// 1. Test przed godzinÄ… granicznÄ… (np. godzina 15:00 w Ĺ›rodÄ™ 2026-09-23)
-$timeWed1500 = strtotime('2026-09-23 15:00:00'); // Ĺšroda
+// 1. Test przed godziną graniczną (np. godzina 15:00 w środę 2026-09-23)
+$timeWed1500 = strtotime('2026-09-23 15:00:00'); // Środa
 $schedBefore = $ctrl->getDeliverySchedule($timeWed1500);
 
 echo "1. Przed cut-off: cutoff_passed = false: ";
 $beforeOk = ($schedBefore['is_cutoff_passed'] === false);
 echo ($beforeOk ? "PASS" : "FAIL") . "\n";
 
-echo "2. Przed cut-off: domyĹ›lna data to jutro (Czwartek 2026-09-24): ";
+echo "2. Przed cut-off: domyślna data to jutro (Czwartek 2026-09-24): ";
 $firstDateBefore = $schedBefore['options'][0]['date'] ?? '';
 $dateTomorrowOk = ($firstDateBefore === '2026-09-24');
 echo ($dateTomorrowOk ? "PASS" : "FAIL (got {$firstDateBefore})") . "\n";
 
-// 2. Test po godzinie granicznej (np. godzina 21:45 w Ĺ›rodÄ™ 2026-09-23)
-$timeWed2145 = strtotime('2026-09-23 21:45:00'); // Ĺšroda po 21:30
+// 2. Test po godzinie granicznej (np. godzina 21:45 w środę 2026-09-23)
+$timeWed2145 = strtotime('2026-09-23 21:45:00'); // Środa po 21:30
 $schedAfter = $ctrl->getDeliverySchedule($timeWed2145);
 
 echo "3. Po cut-off: cutoff_passed = true: ";
 $afterOk = ($schedAfter['is_cutoff_passed'] === true);
 echo ($afterOk ? "PASS" : "FAIL") . "\n";
 
-echo "4. Po cut-off: domyĹ›lna data to pojutrze (PiÄ…tek 2026-09-25): ";
+echo "4. Po cut-off: domyślna data to pojutrze (Piątek 2026-09-25): ";
 $firstDateAfter = $schedAfter['options'][0]['date'] ?? '';
 $dateDayAfterOk = ($firstDateAfter === '2026-09-25');
 echo ($dateDayAfterOk ? "PASS" : "FAIL (got {$firstDateAfter})") . "\n";
 
-// 3. Test ominiÄ™cia niedzieli: sobota rano (2026-09-26 10:00)
-// Jutro jest niedziela (brak dostaw) -> najbliĹĽsza dostawa to poniedziaĹ‚ek 2026-09-28!
+// 3. Test ominięcia niedzieli: sobota rano (2026-09-26 10:00)
+// Jutro jest niedziela (brak dostaw) -> najbliższa dostawa to poniedziałek 2026-09-28!
 $timeSat1000 = strtotime('2026-09-26 10:00:00');
 $schedSat = $ctrl->getDeliverySchedule($timeSat1000);
 $firstDateSat = $schedSat['options'][0]['date'] ?? '';
-echo "5. Sobota rano (omija niedzielÄ™): najbliĹĽsza dostawa w PoniedziaĹ‚ek 2026-09-28: ";
+echo "5. Sobota rano (omija niedzielę): najbliższa dostawa w Poniedziałek 2026-09-28: ";
 $sundaySkippedOk = ($firstDateSat === '2026-09-28');
 echo ($sundaySkippedOk ? "PASS" : "FAIL (got {$firstDateSat})") . "\n";
 
-// 4. Test zapisu zamĂłwienia z wybranÄ… datÄ… dostawy przez HTTP
+// 4. Test zapisu zamówienia z wybraną datą dostawy przez HTTP
 $client = $repo->getClientByLogin('magda') ?: $repo->getAllClients()[0];
 $cookieFile = tempnam(sys_get_temp_dir(), 'cook_deliv_');
 $ch = curl_init();
@@ -62,7 +62,8 @@ curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_COOKIEJAR, $cookieFile);
 curl_setopt($ch, CURLOPT_COOKIEFILE, $cookieFile);
 
-// Katalog
+// Katalog (b2b?token= przekierowuje na adres bez tokenu — PRG, 03c8c0f)
+curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 curl_setopt($ch, CURLOPT_URL, 'http://localhost/b2b?token=' . urlencode($client['auth_token']));
 $catHtml = curl_exec($ch);
 preg_match('/const CSRF_TOKEN = \'([^\']+)\';/', $catHtml, $mCsrf);
@@ -71,19 +72,19 @@ $csrf = $mCsrf[1] ?? '';
 $hasDeliveryCards = (strpos($catHtml, 'input-delivery-date') !== false);
 echo "6. Widok katalogu posiada kafelki wyboru daty dostawy: " . ($hasDeliveryCards ? "PASS" : "FAIL") . "\n";
 
-// ZĹ‚oĹĽenie zamĂłwienia z jawnÄ… datÄ… dostawy '2026-09-28'
+// Złożenie zamówienia z datą wybraną spośród oferowanych w katalogu (ostatni kafelek, czyli nie domyślna).
+// Serwer liczy cenę z katalogu (e7d0f91) — zamawiamy istniejący, dostępny produkt.
+preg_match_all('/name="modal_delivery_date" value="(\d{4}-\d{2}-\d{2})"/', (string)$catHtml, $mDates);
+$chosenDate = !empty($mDates[1]) ? end($mDates[1]) : '';
+$product = $repo->getActiveProducts()[0] ?? null;
 $orderPost = [
     'items' => json_encode([[
-        'product_name' => 'Pomidor Malinowy Test Dostawy',
-        'price' => 7.00,
-        'quantity' => 10,
-        'unit' => 'kg',
-        'package_size' => 5.0,
-        'package_unit' => 'karton',
-        'package_summary' => '2 kartony',
-        'item_total' => 70.00
+        'product_id'   => (int)($product['id'] ?? 0),
+        'product_name' => $product['name'] ?? '',
+        'quantity'     => 10,
+        'unit'         => $product['unit'] ?? 'kg',
     ]]),
-    'delivery_date' => '2026-09-28',
+    'delivery_date' => $chosenDate,
     'notes' => 'Test daty dostawy',
     '_csrf' => $csrf
 ];
@@ -99,18 +100,18 @@ curl_close($ch);
 $respData = json_decode($respJson, true);
 $createdId = $respData['order_id'] ?? 0;
 $orderDb = $createdId > 0 ? $repo->getOrderById($createdId) : null;
-$savedDateOk = ($orderDb && $orderDb['delivery_date'] === '2026-09-28');
-echo "7. Zapisana data dostawy w zamĂłwieniu to 2026-09-28: " . ($savedDateOk ? "PASS" : "FAIL") . "\n";
+$savedDateOk = ($orderDb && $chosenDate !== '' && $orderDb['delivery_date'] === $chosenDate);
+echo "7. Zapisana data dostawy w zamówieniu to wybrana {$chosenDate}: " . ($savedDateOk ? "PASS" : "FAIL") . "\n";
 
-// SprzÄ…tanie
+// Sprzątanie
 if ($createdId > 0) {
     $repo->getPdo()->exec("DELETE FROM b2b_order_items WHERE order_id = {$createdId}");
     $repo->getPdo()->exec("DELETE FROM b2b_orders WHERE id = {$createdId}");
 }
 
 if (!$beforeOk || !$dateTomorrowOk || !$afterOk || !$dateDayAfterOk || !$sundaySkippedOk || !$hasDeliveryCards || !$savedDateOk) {
-    echo "=== TEST ZAKOĹCZONY BĹÄDEM (Stan RED) ===\n";
+    echo "=== TEST ZAKOŃCZONY BŁĘDEM (Stan RED) ===\n";
     exit(1);
 }
 
-echo "=== TEST ZAKOĹCZONY SUKCESEM (Stan GREEN) ===\n";
+echo "=== TEST ZAKOŃCZONY SUKCESEM (Stan GREEN) ===\n";

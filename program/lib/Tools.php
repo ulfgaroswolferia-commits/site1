@@ -81,6 +81,50 @@ class Tools
         return preg_replace('/[^0-9]/', '', $value);
     }
 
+    /**
+     * Kwota w polskim formacie do wyświetlenia w widoku: 1234.5 -> "1 234,50 zł".
+     * Spacje są nierozdzielające (kwota nie łamie się między liniami). Tylko do prezentacji —
+     * eksporty (ERP, XLSX) zachowują format z kropką.
+     */
+    public static function money($value, bool $withCurrency = true): string
+    {
+        $formatted = number_format((float) $value, 2, ',', "\u{00A0}");
+        return $withCurrency ? $formatted . "\u{00A0}zł" : $formatted;
+    }
+
+    /**
+     * Walidacja przesłanego pliku .xlsx (wpis z $_FILES): rozszerzenie, rozmiar i typ MIME z finfo.
+     * Zwraca komunikat błędu dla użytkownika albo null, gdy plik jest poprawny.
+     */
+    public static function validateXlsxUpload(array $file, int $maxBytes = 20 * 1024 * 1024): ?string
+    {
+        if (strtolower(pathinfo((string) ($file['name'] ?? ''), PATHINFO_EXTENSION)) !== 'xlsx') {
+            return 'Dozwolony jest wyłącznie format .xlsx (Excel).';
+        }
+
+        if ((int) ($file['size'] ?? 0) > $maxBytes) {
+            return 'Plik jest za duży. Maksymalny rozmiar to ' . (int) round($maxBytes / 1048576) . ' MB.';
+        }
+
+        // Rozszerzenie z $_FILES['name'] kontroluje przeglądarka — sprawdzamy faktyczną zawartość.
+        // XLSX to archiwum ZIP, więc akceptujemy także typy ZIP.
+        if (function_exists('finfo_open') && !empty($file['tmp_name'])) {
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime  = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+            $allowed = [
+                'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'application/zip',
+                'application/x-zip-compressed',
+            ];
+            if (!in_array($mime, $allowed, true)) {
+                return 'Nieprawidłowy typ pliku. Dozwolony jest wyłącznie format .xlsx (Excel).';
+            }
+        }
+
+        return null;
+    }
+
     /** Escapuje znaki niedozwolone w XML-u. */
     public static function xmlCharOut(string $value): string
     {

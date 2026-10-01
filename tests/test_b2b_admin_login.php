@@ -43,10 +43,10 @@ if (empty($csrf)) {
 
 echo "1. Pobranie strony /b2b/login: HTTP {$resGet['code']}\n";
 
-// 2. WyĹ›lij dane logowania administratora (APP_LOGIN / APP_PASSWORD)
+// 2. Wyślij dane logowania administratora (APP_LOGIN / APP_PASSWORD)
 $resPost = req('http://localhost/b2b/login', [
     'login'      => APP_LOGIN,
-    'password'   => APP_PASSWORD,
+    'password'   => (getenv('APP_TEST_PASSWORD') ?: 'admin123'),
     '_csrf'      => $csrf,
     'csrf_token' => $csrf
 ], true);
@@ -57,11 +57,11 @@ echo "   Docelowy URL: {$resPost['url']}\n";
 $isRedirectedToAdmin = (strpos($resPost['url'], 'b2b/admin') !== false);
 $hasAdminPanelTitle = (strpos($resPost['body'], 'Panel Hurtownika') !== false);
 
-echo "3. Przekierowano do /b2b/admin: " . ($isRedirectedToAdmin ? "OK" : "BĹÄ„D") . "\n";
-echo "4. WyĹ›wietlono zawartoĹ›Ä‡ Panelu Hurtownika: " . ($hasAdminPanelTitle ? "OK" : "BĹÄ„D") . "\n";
+echo "3. Przekierowano do /b2b/admin: " . ($isRedirectedToAdmin ? "OK" : "BŁĄD") . "\n";
+echo "4. Wyświetlono zawartość Panelu Hurtownika: " . ($hasAdminPanelTitle ? "OK" : "BŁĄD") . "\n";
 
 @unlink($cookieFile);
 
 $passed = ($isRedirectedToAdmin && $hasAdminPanelTitle);
-echo $passed ? "=== TEST LOGOWANIA HURTOWNIKA PRZESZEDĹ POMYĹšLNIE ===\n" : "=== TEST LOGOWANIA NIE PRZESZEDĹ ===\n";
+echo $passed ? "=== TEST LOGOWANIA HURTOWNIKA PRZESZEDŁ POMYŚLNIE ===\n" : "=== TEST LOGOWANIA NIE PRZESZEDŁ ===\n";
 exit($passed ? 0 : 1);

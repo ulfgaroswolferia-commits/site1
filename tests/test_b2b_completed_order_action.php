@@ -153,7 +153,7 @@ $loginCsrf = $mCsrf[1] ?? '';
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
     'login'    => defined('APP_LOGIN') ? APP_LOGIN : 'admin',
-    'password' => defined('APP_PASSWORD') ? APP_PASSWORD : 'admin123',
+    'password' => (getenv('APP_TEST_PASSWORD') ?: 'admin123'),
     '_csrf'    => $loginCsrf
 ]));
 curl_exec($ch);

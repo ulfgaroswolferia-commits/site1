@@ -10,6 +10,11 @@ use PDOException;
  */
 class B2bRepository
 {
+    /** Maksymalna liczba pozycji w jednym zamówieniu B2B. */
+    public const MAX_ORDER_ITEMS = 500;
+    /** Maksymalna ilość jednej pozycji (kg / szt. / op.). */
+    public const MAX_ITEM_QUANTITY = 100000;
+
     private PDO $pdo;
     private string $driver;
 
@@ -352,7 +357,7 @@ class B2bRepository
         ];
         $orderSql = $allowed[$orderBy] ?? 'created_at DESC, id DESC';
 
-        $stmt = $this->pdo->query("SELECT * FROM b2b_clients ORDER BY {$orderSql}");
+        $stmt = $this->pdo->query("SELECT id, company_name, nip, phone, email, delivery_address, auth_token, login, price_group_id, is_active, created_at FROM b2b_clients ORDER BY {$orderSql}");
         return $stmt->fetchAll();
     }
 
@@ -599,14 +604,26 @@ class B2bRepository
     {
         $preparedItems = [];
 
+        // Górne granice chronią przed śmieciowymi zamówieniami i przeciążeniem generatora plików.
+        if (count($items) > self::MAX_ORDER_ITEMS) {
+            throw new \InvalidArgumentException('Zamówienie może zawierać najwyżej ' . self::MAX_ORDER_ITEMS . ' pozycji.');
+        }
+
         foreach ($items as $item) {
             if (!is_array($item)) {
                 throw new \InvalidArgumentException('Nieprawidłowa pozycja zamówienia.');
             }
 
-            $quantity = filter_var($item['quantity'] ?? null, FILTER_VALIDATE_FLOAT);
+            $rawQty = $item['quantity'] ?? null;
+            if (is_string($rawQty)) {
+                $rawQty = str_replace(',', '.', trim($rawQty));
+            }
+            $quantity = filter_var($rawQty, FILTER_VALIDATE_FLOAT);
             if ($quantity === false || !is_finite((float)$quantity)) {
                 throw new \InvalidArgumentException('Nieprawidłowa ilość produktu.');
+            }
+            if ($quantity > self::MAX_ITEM_QUANTITY) {
+                throw new \InvalidArgumentException('Ilość produktu przekracza dopuszczalny limit (' . self::MAX_ITEM_QUANTITY . ').');
             }
             if ($quantity <= 0) {
                 continue;

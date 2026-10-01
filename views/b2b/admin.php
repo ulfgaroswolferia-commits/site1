@@ -20,20 +20,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= Tools::h($view['title'] ?? 'Panel Hurtownika — Hurtownia Magdy') ?></title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        emerald: { 50: '#ecfdf5', 100: '#d1fae5', 500: '#10b981', 600: '#059669', 700: '#047857' },
-                        sky: { 50: '#f0f9ff', 100: '#e0f2fe', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1' }
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="<?= Tools::h($base) ?>assets/css/b2b.css?v=<?= (int) @filemtime(BASE_PATH . '/assets/css/b2b.css') ?>">
     <style>
         .bg-grid {
             background-image: radial-gradient(rgba(15, 23, 42, 0.05) 1.2px, transparent 1.2px);
@@ -112,7 +99,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
 
             <!-- Przełącznik modułów i wylogowanie -->
             <div class="flex items-center gap-2">
-                <a href="<?= $base ?>b2b" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-xl hover:bg-sky-100 transition shadow-sm">
+                <a href="<?= $base ?>b2b" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-xl hover:bg-sky-100 transition shadow-sm">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                     Podgląd sklepu B2B
                 </a>
@@ -130,25 +117,25 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
         ?>
         <!-- Zakładki nawigacyjne -->
         <nav class="flex border-b border-slate-200 gap-2 overflow-x-auto pb-1">
-            <button type="button" id="tab-btn-products" onclick="switchTab('products')" class="px-5 py-2.5 font-bold text-sm rounded-xl transition flex items-center gap-2 bg-emerald-600 text-white shadow-md shadow-emerald-600/20">
+            <button type="button" id="tab-btn-products" onclick="switchTab('products')" class="px-5 py-2.5 font-bold text-sm rounded-xl transition flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 bg-emerald-600 text-white shadow-md shadow-emerald-600/20">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                 <span>Aktualny cennik</span>
                 <span id="badge-products-count" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-white/20 text-white"><?= count($products) ?></span>
             </button>
 
-            <button type="button" id="tab-btn-orders" onclick="switchTab('orders')" class="px-5 py-2.5 font-bold text-sm rounded-xl transition flex items-center gap-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80">
+            <button type="button" id="tab-btn-orders" onclick="switchTab('orders')" class="px-5 py-2.5 font-bold text-sm rounded-xl transition flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                 <span>Zamówienia</span>
                 <span id="badge-orders-count" class="ml-1 px-2 py-0.5 text-xs rounded-full <?= $newOrdersCount > 0 ? 'bg-amber-500 text-white font-bold' : 'bg-slate-200 text-slate-700' ?>" title="<?= $newOrdersCount ?> nowych zamówień"><?= $newOrdersCount ?></span>
             </button>
 
-            <button type="button" id="tab-btn-clients" onclick="switchTab('clients')" class="px-5 py-2.5 font-bold text-sm rounded-xl transition flex items-center gap-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80">
+            <button type="button" id="tab-btn-clients" onclick="switchTab('clients')" class="px-5 py-2.5 font-bold text-sm rounded-xl transition flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                 <span>Klienci Hurtowni</span>
                 <span class="ml-1 px-2 py-0.5 text-xs rounded-full bg-slate-200 text-slate-800"><?= count($clients) ?></span>
             </button>
 
-            <button type="button" id="tab-btn-settings" onclick="switchTab('settings')" class="px-5 py-2.5 font-bold text-sm rounded-xl transition flex items-center gap-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80">
+            <button type="button" id="tab-btn-settings" onclick="switchTab('settings')" class="px-5 py-2.5 font-bold text-sm rounded-xl transition flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 <span>Ustawienia & ERP</span>
             </button>
@@ -176,7 +163,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                             <!-- Domyślny ERP jako pierwszy -->
                             <button type="button" id="import-tab-btn-erp"
                                 onclick="switchImportTab('erp')"
-                                class="px-4 py-2 text-xs font-bold rounded-t-xl border border-b-0 border-indigo-400 bg-indigo-600 text-white transition"
+                                class="px-4 py-2 text-xs font-bold rounded-t-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 border border-b-0 border-indigo-400 bg-indigo-600 text-white transition"
                                 role="tab" aria-selected="true" aria-controls="import-panel-erp">
                                 <span class="flex items-center gap-1.5">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
@@ -185,7 +172,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                             </button>
                             <button type="button" id="import-tab-btn-excel"
                                 onclick="switchImportTab('excel')"
-                                class="px-4 py-2 text-xs font-bold rounded-t-xl border border-b-0 border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition"
+                                class="px-4 py-2 text-xs font-bold rounded-t-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 border border-b-0 border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition"
                                 role="tab" aria-selected="false" aria-controls="import-panel-excel">
                                 <span class="flex items-center gap-1.5">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -196,7 +183,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                             <!-- Domyślny Excel jako pierwszy -->
                             <button type="button" id="import-tab-btn-excel"
                                 onclick="switchImportTab('excel')"
-                                class="px-4 py-2 text-xs font-bold rounded-t-xl border border-b-0 border-emerald-400 bg-emerald-600 text-white transition"
+                                class="px-4 py-2 text-xs font-bold rounded-t-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 border border-b-0 border-emerald-400 bg-emerald-600 text-white transition"
                                 role="tab" aria-selected="true" aria-controls="import-panel-excel">
                                 <span class="flex items-center gap-1.5">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -205,7 +192,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                             </button>
                             <button type="button" id="import-tab-btn-erp"
                                 onclick="switchImportTab('erp')"
-                                class="px-4 py-2 text-xs font-bold rounded-t-xl border border-b-0 border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition"
+                                class="px-4 py-2 text-xs font-bold rounded-t-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 border border-b-0 border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition"
                                 role="tab" aria-selected="false" aria-controls="import-panel-erp">
                                 <span class="flex items-center gap-1.5">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
@@ -220,7 +207,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 <div id="import-panel-excel" role="tabpanel" aria-labelledby="import-tab-btn-excel" class="p-6 <?= $defaultImportMethod === 'excel' ? '' : 'hidden' ?>">
                     <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
                         <p class="text-xs text-slate-500">Wgraj plik od dostawcy — parser automatycznie pominie logotypy i dopasuje klatki/skrzynki z pamięci systemu.</p>
-                        <span class="text-xs font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">Format: Microsoft Excel (.xlsx)</span>
+                        <span class="text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">Format: Microsoft Excel (.xlsx)</span>
                     </div>
 
                     <div id="dropzone" class="relative border-2 border-dashed border-slate-300 hover:border-emerald-500 bg-slate-50/50 hover:bg-emerald-50/20 transition rounded-xl p-8 text-center cursor-pointer">
@@ -230,7 +217,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                             </div>
                             <p class="font-bold text-sm text-slate-800">Przeciągnij plik cennika tutaj lub kliknij, aby wybrać</p>
-                            <p class="text-xs text-slate-400">System zachowa zapamiętane opakowania zbiorcze (np. klatki mango, skrzynki pomidorów)</p>
+                            <p class="text-xs text-slate-500">System zachowa zapamiętane opakowania zbiorcze (np. klatki mango, skrzynki pomidorów)</p>
                         </div>
                     </div>
 
@@ -265,7 +252,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                         <div class="mb-4">
                             <div class="text-xs font-bold text-slate-600 mb-2 flex items-center justify-between">
                                 <span>Podgląd zawartości arkusza Excel:</span>
-                                <span class="text-slate-400 font-normal text-[11px]">Wiersz wyróżniony na zielono = nagłówek</span>
+                                <span class="text-slate-500 font-normal text-[11px]">Wiersz wyróżniony na zielono = nagłówek</span>
                             </div>
                             <div class="overflow-x-auto border border-slate-200 rounded-xl max-h-56 overflow-y-auto bg-white shadow-inner">
                                 <table class="w-full text-left text-xs" id="preview-sheet-table">
@@ -312,7 +299,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>
                             </div>
                             <p class="font-bold text-sm text-slate-800">Przeciągnij plik z systemu ERP lub kliknij, aby wybrać</p>
-                            <p class="text-xs text-slate-400">Akceptowane formaty: <strong>.epp</strong> (Subiekt), <strong>.xml</strong> (Optima / Wf-Mag), <strong>.txt</strong> (Symfonia)</p>
+                            <p class="text-xs text-slate-600">Akceptowane formaty: <strong>.epp</strong> (Subiekt), <strong>.xml</strong> (Optima / Wf-Mag), <strong>.txt</strong> (Symfonia)</p>
                         </div>
                     </div>
 
@@ -374,7 +361,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                 <?= $isMysqlConfigured ? 'Skonfigurowana' : 'Nieaktywny' ?>
                             </span>
                         </div>
-                        <p class="text-[11px] text-slate-400 mt-0.5">
+                        <p class="text-[11px] text-slate-500 mt-0.5">
                             <?= $isMysqlConfigured 
                                 ? 'Parametry połączenia MySQL gotowe' 
                                 : 'Póki co nieaktywne — wymaga skonfigurowania danych bazy' ?>
@@ -421,7 +408,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                         </button>
 
                         <div class="relative flex-1 sm:w-64">
-                            <input id="product-search-admin" type="text" placeholder="Filtruj asortyment..." class="w-full text-xs font-medium pl-8 pr-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:border-emerald-500">
+                            <input id="product-search-admin" type="text" placeholder="Filtruj asortyment..." class="w-full text-xs font-medium pl-8 pr-3 py-2 border border-slate-300 rounded-xl focus:outline-none focus:border-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-500">
                             <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                         </div>
                         <select id="filter-category-admin" class="text-xs font-bold border border-slate-300 rounded-xl px-3 py-2 bg-white">
@@ -440,7 +427,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                             <tr>
                                 <th class="py-3 px-4 font-bold text-center w-28">
                                     <div class="leading-tight">DOSTĘPNOŚĆ</div>
-                                    <div class="text-[10px] lowercase font-normal tracking-normal text-slate-400 mt-0.5">kliknij aby zmienić</div>
+                                    <div class="text-[10px] lowercase font-normal tracking-normal text-slate-500 mt-0.5">kliknij aby zmienić</div>
                                 </th>
                                 <th class="py-3.5 px-4 font-bold">Towar</th>
                                 <th class="py-3.5 px-4 font-bold w-32">Kod ERP</th>
@@ -478,12 +465,12 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                             <div class="flex items-center gap-2">
                                                 <input type="text" id="name-<?= $p['id'] ?>" data-prod-id="<?= $p['id'] ?>" data-field-name="name" data-initial="<?= Tools::h($p['name']) ?>" value="<?= Tools::h($p['name']) ?>" class="prod-field w-full bg-transparent border-b border-transparent hover:border-slate-300 focus:border-emerald-500 focus:bg-white px-1.5 py-0.5 rounded text-sm font-bold transition">
                                                 <?php if (!empty($p['is_new'])): ?>
-                                                    <span id="new-badge-<?= $p['id'] ?>" class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-sky-100 text-sky-800 border border-sky-300/70 shadow-2xs" title="Nowy artykuł z cennika — sprawdź jednostkę i opakowanie zbiorcze">
+                                                    <span id="new-badge-<?= $p['id'] ?>" class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-sky-100 text-sky-800 border border-sky-300/70 shadow-sm" title="Nowy artykuł z cennika — sprawdź jednostkę i opakowanie zbiorcze">
                                                         <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>
                                                         Nowość
                                                     </span>
                                                 <?php endif; ?>
-                                                <span id="dirty-badge-<?= $p['id'] ?>" class="hidden shrink-0 items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300/80 shadow-xs" title="Pozycja zmodyfikowana — wymaga zatwierdzenia">
+                                                <span id="dirty-badge-<?= $p['id'] ?>" class="hidden shrink-0 items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-900 border border-amber-300/80 shadow-sm" title="Pozycja zmodyfikowana — wymaga zatwierdzenia">
                                                     Edytowano
                                                 </span>
                                             </div>
@@ -533,8 +520,8 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                         </td>
                                         <!-- Zapis -->
                                         <td class="py-3 px-4 text-center whitespace-nowrap">
-                                            <button type="button" id="save-btn-<?= $p['id'] ?>" onclick="saveProduct(<?= $p['id'] ?>)" class="save-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 border border-transparent transition-all" title="Zapisz zmiany">
-                                                <svg id="save-icon-<?= $p['id'] ?>" class="w-4 h-4 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <button type="button" id="save-btn-<?= $p['id'] ?>" onclick="saveProduct(<?= $p['id'] ?>)" class="save-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 border border-transparent transition-all" title="Zapisz zmiany" aria-label="Zapisz zmiany: <?= Tools::h($p['name']) ?>">
+                                                <svg id="save-icon-<?= $p['id'] ?>" aria-hidden="true" class="w-4 h-4 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                                 </svg>
                                                 <span id="save-label-<?= $p['id'] ?>" class="hidden font-bold">Zapisz</span>
@@ -544,7 +531,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                 <?php endforeach; ?>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="7" class="py-8 text-center text-slate-400 font-medium">Brak towarów w bazie. Wgraj plik Excela powyżej, aby zasilić ofertę.</td>
+                                    <td colspan="7" class="py-8 text-center text-slate-500 font-medium">Brak towarów w bazie. Wgraj plik Excela powyżej, aby zasilić ofertę.</td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
@@ -579,41 +566,41 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
 
                     <!-- Filtry po statusie zamówienia (domyślnie Nowe) -->
                     <div class="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200/80 gap-1 flex-wrap" role="tablist">
-                        <button type="button" id="order-filter-new" onclick="filterOrdersByStatus('new')" class="order-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-emerald-700 shadow-2xs border border-emerald-200/60" data-status="new">
+                        <button type="button" id="order-filter-new" onclick="filterOrdersByStatus('new')" class="order-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition flex items-center gap-1.5 bg-white text-emerald-700 shadow-sm border border-emerald-200/60" data-status="new">
                             <span>Nowe</span>
                             <span class="px-1.5 py-0.2 text-[10px] rounded-full bg-emerald-100 text-emerald-800 font-extrabold" id="order-filter-count-new"><?= $countOrdersNew ?></span>
                         </button>
-                        <button type="button" id="order-filter-processing" onclick="filterOrdersByStatus('processing')" class="order-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5" data-status="processing">
+                        <button type="button" id="order-filter-processing" onclick="filterOrdersByStatus('processing')" class="order-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5" data-status="processing">
                             <span>W kompletacji</span>
                             <span class="px-1.5 py-0.2 text-[10px] rounded-full bg-amber-100 text-amber-800 font-extrabold" id="order-filter-count-processing"><?= $countOrdersProcessing ?></span>
                         </button>
-                        <button type="button" id="order-filter-completed" onclick="filterOrdersByStatus('completed')" class="order-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5" data-status="completed">
+                        <button type="button" id="order-filter-completed" onclick="filterOrdersByStatus('completed')" class="order-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5" data-status="completed">
                             <span>Zrealizowane</span>
                             <span class="px-1.5 py-0.2 text-[10px] rounded-full bg-slate-200 text-slate-700 font-extrabold" id="order-filter-count-completed"><?= $countOrdersCompleted ?></span>
                         </button>
-                        <button type="button" id="order-filter-cancelled" onclick="filterOrdersByStatus('cancelled')" class="order-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5" data-status="cancelled">
+                        <button type="button" id="order-filter-cancelled" onclick="filterOrdersByStatus('cancelled')" class="order-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5" data-status="cancelled">
                             <span>Anulowane</span>
                             <span class="px-1.5 py-0.2 text-[10px] rounded-full bg-rose-100 text-rose-700 font-extrabold" id="order-filter-count-cancelled"><?= $countOrdersCancelled ?></span>
                         </button>
-                        <button type="button" id="order-filter-all" onclick="filterOrdersByStatus('all')" class="order-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5" data-status="all">
+                        <button type="button" id="order-filter-all" onclick="filterOrdersByStatus('all')" class="order-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5" data-status="all">
                             <span>Wszystkie</span>
                             <span class="px-1.5 py-0.2 text-[10px] rounded-full bg-slate-200 text-slate-700 font-extrabold" id="order-filter-count-all"><?= $countOrdersAll ?></span>
                         </button>
                     </div>
 
                     <!-- Pobieranie paczki ERP -->
-                    <div class="inline-flex items-center rounded-xl bg-slate-100 border border-slate-200/80 p-1 shadow-2xs gap-1">
+                    <div class="inline-flex items-center rounded-xl bg-slate-100 border border-slate-200/80 p-1 shadow-sm gap-1">
                         <span class="text-xs font-bold text-slate-700 px-2 flex items-center gap-1.5">
                             <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                             Paczka ERP:
                         </span>
-                        <select id="batch-erp-format" onchange="savePreferredErp(this.value)" class="text-xs font-bold bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-800 focus:outline-none cursor-pointer">
+                        <select id="batch-erp-format" onchange="savePreferredErp(this.value)" class="text-xs font-bold bg-white border border-slate-200 rounded-lg px-2 py-1 text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer" aria-label="Format paczki ERP">
                             <option value="subiekt">Subiekt GT / Nexo (.epp)</option>
                             <option value="optima">Comarch Optima (.xml)</option>
                             <option value="symfonia">Symfonia (.txt)</option>
                             <option value="wfmag">Wf-Mag (.xml)</option>
                         </select>
-                        <button type="button" onclick="downloadBatchErp()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg shadow-2xs transition flex items-center gap-1">
+                        <button type="button" onclick="downloadBatchErp()" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                             <span>Pobierz paczkę</span>
                         </button>
@@ -643,7 +630,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                                 <button type="button" onclick="showOrderModal(<?= $o['id'] ?>)" class="font-extrabold text-blue-700 hover:text-blue-900 hover:underline text-left cursor-pointer transition text-sm order-details-btn-<?= $o['id'] ?>" title="Kliknij, aby otworzyć szczegóły zamówienia">
                                                     <?= Tools::h($o['order_number']) ?>
                                                 </button>
-                                                <div class="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
+                                                <div class="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
                                                     <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                                                     <span><?= date('d.m.Y H:i', strtotime($o['created_at'])) ?></span>
                                                 </div>
@@ -662,9 +649,9 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                         <td class="py-3.5 px-4 font-bold text-slate-900"><?= Tools::h($o['client_name_snapshot']) ?></td>
                                         <td class="py-3.5 px-4 text-xs font-semibold text-slate-600"><?= Tools::h($o['client_phone_snapshot'] ?: '—') ?></td>
                                         <td class="py-3.5 px-4 text-center font-bold text-slate-700"><?= (int)$o['total_items'] ?></td>
-                                        <td class="py-3.5 px-4 text-right font-extrabold text-slate-900"><?= number_format((float)$o['total_amount'], 2, '.', ' ') ?> zł</td>
+                                        <td class="py-3.5 px-4 text-right font-extrabold text-slate-900"><?= Tools::money($o['total_amount']) ?></td>
                                         <td class="py-3.5 px-4 text-center">
-                                            <select id="order-status-select-<?= $o['id'] ?>" onchange="handleOrderStatusChange(<?= $o['id'] ?>, this)" data-previous-status="<?= Tools::h($o['status']) ?>" class="text-xs font-bold rounded-lg px-2 py-1 border border-slate-200 focus:outline-none">
+                                            <select id="order-status-select-<?= $o['id'] ?>" onchange="handleOrderStatusChange(<?= $o['id'] ?>, this)" data-previous-status="<?= Tools::h($o['status']) ?>" class="text-xs font-bold rounded-lg px-2 py-1 border border-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" aria-label="Status zamówienia <?= Tools::h($o['order_number']) ?>">
                                                 <option value="new" <?= $o['status'] === 'new' ? 'selected' : '' ?>>Nowe</option>
                                                 <option value="processing" <?= $o['status'] === 'processing' ? 'selected' : '' ?>>W kompletacji</option>
                                                 <option value="completed" <?= $o['status'] === 'completed' ? 'selected' : '' ?>>Zrealizowane</option>
@@ -673,16 +660,16 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                         </td>
                                         <td class="py-3.5 px-4 text-center whitespace-nowrap" id="order-action-cell-<?= $o['id'] ?>">
                                             <?php if ($o['status'] === 'completed'): ?>
-                                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-bold text-xs rounded-xl shadow-2xs" title="Zamówienie zrealizowane">
+                                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-bold text-xs rounded-xl shadow-sm" title="Zamówienie zrealizowane">
                                                     <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
                                                     <span>Zamówienie zrealizowane</span>
                                                 </span>
                                             <?php elseif ($o['status'] === 'cancelled'): ?>
-                                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-500 border border-slate-200 font-bold text-xs rounded-xl shadow-2xs" title="Zamówienie anulowane">
+                                                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-500 border border-slate-200 font-bold text-xs rounded-xl shadow-sm" title="Zamówienie anulowane">
                                                     <span>Zamówienie anulowane</span>
                                                 </span>
                                             <?php else: ?>
-                                                <button type="button" onclick="showOrderModal(<?= $o['id'] ?>)" class="btn-finalize-order inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-2xs hover:shadow transition cursor-pointer" title="Otwórz podsumowanie i specyfikację kompletacji zamówienia">
+                                                <button type="button" onclick="showOrderModal(<?= $o['id'] ?>)" class="btn-finalize-order inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm hover:shadow transition cursor-pointer" title="Otwórz podsumowanie i specyfikację kompletacji zamówienia">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                                     <span>Finalizuj zamówienie</span>
                                                 </button>
@@ -691,13 +678,13 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                     </tr>
                                 <?php endforeach; ?>
                                 <tr id="orders-filter-empty-row" class="hidden">
-                                    <td colspan="7" class="py-8 text-center text-slate-400 font-medium">
+                                    <td colspan="7" class="py-8 text-center text-slate-500 font-medium">
                                         Brak zamówień o statusie: <strong id="orders-filter-empty-label" class="text-slate-600">Nowe</strong>.
                                     </td>
                                 </tr>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="7" class="py-8 text-center text-slate-400 font-medium">Brak złożonych zamówień w historii.</td>
+                                    <td colspan="7" class="py-8 text-center text-slate-500 font-medium">Brak złożonych zamówień w historii.</td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
@@ -720,23 +707,23 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 <form id="form-create-client" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nazwa sklepu / firmy *</label>
-                        <input type="text" id="new-client-name" required placeholder="np. Warzywniak U Ani" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none">
+                        <input type="text" id="new-client-name" required placeholder="np. Warzywniak U Ani" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">NIP (opcjonalnie)</label>
-                        <input type="text" id="new-client-nip" placeholder="np. 1234567890" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none">
+                        <input type="text" id="new-client-nip" placeholder="np. 1234567890" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Telefon kontaktowy *</label>
-                        <input type="text" id="new-client-phone" required placeholder="np. 500 600 700" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none">
+                        <input type="text" id="new-client-phone" required placeholder="np. 500 600 700" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Adres e-mail</label>
-                        <input type="email" id="new-client-email" placeholder="sklep@example.com" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none">
+                        <input type="email" id="new-client-email" placeholder="sklep@example.com" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Adres dostawy i uwagi dla kierowcy</label>
-                        <input type="text" id="new-client-address" placeholder="np. ul. Kwiatowa 5, Warszawa (brama od podwórka)" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none">
+                        <input type="text" id="new-client-address" placeholder="np. ul. Kwiatowa 5, Warszawa (brama od podwórka)" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
                     </div>
                     <div class="md:col-span-3 flex justify-end">
                         <button type="submit" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm rounded-xl shadow-md transition flex items-center gap-2">
@@ -745,6 +732,26 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                         </button>
                     </div>
                 </form>
+
+                <!-- Link dostępu nowo utworzonego klienta (pokazywany po utworzeniu profilu) -->
+                <div id="new-client-link-box" class="hidden mt-5 p-4 bg-emerald-50 border border-emerald-200 rounded-xl" role="region" aria-labelledby="new-client-link-title">
+                    <div class="flex items-start justify-between gap-3 mb-2">
+                        <p id="new-client-link-title" class="text-sm font-extrabold text-emerald-900">
+                            Utworzono klienta<span id="new-client-link-name"></span>
+                        </p>
+                        <button type="button" onclick="hideNewClientLinkBox()" class="shrink-0 p-1 rounded-lg text-emerald-800 hover:bg-emerald-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" aria-label="Zamknij informację o linku klienta">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    <label for="new-client-link-url" class="block text-xs font-bold text-emerald-900 mb-1">Link dostępu dla odbiorcy — skopiuj i wyślij go klientowi:</label>
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <input id="new-client-link-url" type="text" readonly onfocus="this.select()" class="flex-1 min-w-0 text-xs font-mono bg-white border border-emerald-300 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
+                        <button type="button" onclick="copyNewClientLink()" class="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                            <span>Kopiuj</span>
+                        </button>
+                    </div>
+                </div>
             </section>
 
             <!-- Tabela zarejestrowanych klientów -->
@@ -757,13 +764,13 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     <div class="flex items-center gap-3 w-full sm:w-auto">
                         <!-- Wyszukiwarka klientów po nazwie -->
                         <div class="relative flex-1 sm:w-72">
-                            <input id="client-search-admin" type="text" placeholder="Szukaj klienta po nazwie / NIP / tel..." class="w-full text-xs font-medium pl-8 pr-8 py-2 border border-slate-300 rounded-xl focus:outline-none focus:border-emerald-500 shadow-2xs">
+                            <input id="client-search-admin" type="text" placeholder="Szukaj klienta po nazwie / NIP / tel..." class="w-full text-xs font-medium pl-8 pr-8 py-2 border border-slate-300 rounded-xl focus:outline-none focus:border-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-500 shadow-sm">
                             <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                            <button type="button" id="client-search-clear" onclick="clearClientSearch()" class="hidden absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600" title="Wyczyść szukanie">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            <button type="button" id="client-search-clear" onclick="clearClientSearch()" class="hidden absolute right-2.5 top-2.5 text-slate-500 hover:text-slate-700 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" title="Wyczyść szukanie" aria-label="Wyczyść szukanie klienta">
+                                <svg class="w-4 h-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </button>
                         </div>
-                        <span id="clients-count-badge" class="text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl whitespace-nowrap shadow-2xs">
+                        <span id="clients-count-badge" class="text-xs font-bold text-slate-600 bg-slate-100 border border-slate-200 px-3 py-2 rounded-xl whitespace-nowrap shadow-sm">
                             <?= count($clients) ?> odbiorców
                         </span>
                     </div>
@@ -790,11 +797,11 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                             <div class="flex items-center gap-2">
                                                 <span id="client-name-display-<?= $c['id'] ?>"><?= Tools::h($c['company_name']) ?></span>
                                             </div>
-                                            <div class="flex items-center gap-2 text-xs font-normal text-slate-400 mt-0.5">
+                                            <div class="flex items-center gap-2 text-xs font-normal text-slate-500 mt-0.5">
                                                 <span id="client-nip-display-<?= $c['id'] ?>" class="<?= empty($c['nip']) ? 'hidden' : '' ?>">NIP: <?= Tools::h($c['nip'] ?? '') ?></span>
                                                 <?php if (!empty($c['created_at'])): ?>
                                                     <span class="text-slate-300 <?= empty($c['nip']) ? 'hidden' : '' ?>">•</span>
-                                                    <span class="text-slate-400" title="Data rejestracji">Dodano: <?= date('d.m.Y H:i', strtotime($c['created_at'])) ?></span>
+                                                    <span class="text-slate-500" title="Data rejestracji">Dodano: <?= date('d.m.Y H:i', strtotime($c['created_at'])) ?></span>
                                                 <?php endif; ?>
                                             </div>
                                         </td>
@@ -815,26 +822,26 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                         <td class="py-3 px-4 text-center whitespace-nowrap">
                                             <div class="inline-flex items-center gap-1.5 flex-wrap justify-center">
                                                 <!-- Kopiuj link -->
-                                                <button type="button" data-token-url="<?= Tools::h($tokenUrl) ?>" onclick="copyToken(this.dataset.tokenUrl)" class="copy-token inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-xl hover:bg-sky-100 transition shadow-2xs" title="Skopiuj bezpośredni link logowania klienta do schowka">
+                                                <button type="button" data-token-url="<?= Tools::h($tokenUrl) ?>" onclick="copyToken(this.dataset.tokenUrl)" class="copy-token inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-xl hover:bg-sky-100 transition shadow-sm" title="Skopiuj bezpośredni link logowania klienta do schowka">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
                                                     <span>Kopiuj</span>
                                                 </button>
 
                                                 <!-- Wyślij E-mail -->
-                                                <button type="button" id="btn-send-email-<?= $c['id'] ?>" onclick="sendTokenEmail(<?= $c['id'] ?>)" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-xl hover:bg-indigo-100 transition shadow-2xs" title="<?= !empty($c['email']) ? 'Wyślij bezpośredni link dostępowy na e-mail: ' . Tools::h($c['email']) : 'Brak e-maila klienta' ?>">
+                                                <button type="button" id="btn-send-email-<?= $c['id'] ?>" onclick="sendTokenEmail(<?= $c['id'] ?>)" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-xl hover:bg-indigo-100 transition shadow-sm" title="<?= !empty($c['email']) ? 'Wyślij bezpośredni link dostępowy na e-mail: ' . Tools::h($c['email']) : 'Brak e-maila klienta' ?>">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
                                                     <span>E-mail</span>
                                                 </button>
 
                                                 <!-- Wyślij SMS / Tel -->
-                                                <button type="button" onclick="openSendSmsModal(<?= $c['id'] ?>)" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition shadow-2xs" title="Wyślij link SMS-em lub przez WhatsApp">
+                                                <button type="button" onclick="openSendSmsModal(<?= $c['id'] ?>)" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition shadow-sm" title="Wyślij link SMS-em lub przez WhatsApp">
                                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
                                                     <span>SMS / Tel</span>
                                                 </button>
                                             </div>
                                         </td>
                                         <td class="py-3 px-4 text-center whitespace-nowrap">
-                                            <button type="button" onclick="openEditClientModal(<?= $c['id'] ?>)" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded-xl transition border border-slate-200 shadow-2xs" title="Edytuj dane odbiorcy">
+                                            <button type="button" onclick="openEditClientModal(<?= $c['id'] ?>)" class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 rounded-xl transition border border-slate-200 shadow-sm" title="Edytuj dane odbiorcy">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                                 <span>Edytuj</span>
                                             </button>
@@ -842,7 +849,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                     </tr>
                                 <?php endforeach; ?>
                                 <tr id="no-clients-search-row" class="hidden">
-                                    <td colspan="7" class="py-10 text-center text-slate-400 font-medium">
+                                    <td colspan="7" class="py-10 text-center text-slate-500 font-medium">
                                         <div class="flex flex-col items-center justify-center gap-2">
                                             <svg class="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                                             <p>Nie znaleziono klientów pasujących do frazy: <strong id="no-clients-search-term" class="text-slate-700"></strong></p>
@@ -852,7 +859,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                 </tr>
                             <?php else: ?>
                                 <tr>
-                                    <td colspan="7" class="py-8 text-center text-slate-400 font-medium">Brak dodanych odbiorców. Dodaj pierwszego klienta powyżej.</td>
+                                    <td colspan="7" class="py-8 text-center text-slate-500 font-medium">Brak dodanych odbiorców. Dodaj pierwszego klienta powyżej.</td>
                                 </tr>
                             <?php endif; ?>
                         </tbody>
@@ -893,7 +900,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                             Po tej godzinie system informuje zamawiającego sklep, że dostawy na jutro rano są już zamknięte i automatycznie proponuje dostawę na kolejny dostępny dzień roboczy.
                         </p>
                         <div class="flex items-center gap-3">
-                            <input type="time" id="settings-cutoff" name="cutoff_time" value="<?= Tools::h($cutoffVal) ?>" class="text-base font-extrabold text-slate-800 bg-white border border-slate-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-2xs" required>
+                            <input type="time" id="settings-cutoff" name="cutoff_time" value="<?= Tools::h($cutoffVal) ?>" class="text-base font-extrabold text-slate-800 bg-white border border-slate-300 rounded-xl px-4 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm" required>
                             <span class="text-xs font-semibold text-slate-500">Domyślnie: 21:30</span>
                         </div>
                     </div>
@@ -937,7 +944,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                             Wybierz, która metoda wgrywania oferty ma być otwierana jako pierwsza (domyślna) w panelu hurtowni.
                         </p>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-emerald-400 transition shadow-2xs">
+                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-emerald-400 transition shadow-sm">
                                 <input type="radio" id="settings-default-import-excel" name="default_import_method" value="excel" <?= $defaultImportMethod === 'excel' ? 'checked' : '' ?> class="mt-0.5 text-emerald-600 focus:ring-emerald-500">
                                 <div>
                                     <span class="block font-bold text-xs text-slate-900 flex items-center gap-1.5">
@@ -948,7 +955,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                 </div>
                             </label>
 
-                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-indigo-400 transition shadow-2xs">
+                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-indigo-400 transition shadow-sm">
                                 <input type="radio" id="settings-default-import-erp" name="default_import_method" value="erp" <?= $defaultImportMethod === 'erp' ? 'checked' : '' ?> class="mt-0.5 text-indigo-600 focus:ring-indigo-500">
                                 <div>
                                     <span class="block font-bold text-xs text-slate-900 flex items-center gap-1.5">
@@ -969,7 +976,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                         <p class="text-xs text-slate-500 mb-3">
                             Wybierz format eksportu i importu, z którego korzysta Twoja hurtownia. Wybór automatycznie określa domyślny format przy imporcie pliku ERP oraz przy eksporcie zamówień.
                         </p>
-                        <select id="settings-erp-format" name="default_erp_format" onchange="syncErpFormatSelection(this.value)" class="w-full sm:w-80 text-sm font-bold bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-2xs cursor-pointer">
+                        <select id="settings-erp-format" name="default_erp_format" onchange="syncErpFormatSelection(this.value)" class="w-full sm:w-80 text-sm font-bold bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm cursor-pointer">
                             <option value="subiekt" <?= $defaultErpFormat === 'subiekt' ? 'selected' : '' ?>>InsERT Subiekt GT / Nexo (.epp / EDI++)</option>
                             <option value="optima" <?= $defaultErpFormat === 'optima' ? 'selected' : '' ?>>Comarch ERP Optima (.xml)</option>
                             <option value="symfonia" <?= $defaultErpFormat === 'symfonia' ? 'selected' : '' ?>>Symfonia Handel (.txt)</option>
@@ -987,7 +994,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                         </p>
                         
                         <div class="space-y-2.5">
-                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-emerald-400 transition shadow-2xs">
+                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-emerald-400 transition shadow-sm">
                                 <input type="radio" name="finalize_action" value="print" <?= ($finalizeActionVal === 'print') ? 'checked' : '' ?> onchange="toggleFinalizeErpOptions(this.value)" class="mt-0.5 text-emerald-600 focus:ring-emerald-500">
                                 <div>
                                     <span class="block font-bold text-xs text-slate-900">Drukuj specyfikację zamówienia (Format A4)</span>
@@ -995,7 +1002,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                 </div>
                             </label>
 
-                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-emerald-400 transition shadow-2xs">
+                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-emerald-400 transition shadow-sm">
                                 <input type="radio" name="finalize_action" value="excel" <?= ($finalizeActionVal === 'excel') ? 'checked' : '' ?> onchange="toggleFinalizeErpOptions(this.value)" class="mt-0.5 text-emerald-600 focus:ring-emerald-500">
                                 <div>
                                     <span class="block font-bold text-xs text-slate-900">Pobierz arkusz kompletacji Excel (.xlsx)</span>
@@ -1003,7 +1010,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                 </div>
                             </label>
 
-                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-emerald-400 transition shadow-2xs">
+                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-emerald-400 transition shadow-sm">
                                 <input type="radio" name="finalize_action" value="erp" <?= ($finalizeActionVal === 'erp') ? 'checked' : '' ?> onchange="toggleFinalizeErpOptions(this.value)" class="mt-0.5 text-emerald-600 focus:ring-emerald-500">
                                 <div class="flex-1">
                                     <span class="block font-bold text-xs text-slate-900">Eksportuj do programu magazynowo-handlowego ERP</span>
@@ -1023,7 +1030,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                                 </div>
                             </label>
 
-                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-emerald-400 transition shadow-2xs">
+                            <label class="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-emerald-400 transition shadow-sm">
                                 <input type="radio" name="finalize_action" value="status_only" <?= ($finalizeActionVal === 'status_only') ? 'checked' : '' ?> onchange="toggleFinalizeErpOptions(this.value)" class="mt-0.5 text-emerald-600 focus:ring-emerald-500">
                                 <div>
                                     <span class="block font-bold text-xs text-slate-900">Tylko zmiana statusu</span>
@@ -1044,7 +1051,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
 
                 <!-- Instrukcja importu ERP -->
                 <div class="mt-8 pt-6 border-t border-slate-200">
-                    <h3 class="text-xs font-extrabold uppercase text-slate-400 tracking-wider mb-4">Informacje o obsługiwanych formatach importu ERP:</h3>
+                    <h3 class="text-xs font-extrabold uppercase text-slate-500 tracking-wider mb-4">Informacje o obsługiwanych formatach importu ERP:</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/70">
                             <div class="text-xs font-black text-indigo-700 mb-1">Subiekt GT / Nexo</div>
@@ -1069,7 +1076,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
     </div>
 
     <!-- Modal szczegółów zamówienia -->
-    <div id="modal-order" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden animate-fade-in">
+    <div id="modal-order" role="dialog" aria-modal="true" aria-labelledby="modal-order-number" aria-describedby="modal-order-client" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden animate-fade-in">
         <div class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
             <div class="p-5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 bg-slate-50">
                 <div>
@@ -1077,17 +1084,17 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     <p class="text-xs text-slate-500 mt-0.5" id="modal-order-client"></p>
                 </div>
                 <div class="flex items-center gap-2.5">
-                    <div class="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-2xs">
+                    <div class="flex items-center gap-1.5 bg-white border border-slate-200 rounded-xl px-3 py-1.5 shadow-sm">
                         <label for="modal-order-status" class="text-xs font-bold text-slate-600">Status:</label>
-                        <select id="modal-order-status" onchange="changeModalOrderStatus(this.value)" class="text-xs font-bold text-slate-800 bg-transparent border-none focus:outline-none cursor-pointer">
+                        <select id="modal-order-status" onchange="changeModalOrderStatus(this.value)" class="text-xs font-bold text-slate-800 bg-transparent border-none rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 cursor-pointer">
                             <option value="new">Nowe</option>
                             <option value="processing">W kompletacji</option>
                             <option value="completed">Zrealizowane</option>
                             <option value="cancelled">Anulowane</option>
                         </select>
                     </div>
-                    <button type="button" onclick="closeOrderModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    <button type="button" onclick="closeOrderModal()" class="text-slate-500 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" aria-label="Zamknij szczegóły zamówienia" data-autofocus>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
             </div>
@@ -1098,7 +1105,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     <p><strong>Uwagi dla kierowcy:</strong> <span id="modal-order-notes" class="italic text-slate-600"></span></p>
                 </div>
                 <table class="w-full text-left text-sm">
-                    <thead class="text-xs uppercase text-slate-400 border-b border-slate-200">
+                    <thead class="text-xs uppercase text-slate-500 border-b border-slate-200">
                         <tr>
                             <th class="py-2">Towar</th>
                             <th class="py-2 text-right">Ilość</th>
@@ -1115,24 +1122,24 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     <strong id="modal-order-total" class="text-lg font-black text-emerald-700"></strong>
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
-                    <button type="button" id="modal-order-print-btn" onclick="printOrderSpecification()" class="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs rounded-xl shadow-2xs transition" title="Drukuj kartę kompletacji / specyfikację zlecenia dla logistyki i kierowcy">
+                    <button type="button" id="modal-order-print-btn" onclick="printOrderSpecification()" class="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-bold text-xs rounded-xl shadow-sm transition" title="Drukuj kartę kompletacji / specyfikację zlecenia dla logistyki i kierowcy">
                         <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                         <span>Drukuj specyfikację</span>
                     </button>
                     <!-- Eksport ERP pojedynczego zamówienia -->
-                    <div class="inline-flex items-center rounded-xl shadow-2xs border border-indigo-200 overflow-hidden">
+                    <div class="inline-flex items-center rounded-xl shadow-sm border border-indigo-200 overflow-hidden">
                         <button type="button" id="modal-order-erp-btn" onclick="exportCurrentOrderErp()" class="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition" title="Eksportuj zamówienie do formatu wybranego programu ERP">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                             <span id="modal-erp-btn-label">Eksport ERP</span>
                         </button>
-                        <select id="modal-erp-format" onchange="savePreferredErp(this.value); updateModalErpBtnLabel(this.value);" class="bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold py-2 px-1.5 border-l border-indigo-500 focus:outline-none cursor-pointer">
+                        <select id="modal-erp-format" onchange="savePreferredErp(this.value); updateModalErpBtnLabel(this.value);" class="bg-indigo-700 hover:bg-indigo-800 text-white text-xs font-bold py-2 px-1.5 border-l border-indigo-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white cursor-pointer" aria-label="Format eksportu ERP">
                             <option value="subiekt">Subiekt (.epp)</option>
                             <option value="optima">Optima (.xml)</option>
                             <option value="symfonia">Symfonia (.txt)</option>
                             <option value="wfmag">Wf-Mag (.xml)</option>
                         </select>
                     </div>
-                    <a id="modal-order-download-btn" href="#" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition" title="Pobierz kartę kompletacji zamówienia (.xlsx)">
+                    <a id="modal-order-download-btn" href="#" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition" title="Pobierz kartę kompletacji zamówienia (.xlsx)">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                         <span>Pobierz Excel (.xlsx)</span>
                     </a>
@@ -1156,7 +1163,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     </p>
                 </div>
                 <div id="modal-finalize-completed-wrap" class="hidden flex flex-col items-center justify-center text-center gap-1.5 w-full">
-                    <div class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-100/90 text-emerald-900 border border-emerald-300 font-extrabold text-sm rounded-xl shadow-2xs">
+                    <div class="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-100/90 text-emerald-900 border border-emerald-300 font-extrabold text-sm rounded-xl shadow-sm">
                         <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
                         <span>Zamówienie zrealizowane</span>
                     </div>
@@ -1169,11 +1176,11 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
     </div>
 
     <!-- Modal edycji klienta -->
-    <div id="modal-edit-client" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden animate-fade-in">
+    <div id="modal-edit-client" role="dialog" aria-modal="true" aria-labelledby="modal-edit-client-title" aria-describedby="modal-edit-client-subtitle" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden animate-fade-in">
         <div class="bg-white rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[90vh]">
             <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
                 <div>
-                    <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                    <h3 id="modal-edit-client-title" class="text-base font-extrabold text-slate-900 flex items-center gap-2">
                         <span class="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                         </span>
@@ -1181,8 +1188,8 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     </h3>
                     <p class="text-xs text-slate-500 mt-0.5" id="modal-edit-client-subtitle">Zmień dane kontaktowe i parametry dostępu</p>
                 </div>
-                <button type="button" onclick="closeEditClientModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <button type="button" onclick="closeEditClientModal()" class="text-slate-500 hover:text-slate-700 p-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" aria-label="Zamknij edycję klienta">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             
@@ -1191,46 +1198,46 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Nazwa sklepu / Odbiorcy *</label>
-                        <input type="text" id="edit-client-name" required class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-bold focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500">
+                        <label for="edit-client-name" class="block text-xs font-bold text-slate-700 mb-1">Nazwa sklepu / Odbiorcy *</label>
+                        <input type="text" id="edit-client-name" required data-autofocus class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-bold focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500">
                     </div>
                     
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">NIP (opcjonalnie)</label>
-                        <input type="text" id="edit-client-nip" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none">
+                        <label for="edit-client-nip" class="block text-xs font-bold text-slate-700 mb-1">NIP (opcjonalnie)</label>
+                        <input type="text" id="edit-client-nip" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
                     </div>
                     
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Telefon kontaktowy *</label>
-                        <input type="tel" id="edit-client-phone" required class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-bold focus:border-emerald-500 focus:outline-none">
+                        <label for="edit-client-phone" class="block text-xs font-bold text-slate-700 mb-1">Telefon kontaktowy *</label>
+                        <input type="tel" id="edit-client-phone" required class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-bold focus:border-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
                     </div>
                     
                     <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Adres e-mail (do wysyłki linku i powiadomień)</label>
-                        <input type="email" id="edit-client-email" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none">
+                        <label for="edit-client-email" class="block text-xs font-bold text-slate-700 mb-1">Adres e-mail (do wysyłki linku i powiadomień)</label>
+                        <input type="email" id="edit-client-email" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
                     </div>
                     
                     <div class="md:col-span-2">
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Adres dostawy towaru</label>
-                        <input type="text" id="edit-client-address" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none">
+                        <label for="edit-client-address" class="block text-xs font-bold text-slate-700 mb-1">Adres dostawy towaru</label>
+                        <input type="text" id="edit-client-address" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
                     </div>
                     
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Login (opcjonalny)</label>
-                        <input type="text" id="edit-client-login" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none" placeholder="Pozostaw puste dla logowania linkiem">
+                        <label for="edit-client-login" class="block text-xs font-bold text-slate-700 mb-1">Login (opcjonalny)</label>
+                        <input type="text" id="edit-client-login" autocomplete="off" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" placeholder="Pozostaw puste dla logowania linkiem">
                     </div>
                     
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Nowe hasło (opcjonalnie)</label>
-                        <input type="password" id="edit-client-password" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none" placeholder="Wypełnij tylko, aby zmienić">
+                        <label for="edit-client-password" class="block text-xs font-bold text-slate-700 mb-1">Nowe hasło (opcjonalnie)</label>
+                        <input type="password" id="edit-client-password" autocomplete="new-password" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-medium focus:border-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" placeholder="Wypełnij tylko, aby zmienić">
                     </div>
 
                     <div class="md:col-span-2 bg-slate-50 border border-slate-200 rounded-xl p-3.5">
-                        <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                        <label for="edit-client-status" class="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
                             <span>Status konta odbiorcy B2B</span>
-                            <span class="text-[11px] font-normal text-slate-400">Blokada uniemożliwia logowanie i składanie zamówień</span>
+                            <span class="text-[11px] font-normal text-slate-500">Blokada uniemożliwia logowanie i składanie zamówień</span>
                         </label>
-                        <select id="edit-client-status" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-bold bg-white focus:border-emerald-500 focus:outline-none">
+                        <select id="edit-client-status" class="w-full text-sm border border-slate-300 rounded-xl p-2.5 font-bold bg-white focus:border-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500">
                             <option value="1">🟢 Aktywny (Klient ma dostęp do składania zamówień)</option>
                             <option value="0">⛔ Zablokowany (Dostęp do sklepu B2B wstrzymany)</option>
                         </select>
@@ -1245,7 +1252,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 </div>
 
                 <div class="pt-4 border-t border-slate-200 flex items-center justify-between gap-3">
-                    <button type="button" id="btn-delete-client" onclick="deleteCurrentClient()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 hover:text-rose-800 border border-rose-200 rounded-xl transition shadow-2xs hover:shadow" title="Usuń tego klienta na stałe z bazy danych">
+                    <button type="button" id="btn-delete-client" onclick="deleteCurrentClient()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 hover:text-rose-800 border border-rose-200 rounded-xl transition shadow-sm hover:shadow" title="Usuń tego klienta na stałe z bazy danych">
                         <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         <span>Usuń klienta</span>
                     </button>
@@ -1263,11 +1270,11 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
     </div>
 
     <!-- Modal wysyłki SMS / WhatsApp -->
-    <div id="modal-send-sms" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden animate-fade-in">
+    <div id="modal-send-sms" role="dialog" aria-modal="true" aria-labelledby="modal-send-sms-title" aria-describedby="sms-modal-recipient" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden animate-fade-in">
         <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden border border-slate-200 flex flex-col">
             <div class="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
                 <div>
-                    <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                    <h3 id="modal-send-sms-title" class="text-base font-extrabold text-slate-900 flex items-center gap-2">
                         <span class="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
                         </span>
@@ -1275,37 +1282,45 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     </h3>
                     <p class="text-xs text-slate-500 mt-0.5" id="sms-modal-recipient">Odbiorca: —</p>
                 </div>
-                <button type="button" onclick="closeSendSmsModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <button type="button" onclick="closeSendSmsModal()" class="text-slate-500 hover:text-slate-700 p-1 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" aria-label="Zamknij okno wysyłki linku">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            
+
             <div class="p-6 space-y-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Numer telefonu odbiorcy</label>
+                    <label for="sms-phone-display" class="block text-xs font-bold text-slate-700 mb-1">Numer telefonu odbiorcy</label>
                     <input type="text" id="sms-phone-display" readonly class="w-full text-sm font-bold bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-slate-800">
                 </div>
-                
+
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Treść wiadomości z bezpośrednim linkiem (możesz edytować)</label>
-                    <textarea id="sms-text-preview" rows="4" class="w-full text-xs font-medium border border-slate-300 rounded-xl p-3 focus:border-emerald-500 focus:outline-none"></textarea>
+                    <label for="sms-text-preview" class="block text-xs font-bold text-slate-700 mb-1">Treść wiadomości z bezpośrednim linkiem (możesz edytować)</label>
+                    <textarea id="sms-text-preview" rows="4" data-autofocus class="w-full text-xs font-medium border border-slate-300 rounded-xl p-3 focus:border-emerald-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"></textarea>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
                     <!-- Otwórz SMS -->
-                    <a id="sms-btn-native" href="#" class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition text-center">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                    <a id="sms-btn-native" href="#" class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
                         <span>Otwórz SMS</span>
                     </a>
+                    <button type="button" id="sms-btn-native-nophone" onclick="showNoPhoneToast()" class="hidden items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold text-white bg-blue-600/60 rounded-xl shadow-sm transition text-center cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2" aria-describedby="sms-phone-display">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                        <span>Otwórz SMS</span>
+                    </button>
 
                     <!-- WhatsApp -->
-                    <a id="sms-btn-whatsapp" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition text-center">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.669-.699c.969.53 1.771.78 2.791.78 3.182 0 5.77-2.587 5.77-5.766.001-3.182-2.585-5.766-5.77-5.766zm0 10.514c-.878 0-1.637-.251-2.316-.677l-.165-.104-1.579.414.421-1.54-.108-.172c-.476-.757-.746-1.564-.745-2.669.001-2.618 2.13-4.747 4.752-4.747 2.62 0 4.749 2.129 4.749 4.749.001 2.62-2.129 4.75-4.75 4.75z"/></svg>
+                    <a id="sms-btn-whatsapp" href="#" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-sm transition text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.669-.699c.969.53 1.771.78 2.791.78 3.182 0 5.77-2.587 5.77-5.766.001-3.182-2.585-5.766-5.77-5.766zm0 10.514c-.878 0-1.637-.251-2.316-.677l-.165-.104-1.579.414.421-1.54-.108-.172c-.476-.757-.746-1.564-.745-2.669.001-2.618 2.13-4.747 4.752-4.747 2.62 0 4.749 2.129 4.749 4.749.001 2.62-2.129 4.75-4.75 4.75z"/></svg>
                         <span>WhatsApp</span>
                     </a>
+                    <button type="button" id="sms-btn-whatsapp-nophone" onclick="showNoPhoneToast()" class="hidden items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold text-white bg-emerald-600/60 rounded-xl shadow-sm transition text-center cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2" aria-describedby="sms-phone-display">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.711 2.598 2.669-.699c.969.53 1.771.78 2.791.78 3.182 0 5.77-2.587 5.77-5.766.001-3.182-2.585-5.766-5.77-5.766zm0 10.514c-.878 0-1.637-.251-2.316-.677l-.165-.104-1.579.414.421-1.54-.108-.172c-.476-.757-.746-1.564-.745-2.669.001-2.618 2.13-4.747 4.752-4.747 2.62 0 4.749 2.129 4.749 4.749.001 2.62-2.129 4.75-4.75 4.75z"/></svg>
+                        <span>WhatsApp</span>
+                    </button>
 
                     <!-- Kopiuj treść SMS -->
-                    <button type="button" onclick="copySmsText()" class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition text-center border border-slate-200">
+                    <button type="button" onclick="copySmsText()" class="inline-flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition text-center border border-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
                         <span>Kopiuj treść</span>
                     </button>
@@ -1315,9 +1330,15 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
     </div>
 
     <!-- Powiadomienie Toast -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-xl transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none z-50 flex items-center gap-2">
-        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+    <div id="toast" role="status" aria-live="polite" aria-atomic="true" class="fixed bottom-5 right-5 max-w-md bg-slate-900 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-xl transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none z-50 flex items-center gap-2">
+        <svg id="toast-icon-success" class="w-4 h-4 shrink-0 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        <svg id="toast-icon-error" class="hidden w-4 h-4 shrink-0 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path></svg>
+        <svg id="toast-icon-info" class="hidden w-4 h-4 shrink-0 text-sky-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         <span id="toast-msg">Komunikat</span>
+        <a id="toast-link" href="#" class="hidden shrink-0 underline underline-offset-2 text-white hover:text-emerald-200 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"></a>
+        <button type="button" id="toast-close" onclick="hideToast()" class="hidden shrink-0 -mr-1 p-1 rounded-lg text-white/80 hover:text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white" aria-label="Zamknij powiadomienie">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
     </div>
 
     <script>
@@ -1370,21 +1391,176 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             }
         }
 
-        function showToast(msg) {
+        // Formatowanie kwot WYŁĄCZNIE do wyświetlania (nie do wartości pól / wysyłki na serwer)
+        const formatPLN = (v) => new Intl.NumberFormat('pl-PL', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(Number(v) || 0) + ' zł';
+
+        // ─── Powiadomienia (toast) ───────────────────────────────────────
+        // type: 'success' (domyślnie) | 'error' | 'info'
+        // opts: { linkHref, linkLabel, sticky, duration }
+        let toastTimer = null;
+
+        function hideToast() {
             const t = document.getElementById('toast');
+            if (!t) return;
+            if (toastTimer) { clearTimeout(toastTimer); toastTimer = null; }
+            t.classList.add('translate-y-20', 'opacity-0', 'pointer-events-none');
+        }
+
+        function showToast(msg, type = 'success', opts = {}) {
+            const t = document.getElementById('toast');
+            if (!t) return;
+            const variant = (type === 'error' || type === 'info') ? type : 'success';
             document.getElementById('toast-msg').textContent = msg;
+
+            ['success', 'error', 'info'].forEach(v => {
+                const icon = document.getElementById('toast-icon-' + v);
+                if (icon) icon.classList.toggle('hidden', v !== variant);
+            });
+            t.classList.toggle('bg-slate-900', variant !== 'error');
+            t.classList.toggle('bg-rose-700', variant === 'error');
+
+            const link = document.getElementById('toast-link');
+            if (link) {
+                if (opts.linkHref) {
+                    link.href = opts.linkHref;
+                    link.textContent = opts.linkLabel || opts.linkHref;
+                    link.classList.remove('hidden');
+                } else {
+                    link.classList.add('hidden');
+                    link.removeAttribute('href');
+                    link.textContent = '';
+                }
+            }
+            const closeBtn = document.getElementById('toast-close');
+            const interactive = variant === 'error' || !!opts.linkHref || !!opts.sticky;
+            if (closeBtn) closeBtn.classList.toggle('hidden', !interactive);
+
             t.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => t.classList.add('translate-y-20', 'opacity-0'), 3000);
+            t.classList.toggle('pointer-events-none', !interactive);
+
+            if (toastTimer) { clearTimeout(toastTimer); toastTimer = null; }
+            if (!opts.sticky) {
+                const duration = opts.duration || (variant === 'error' ? 7000 : 3000);
+                toastTimer = setTimeout(hideToast, duration);
+            }
+        }
+
+        // Komunikat do pokazania po przeładowaniu strony (np. po imporcie cennika)
+        function flashToast(msg, type = 'success') {
+            try { sessionStorage.setItem('b2b_admin_flash', JSON.stringify({ msg: msg, type: type })); } catch (e) {}
+        }
+
+        // ─── Obsługa odpowiedzi fetch (wygaśnięcie sesji) ───────────────
+        const LOGIN_URL = BASE_URL + 'home/login';
+        const SESSION_EXPIRED_MSG = 'Sesja wygasła — zaloguj się ponownie.';
+
+        class SessionExpiredError extends Error {
+            constructor() {
+                super(SESSION_EXPIRED_MSG);
+                this.name = 'SessionExpiredError';
+                this.sessionExpired = true;
+            }
+        }
+
+        function showSessionExpired() {
+            showToast(SESSION_EXPIRED_MSG, 'error', { linkHref: LOGIN_URL, linkLabel: 'Zaloguj się', sticky: true });
+        }
+
+        // Wspólny wrapper na fetch: wykrywa wygaśnięcie sesji (401/403/419, przekierowanie na stronę
+        // logowania, odpowiedź HTML zamiast JSON) zanim spróbujemy parsować JSON.
+        function fetchJson(url, options) {
+            return fetch(url, options).then(res => {
+                const ct = (res.headers.get('content-type') || '').toLowerCase();
+                const isJson = ct.indexOf('json') !== -1;
+                if (res.status === 401 || res.status === 403 || res.status === 419 || (res.redirected && !isJson)) {
+                    showSessionExpired();
+                    throw new SessionExpiredError();
+                }
+                if (!isJson) {
+                    throw new Error('Nieoczekiwana odpowiedź serwera (HTTP ' + res.status + '). Odśwież stronę i spróbuj ponownie.');
+                }
+                return res.json();
+            });
+        }
+
+        // Pokazuje błąd jako toast (komunikat o wygaśnięciu sesji jest już wyświetlony przez fetchJson)
+        function reportError(err, prefix = '') {
+            if (err && err.sessionExpired) return;
+            showToast(prefix + ((err && err.message) ? err.message : 'Wystąpił nieoczekiwany błąd.'), 'error');
+        }
+
+        // ─── Kopiowanie do schowka (z fallbackiem dla kontekstu bez HTTPS) ──
+        function copyText(text, successMsg, promptLabel) {
+            const fallback = () => {
+                let ok = false;
+                try {
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.setAttribute('readonly', '');
+                    ta.style.position = 'fixed';
+                    ta.style.top = '-1000px';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    ok = document.execCommand('copy');
+                    document.body.removeChild(ta);
+                } catch (e) { ok = false; }
+                if (ok) {
+                    showToast(successMsg);
+                } else {
+                    prompt(promptLabel || 'Skopiuj:', text);
+                }
+            };
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text).then(() => showToast(successMsg)).catch(fallback);
+            } else {
+                fallback();
+            }
+        }
+
+        function toAbsoluteUrl(url) {
+            return /^https?:\/\//i.test(url) ? url : window.location.origin + url;
         }
 
         function copyToken(url) {
-            const fullUrl = window.location.origin + url;
-            navigator.clipboard.writeText(fullUrl).then(() => {
-                showToast('Skopiowano unikalny link dostępowy dla klienta!');
-            }).catch(() => {
-                prompt('Skopiuj link dla klienta:', fullUrl);
-            });
+            copyText(toAbsoluteUrl(url), 'Skopiowano unikalny link dostępowy dla klienta!', 'Skopiuj link dla klienta:');
         }
+
+        // ─── Dostępność okien modalnych (Escape, powrót fokusu) ─────────
+        const MODAL_OPENERS = {};
+
+        function openModalA11y(id, opener) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            const wasHidden = modal.classList.contains('hidden');
+            if (wasHidden) {
+                MODAL_OPENERS[id] = opener || document.activeElement;
+            }
+            modal.classList.remove('hidden');
+            if (wasHidden) {
+                const focusTarget = modal.querySelector('[data-autofocus]') || modal.querySelector('button, [href], input:not([type="hidden"]), select, textarea');
+                if (focusTarget) setTimeout(() => focusTarget.focus(), 0);
+            }
+        }
+
+        function closeModalA11y(id) {
+            const modal = document.getElementById(id);
+            if (!modal) return;
+            const wasOpen = !modal.classList.contains('hidden');
+            modal.classList.add('hidden');
+            const opener = MODAL_OPENERS[id];
+            delete MODAL_OPENERS[id];
+            if (wasOpen && opener && typeof opener.focus === 'function' && document.contains(opener)) {
+                opener.focus();
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            const isOpen = (id) => { const m = document.getElementById(id); return m && !m.classList.contains('hidden'); };
+            if (isOpen('modal-send-sms')) { e.preventDefault(); closeSendSmsModal(); }
+            else if (isOpen('modal-edit-client')) { e.preventDefault(); closeEditClientModal(); }
+            else if (isOpen('modal-order')) { e.preventDefault(); closeOrderModal(); }
+        });
 
         function switchTab(tab, saveState = true) {
             ['products', 'orders', 'clients', 'settings'].forEach(t => {
@@ -1392,12 +1568,17 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 const btn = document.getElementById('tab-btn-' + t);
                 if (t === tab) {
                     el.classList.remove('hidden');
-                    btn.className = 'px-5 py-2.5 font-bold text-sm rounded-xl transition flex items-center gap-2 bg-emerald-600 text-white shadow-md shadow-emerald-600/20';
+                    btn.className = 'px-5 py-2.5 font-bold text-sm rounded-xl transition flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 bg-emerald-600 text-white shadow-md shadow-emerald-600/20';
                 } else {
                     el.classList.add('hidden');
-                    btn.className = 'px-5 py-2.5 font-bold text-sm rounded-xl transition flex items-center gap-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80';
+                    btn.className = 'px-5 py-2.5 font-bold text-sm rounded-xl transition flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80';
                 }
             });
+            // Licznik cennika ma kolory zależne od stanu zakładki (biały tekst tylko na aktywnym, zielonym tle)
+            const productsBadge = document.getElementById('badge-products-count');
+            if (productsBadge) {
+                productsBadge.className = 'ml-1 px-2 py-0.5 text-xs rounded-full ' + (tab === 'products' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700');
+            }
             if (saveState) {
                 try {
                     localStorage.setItem('b2b_admin_tab', tab);
@@ -1455,11 +1636,11 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     const activeColorClass = (p === 'erp')
                         ? 'border-indigo-400 bg-indigo-600 text-white'
                         : 'border-emerald-400 bg-emerald-600 text-white';
-                    btn.className = 'px-4 py-2 text-xs font-bold rounded-t-xl border border-b-0 ' + activeColorClass + ' transition';
+                    btn.className = 'px-4 py-2 text-xs font-bold rounded-t-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 border border-b-0 ' + activeColorClass + ' transition';
                     btn.setAttribute('aria-selected', 'true');
                 } else {
                     panel.classList.add('hidden');
-                    btn.className = 'px-4 py-2 text-xs font-bold rounded-t-xl border border-b-0 border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition';
+                    btn.className = 'px-4 py-2 text-xs font-bold rounded-t-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 border border-b-0 border-slate-200 bg-slate-50 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition';
                     btn.setAttribute('aria-selected', 'false');
                 }
             });
@@ -1514,8 +1695,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             fd.append('step', 'preview');
             fd.append('_csrf', CSRF_TOKEN);
 
-            fetch(BASE_URL + 'b2b/importerp', { method: 'POST', body: fd })
-                .then(r => r.json())
+            fetchJson(BASE_URL + 'b2b/importerp', { method: 'POST', body: fd })
                 .then(data => {
                     if (!data.ok) throw new Error(data.error || 'Błąd parsowania');
                     erpParsedProducts = data.products || [];
@@ -1548,16 +1728,16 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
 
             let html = '';
             products.slice(0, 200).forEach(p => {
-                const price = parseFloat(p.price || 0).toFixed(2);
+                const price = formatPLN(parseFloat(p.price || 0));
                 html += `<tr class="hover:bg-slate-50 transition">
                     <td class="py-2 px-3 font-mono text-slate-500 text-[11px]">${escapeHtml(p.erp_code || '—')}</td>
                     <td class="py-2 px-3 font-semibold text-slate-800">${escapeHtml(p.name)}</td>
-                    <td class="py-2 px-3 text-right font-bold text-blue-700">${price} zł</td>
+                    <td class="py-2 px-3 text-right font-bold text-blue-700 whitespace-nowrap">${price}</td>
                     <td class="py-2 px-3 text-center text-slate-600">${escapeHtml(p.unit || 'kg')}</td>
                 </tr>`;
             });
             if (products.length > 200) {
-                html += `<tr><td colspan="4" class="py-2 px-3 text-center text-xs text-slate-400 italic">… i ${products.length - 200} kolejnych pozycji (podgląd skrócony do 200)</td></tr>`;
+                html += `<tr><td colspan="4" class="py-2 px-3 text-center text-xs text-slate-500 italic">… i ${products.length - 200} kolejnych pozycji (podgląd skrócony do 200)</td></tr>`;
             }
             tbody.innerHTML = html;
             box.classList.remove('hidden');
@@ -1584,15 +1764,14 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 fd.append('products', JSON.stringify(erpParsedProducts));
                 fd.append('_csrf', CSRF_TOKEN);
 
-                fetch(BASE_URL + 'b2b/importerp', { method: 'POST', body: fd })
-                    .then(r => r.json())
+                fetchJson(BASE_URL + 'b2b/importerp', { method: 'POST', body: fd })
                     .then(data => {
                         if (!data.ok) throw new Error(data.error || 'Błąd importu');
-                        alert('Sukces! Zaimportowano ' + data.total_imported + ' pozycji z pliku ERP do oferty hurtowni.');
+                        flashToast('Sukces! Zaimportowano ' + data.total_imported + ' pozycji z pliku ERP do oferty hurtowni.');
                         window.location.reload();
                     })
                     .catch(err => {
-                        alert('Błąd: ' + err.message);
+                        reportError(err, 'Błąd: ');
                         btnConfirmErp.disabled = false;
                         if (label) label.textContent = 'Wdróż asortyment z ERP do oferty B2B';
                     });
@@ -1661,8 +1840,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             fd.append('cennik', file);
             fd.append('_csrf', CSRF_TOKEN);
 
-            fetch(BASE_URL + 'b2b/upload', { method: 'POST', body: fd })
-                .then(r => r.json())
+            fetchJson(BASE_URL + 'b2b/upload', { method: 'POST', body: fd })
                 .then(data => {
                     if (!data.ok) throw new Error(data.error || 'Błąd uploadu');
                     currentFileId = data.file_id;
@@ -1727,7 +1905,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             const tbody = document.getElementById('preview-sheet-tbody');
             if (!thead || !tbody) return;
 
-            let thHtml = '<tr><th class="py-2 px-3 w-12 text-slate-400 font-mono text-[11px] bg-slate-100">#</th>';
+            let thHtml = '<tr><th class="py-2 px-3 w-12 text-slate-500 font-mono text-[11px] bg-slate-100">#</th>';
             for (let c = 0; c < maxCols; c++) {
                 const colLetter = String.fromCharCode(65 + (c % 26));
                 thHtml += `<th class="py-2 px-3 whitespace-nowrap bg-slate-100">Kolumna ${colLetter}</th>`;
@@ -1739,7 +1917,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             normRows.slice(0, 10).forEach(r => {
                 const isHeader = (r.row_index === Number(headerRowIndex));
                 tbHtml += `<tr class="${isHeader ? 'bg-emerald-50/80 font-semibold text-emerald-950' : 'hover:bg-slate-50 text-slate-700'}">`;
-                tbHtml += `<td class="py-2 px-3 font-mono ${isHeader ? 'text-emerald-700 font-bold' : 'text-slate-400'}">${r.row_index}</td>`;
+                tbHtml += `<td class="py-2 px-3 font-mono ${isHeader ? 'text-emerald-700 font-bold' : 'text-slate-500'}">${r.row_index}</td>`;
                 for (let c = 0; c < maxCols; c++) {
                     const val = (r.cells[c] !== undefined && r.cells[c] !== null) ? String(r.cells[c]) : '';
                     tbHtml += `<td class="py-2 px-3 whitespace-nowrap max-w-xs truncate">${escapeHtml(val)}</td>`;
@@ -1885,15 +2063,14 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             fd.append('col_unit', document.getElementById('map-col-unit').value);
             fd.append('_csrf', CSRF_TOKEN);
 
-            fetch(BASE_URL + 'b2b/processimport', { method: 'POST', body: fd })
-                .then(r => r.json())
+            fetchJson(BASE_URL + 'b2b/processimport', { method: 'POST', body: fd })
                 .then(data => {
                     if (!data.ok) throw new Error(data.error || 'Błąd importu');
-                    alert('Sukces! Zaimportowano ' + data.total_imported + ' pozycji do oferty hurtowni.');
+                    flashToast('Sukces! Zaimportowano ' + data.total_imported + ' pozycji do oferty hurtowni.');
                     window.location.reload();
                 })
                 .catch(err => {
-                    alert('Błąd: ' + err.message);
+                    reportError(err, 'Błąd: ');
                     btn.disabled = false;
                     btn.textContent = 'Wdróż ten cennik do oferty B2B';
                 });
@@ -1979,7 +2156,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 }
 
                 if (btn) {
-                    btn.className = 'save-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 border border-transparent transition-all';
+                    btn.className = 'save-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 border border-transparent transition-all';
                     btn.title = 'Zapisz zmiany';
                 }
                 if (label) {
@@ -2092,7 +2269,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
 
             const prodName = nameInput.value.trim();
             if (!prodName) {
-                alert('Nazwa towaru nie może być pusta!');
+                showToast('Nazwa towaru nie może być pusta!', 'error');
                 nameInput.focus();
                 return;
             }
@@ -2122,8 +2299,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             fd.append('package_unit', pkgUnitSelect ? pkgUnitSelect.value : 'skrzynka');
             fd.append('_csrf', CSRF_TOKEN);
 
-            fetch(BASE_URL + 'b2b/updateproduct', { method: 'POST', body: fd })
-                .then(r => r.json())
+            fetchJson(BASE_URL + 'b2b/updateproduct', { method: 'POST', body: fd })
                 .then(d => {
                     if (!d.ok) throw new Error(d.error || 'Błąd zapisu produktu');
 
@@ -2185,7 +2361,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                         }
                         if (btn) {
                             btn.disabled = false;
-                            btn.className = 'save-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 border border-transparent transition-all';
+                            btn.className = 'save-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 border border-transparent transition-all';
                             btn.title = 'Zapisz zmiany';
                             btn.innerHTML = `
                                 <svg id="save-icon-${id}" class="w-4 h-4 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2197,7 +2373,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     }, 1200);
                 })
                 .catch(err => {
-                    alert('Błąd zapisu produktu: ' + err.message);
+                    reportError(err, 'Błąd zapisu produktu: ');
                     if (btn) {
                         btn.disabled = false;
                         updateRowDirtyState(id);
@@ -2235,7 +2411,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
 
                 const prodName = nameInput.value.trim();
                 if (!prodName) {
-                    alert('Nazwa towaru dla pozycji ID ' + id + ' nie może być pusta!');
+                    showToast('Nazwa towaru dla pozycji ID ' + id + ' nie może być pusta!', 'error');
                     nameInput.focus();
                     return;
                 }
@@ -2297,8 +2473,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             fd.append('products', JSON.stringify(productsData));
             fd.append('_csrf', CSRF_TOKEN);
 
-            fetch(BASE_URL + 'b2b/updateproductsbatch', { method: 'POST', body: fd })
-                .then(r => r.json())
+            fetchJson(BASE_URL + 'b2b/updateproductsbatch', { method: 'POST', body: fd })
                 .then(d => {
                     if (!d.ok) throw new Error(d.error || 'Błąd hurtowego zapisu produktów');
 
@@ -2355,7 +2530,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                             }
                             if (btn) {
                                 btn.disabled = false;
-                                btn.className = 'save-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 border border-transparent transition-all';
+                                btn.className = 'save-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 border border-transparent transition-all';
                                 btn.title = 'Zapisz zmiany';
                                 btn.innerHTML = `
                                     <svg id="save-icon-${id}" class="w-4 h-4 shrink-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2387,7 +2562,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 })
                 .catch(err => {
                     console.error(err);
-                    alert('Błąd podczas zapisywania zmian: ' + err.message);
+                    reportError(err, 'Błąd podczas zapisywania zmian: ');
                     if (btnSaveAll) {
                         btnSaveAll.disabled = false;
                         btnSaveAll.classList.remove('cursor-wait', 'opacity-90');
@@ -2407,11 +2582,12 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             fd.append('id', id);
             fd.append('_csrf', CSRF_TOKEN);
 
-            fetch(BASE_URL + 'b2b/toggleproduct', { method: 'POST', body: fd })
-                .then(r => r.json())
+            fetchJson(BASE_URL + 'b2b/toggleproduct', { method: 'POST', body: fd })
                 .then(d => {
                     if (d.ok) window.location.reload();
-                });
+                    else showToast(d.error || 'Nie udało się zmienić dostępności towaru.', 'error');
+                })
+                .catch(err => reportError(err));
         }
 
         // Dodanie klienta
@@ -2425,15 +2601,48 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             fd.append('delivery_address', document.getElementById('new-client-address').value);
             fd.append('_csrf', CSRF_TOKEN);
 
-            fetch(BASE_URL + 'b2b/createclient', { method: 'POST', body: fd })
-                .then(r => r.json())
+            fetchJson(BASE_URL + 'b2b/createclient', { method: 'POST', body: fd })
                 .then(d => {
                     if (!d.ok) throw new Error(d.error || 'Błąd tworzenia klienta');
-                    alert('Klient utworzony! Link dostępu dla odbiorcy: ' + d.token_url);
+                    // Link pokazywany po przeładowaniu w ramce z przyciskiem „Kopiuj” (#new-client-link-box)
+                    const newLink = {
+                        url: toAbsoluteUrl(String(d.token_url || '')),
+                        name: document.getElementById('new-client-name').value
+                    };
+                    try {
+                        sessionStorage.setItem('b2b_admin_new_client_link', JSON.stringify(newLink));
+                    } catch (e) {
+                        // Brak sessionStorage — pokaż link od razu, bez przeładowania (inaczej by przepadł)
+                        showNewClientLinkBox(newLink.url, newLink.name);
+                        showToast('Klient utworzony! Odśwież stronę, aby zobaczyć go na liście.');
+                        return;
+                    }
+                    flashToast('Klient utworzony! Skopiuj link dostępu dla odbiorcy pod formularzem.');
                     window.location.reload();
                 })
-                .catch(err => alert(err.message));
+                .catch(err => reportError(err));
         });
+
+        function showNewClientLinkBox(url, name) {
+            const box = document.getElementById('new-client-link-box');
+            const input = document.getElementById('new-client-link-url');
+            if (!box || !input) return;
+            input.value = url || '';
+            const nameEl = document.getElementById('new-client-link-name');
+            if (nameEl) nameEl.textContent = name ? ': ' + name : '';
+            box.classList.remove('hidden');
+        }
+
+        function hideNewClientLinkBox() {
+            const box = document.getElementById('new-client-link-box');
+            if (box) box.classList.add('hidden');
+        }
+
+        function copyNewClientLink() {
+            const input = document.getElementById('new-client-link-url');
+            if (!input || !input.value) return;
+            copyText(input.value, 'Skopiowano link dostępowy dla nowego klienta!', 'Skopiuj link dla klienta:');
+        }
 
         function toggleClient(id) {
             const btn = document.getElementById('client-status-btn-' + id);
@@ -2446,8 +2655,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             fd.append('id', id);
             fd.append('_csrf', CSRF_TOKEN);
 
-            fetch(BASE_URL + 'b2b/toggleclient', { method: 'POST', body: fd })
-                .then(r => r.json())
+            fetchJson(BASE_URL + 'b2b/toggleclient', { method: 'POST', body: fd })
                 .then(d => {
                     if (btn) {
                         btn.disabled = false;
@@ -2477,7 +2685,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
 
                         showToast(d.message || (isActive ? 'Konto klienta zostało odblokowane' : 'Konto klienta zostało zablokowane'));
                     } else {
-                        alert(d.error || 'Wystąpił błąd podczas zmiany statusu klienta');
+                        showToast(d.error || 'Wystąpił błąd podczas zmiany statusu klienta', 'error');
                     }
                 })
                 .catch(err => {
@@ -2485,7 +2693,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                         btn.disabled = false;
                         btn.style.opacity = '1';
                     }
-                    alert('Błąd sieci: ' + err.message);
+                    reportError(err, 'Błąd sieci: ');
                 });
         }
 
@@ -2579,11 +2787,11 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             }
 
             document.getElementById('modal-edit-client-subtitle').textContent = 'Edycja danych dla: ' + c.company_name;
-            document.getElementById('modal-edit-client').classList.remove('hidden');
+            openModalA11y('modal-edit-client');
         }
 
         function closeEditClientModal() {
-            document.getElementById('modal-edit-client').classList.add('hidden');
+            closeModalA11y('modal-edit-client');
         }
 
         const formEditClient = document.getElementById('form-edit-client');
@@ -2622,8 +2830,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 }
                 fd.append('_csrf', CSRF_TOKEN);
 
-                fetch(BASE_URL + 'b2b/updateclient', { method: 'POST', body: fd })
-                    .then(r => r.json())
+                fetchJson(BASE_URL + 'b2b/updateclient', { method: 'POST', body: fd })
                     .then(d => {
                         btn.disabled = false;
                         btn.innerHTML = origBtnHtml;
@@ -2677,7 +2884,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     .catch(err => {
                         btn.disabled = false;
                         btn.innerHTML = origBtnHtml;
-                        alert(err.message);
+                        reportError(err);
                     });
             });
         }
@@ -2711,11 +2918,10 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             fd.append('id', id);
             fd.append('_csrf', CSRF_TOKEN);
 
-            fetch(BASE_URL + 'b2b/deleteclient', {
+            fetchJson(BASE_URL + 'b2b/deleteclient', {
                 method: 'POST',
                 body: fd
             })
-            .then(r => r.json())
             .then(d => {
                 if (btn) {
                     btn.disabled = false;
@@ -2749,7 +2955,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     btn.disabled = false;
                     btn.innerHTML = origHtml;
                 }
-                alert(err.message);
+                reportError(err);
             });
         }
 
@@ -2758,7 +2964,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             if (!c) return;
 
             if (!c.email || !c.email.includes('@')) {
-                alert('Odbiorca nie ma zapisanego adresu e-mail. Wprowadź e-mail w oknie edycji klienta.');
+                showToast('Odbiorca nie ma zapisanego adresu e-mail. Wprowadź e-mail w oknie edycji klienta.', 'info', { duration: 6000 });
                 openEditClientModal(id);
                 return;
             }
@@ -2786,8 +2992,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             fd.append('channel', 'email');
             fd.append('_csrf', CSRF_TOKEN);
 
-            fetch(BASE_URL + 'b2b/sendtoken', { method: 'POST', body: fd })
-                .then(r => r.json())
+            fetchJson(BASE_URL + 'b2b/sendtoken', { method: 'POST', body: fd })
                 .then(d => {
                     if (btn) {
                         btn.disabled = false;
@@ -2811,7 +3016,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                         btn.disabled = false;
                         btn.innerHTML = origHtml;
                     }
-                    alert(err.message);
+                    reportError(err);
                 });
         }
 
@@ -2835,28 +3040,47 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             // Link do natywnej aplikacji SMS (iOS vs Android/Desktop)
             const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             const smsSep = isIos ? '&' : '?';
-            const smsHref = cleanPhone ? 'sms:' + cleanPhone + smsSep + 'body=' + encodeURIComponent(message) : 'javascript:alert("Brak numeru telefonu klienta")';
-            document.getElementById('sms-btn-native').href = smsHref;
+            const smsHref = cleanPhone ? 'sms:' + cleanPhone + smsSep + 'body=' + encodeURIComponent(message) : '';
 
             // Link do WhatsApp
             const waPhone = cleanPhone.replace(/^\+/, '');
-            const waHref = waPhone ? 'https://wa.me/' + waPhone + '?text=' + encodeURIComponent(message) : 'javascript:alert("Brak numeru telefonu klienta")';
-            document.getElementById('sms-btn-whatsapp').href = waHref;
+            const waHref = waPhone ? 'https://wa.me/' + waPhone + '?text=' + encodeURIComponent(message) : '';
 
-            document.getElementById('modal-send-sms').classList.remove('hidden');
+            // Bez numeru telefonu linki są zastępowane przyciskami pokazującymi komunikat
+            setSmsChannelLink('sms-btn-native', smsHref);
+            setSmsChannelLink('sms-btn-whatsapp', waHref);
+
+            openModalA11y('modal-send-sms');
+        }
+
+        function setSmsChannelLink(id, href) {
+            const link = document.getElementById(id);
+            const noPhoneBtn = document.getElementById(id + '-nophone');
+            if (!link) return;
+            if (href) {
+                link.href = href;
+                link.classList.remove('hidden');
+                link.classList.add('inline-flex');
+                if (noPhoneBtn) { noPhoneBtn.classList.add('hidden'); noPhoneBtn.classList.remove('inline-flex'); }
+            } else {
+                link.href = '#';
+                link.classList.add('hidden');
+                link.classList.remove('inline-flex');
+                if (noPhoneBtn) { noPhoneBtn.classList.remove('hidden'); noPhoneBtn.classList.add('inline-flex'); }
+            }
+        }
+
+        function showNoPhoneToast() {
+            showToast('Brak numeru telefonu klienta. Uzupełnij go w oknie edycji klienta.', 'error');
         }
 
         function closeSendSmsModal() {
-            document.getElementById('modal-send-sms').classList.add('hidden');
+            closeModalA11y('modal-send-sms');
         }
 
         function copySmsText() {
             const text = document.getElementById('sms-text-preview').value || currentSmsText;
-            navigator.clipboard.writeText(text).then(() => {
-                showToast('Skopiowano treść SMS z linkiem do schowka!');
-            }).catch(() => {
-                prompt('Skopiuj treść wiadomości SMS:', text);
-            });
+            copyText(text, 'Skopiowano treść SMS z linkiem do schowka!', 'Skopiuj treść wiadomości SMS:');
         }
 
         let currentModalOrderId = null;
@@ -2873,9 +3097,9 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             document.querySelectorAll('.order-filter-btn').forEach(btn => {
                 const btnStatus = btn.getAttribute('data-status');
                 if (btnStatus === currentOrderStatusFilter) {
-                    btn.className = 'order-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white text-emerald-700 shadow-2xs border border-emerald-200/60';
+                    btn.className = 'order-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition flex items-center gap-1.5 bg-white text-emerald-700 shadow-sm border border-emerald-200/60';
                 } else {
-                    btn.className = 'order-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5';
+                    btn.className = 'order-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5';
                 }
             });
 
@@ -2964,20 +3188,20 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             if (!cell) return;
             if (status === 'completed') {
                 cell.innerHTML = `
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-bold text-xs rounded-xl shadow-2xs" title="Zamówienie zrealizowane">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-200/80 font-bold text-xs rounded-xl shadow-sm" title="Zamówienie zrealizowane">
                         <svg class="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
                         <span>Zamówienie zrealizowane</span>
                     </span>
                 `;
             } else if (status === 'cancelled') {
                 cell.innerHTML = `
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-500 border border-slate-200 font-bold text-xs rounded-xl shadow-2xs" title="Zamówienie anulowane">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-500 border border-slate-200 font-bold text-xs rounded-xl shadow-sm" title="Zamówienie anulowane">
                         <span>Zamówienie anulowane</span>
                     </span>
                 `;
             } else {
                 cell.innerHTML = `
-                    <button type="button" onclick="showOrderModal(${id})" class="btn-finalize-order inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-2xs hover:shadow transition cursor-pointer" title="Otwórz podsumowanie i specyfikację kompletacji zamówienia">
+                    <button type="button" onclick="showOrderModal(${id})" class="btn-finalize-order inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm hover:shadow transition cursor-pointer" title="Otwórz podsumowanie i specyfikację kompletacji zamówienia">
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         <span>Finalizuj zamówienie</span>
                     </button>
@@ -3048,8 +3272,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             fd.append('status', status);
             fd.append('_csrf', CSRF_TOKEN);
 
-            fetch(BASE_URL + 'b2b/updateorderstatus', { method: 'POST', body: fd })
-                .then(r => r.json())
+            fetchJson(BASE_URL + 'b2b/updateorderstatus', { method: 'POST', body: fd })
                 .then(d => {
                     if (d.ok) {
                         showToast('Zaktualizowano status zamówienia!');
@@ -3076,8 +3299,11 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                         refreshOrdersFilterCounts();
                         refreshNewOrdersBadge();
                         filterOrdersByStatus(currentOrderStatusFilter);
+                    } else {
+                        showToast(d.error || 'Nie udało się zmienić statusu zamówienia.', 'error');
                     }
-                });
+                })
+                .catch(err => reportError(err));
         }
 
         function refreshNewOrdersBadge() {
@@ -3099,17 +3325,20 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
 
         function showOrderModal(id) {
             currentModalOrderId = id;
-            fetch(BASE_URL + 'b2b/orderdetails?id=' + id)
-                .then(r => r.json())
+            const opener = document.activeElement;
+            fetchJson(BASE_URL + 'b2b/orderdetails?id=' + id)
                 .then(d => {
-                    if (!d.ok) return alert('Błąd pobierania szczegółów');
+                    if (!d.ok) {
+                        showToast(d.error || 'Błąd pobierania szczegółów', 'error');
+                        return;
+                    }
                     currentOrderDetails = d;
 
                     document.getElementById('modal-order-number').textContent = 'Zamówienie ' + d.order.order_number;
                     document.getElementById('modal-order-client').textContent = d.order.client_name_snapshot + ' (tel. ' + (d.order.client_phone_snapshot || '—') + ')';
                     document.getElementById('modal-order-address').textContent = d.order.delivery_address_snapshot || 'Brak';
                     document.getElementById('modal-order-notes').textContent = d.order.notes || 'Brak uwag';
-                    document.getElementById('modal-order-total').textContent = Number(d.order.total_amount).toFixed(2) + ' zł';
+                    document.getElementById('modal-order-total').textContent = formatPLN(d.order.total_amount);
 
                     const delivDateEl = document.getElementById('modal-order-delivery-date');
                     if (delivDateEl) {
@@ -3154,18 +3383,19 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                         packageSummary.textContent = i.package_summary || '—';
                         const itemTotal = document.createElement('td');
                         itemTotal.className = 'py-2 text-right font-bold text-slate-800';
-                        itemTotal.textContent = isCustom && Number(i.item_total) === 0 ? 'Do wyceny' : `${Number(i.item_total).toFixed(2)} zł`;
+                        itemTotal.textContent = isCustom && Number(i.item_total) === 0 ? 'Do wyceny' : formatPLN(i.item_total);
                         row.append(productName, quantity, packageSummary, itemTotal);
                         tbody.appendChild(row);
                     });
                     updateFinalizeButtonSubtext();
                     updateModalFinalizeZone(d.order.status || 'new');
-                    document.getElementById('modal-order').classList.remove('hidden');
-                });
+                    openModalA11y('modal-order', opener);
+                })
+                .catch(err => reportError(err, 'Błąd pobierania szczegółów: '));
         }
 
         function closeOrderModal() {
-            document.getElementById('modal-order').classList.add('hidden');
+            closeModalA11y('modal-order');
         }
 
         function printOrderSpecification() {
@@ -3180,7 +3410,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
 
             const printWindow = window.open('', '_blank', 'width=900,height=800');
             if (!printWindow) {
-                alert('Proszę zezwolić na otwieranie okien wyskakujących, aby wydrukować specyfikację.');
+                showToast('Proszę zezwolić na otwieranie okien wyskakujących, aby wydrukować specyfikację.', 'error');
                 return;
             }
 
@@ -3195,8 +3425,8 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                     </td>
                     <td style="padding: 8px 10px; text-align: right; font-weight: 700; font-size: 13px;">${Number(it.quantity)} ${escapeHtml(it.unit)}</td>
                     <td style="padding: 8px 10px; text-align: center; font-size: 12px; background: ${isCustom ? '#fef3c7' : '#f8fafc'}; font-weight: 600; color: ${isCustom ? '#92400e' : '#047857'};">${escapeHtml(it.package_summary || '—')}</td>
-                    <td style="padding: 8px 10px; text-align: right; font-size: 12px; color: #64748b;">${Number(it.price).toFixed(2)} zł</td>
-                    <td style="padding: 8px 10px; text-align: right; font-weight: 700; font-size: 13px; color: #0f172a;">${isCustom && Number(it.item_total) === 0 ? 'Do wyceny' : Number(it.item_total).toFixed(2) + ' zł'}</td>
+                    <td style="padding: 8px 10px; text-align: right; font-size: 12px; color: #64748b; white-space: nowrap;">${formatPLN(it.price)}</td>
+                    <td style="padding: 8px 10px; text-align: right; font-weight: 700; font-size: 13px; color: #0f172a; white-space: nowrap;">${isCustom && Number(it.item_total) === 0 ? 'Do wyceny' : formatPLN(it.item_total)}</td>
                 </tr>
             `;}).join('');
 
@@ -3286,7 +3516,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
     <div class="summary">
         <div class="summary-box">
             <div style="font-size: 12px; color: #475569;">Liczba zamówionych pozycji: <strong>${items.length}</strong></div>
-            <div style="margin-top: 4px; font-size: 15px; font-weight: 900; color: #047857;">Łącznie do zapłaty: ${Number(o.total_amount).toFixed(2)} zł</div>
+            <div style="margin-top: 4px; font-size: 15px; font-weight: 900; color: #047857;">Łącznie do zapłaty: ${formatPLN(o.total_amount)}</div>
         </div>
     </div>
 
@@ -3434,12 +3664,11 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
             fd.append('finalize_erp_format', finErp);
             fd.append('_csrf', CSRF_TOKEN);
 
-            fetch(BASE_URL + 'b2b/savesettings', {
+            fetchJson(BASE_URL + 'b2b/savesettings', {
                 method: 'POST',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 body: fd
             })
-            .then(r => r.json())
             .then(d => {
                 if (!d.ok) throw new Error(d.error || 'Błąd zapisu ustawień');
                 FINALIZE_ACTION = finAction;
@@ -3457,7 +3686,7 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
                 }
             })
             .catch(err => {
-                alert('Błąd: ' + err.message);
+                reportError(err, 'Błąd: ');
             })
             .finally(() => {
                 if (btn) {
@@ -3526,6 +3755,28 @@ $isMysqlConfigured = defined('DSN') && strpos(DSN, 'CHANGEME') === false && defi
 
         // Inicjalizacja opisu przycisku finalizacji
         updateFinalizeButtonSubtext();
+
+        // Komunikaty zapamiętane przed przeładowaniem strony (import cennika, nowy klient)
+        (function initFlashMessages() {
+            let flash = null, newClient = null;
+            try {
+                flash = JSON.parse(sessionStorage.getItem('b2b_admin_flash') || 'null');
+                newClient = JSON.parse(sessionStorage.getItem('b2b_admin_new_client_link') || 'null');
+                sessionStorage.removeItem('b2b_admin_flash');
+                sessionStorage.removeItem('b2b_admin_new_client_link');
+            } catch (e) {}
+            if (newClient && newClient.url) {
+                switchTab('clients');
+                showNewClientLinkBox(String(newClient.url), String(newClient.name || ''));
+                const box = document.getElementById('new-client-link-box');
+                if (box && box.scrollIntoView) box.scrollIntoView({ block: 'center' });
+                const input = document.getElementById('new-client-link-url');
+                if (input) input.focus();
+            }
+            if (flash && flash.msg) {
+                showToast(String(flash.msg), flash.type || 'success', { duration: 5000 });
+            }
+        })();
     </script>
 </body>
 </html>

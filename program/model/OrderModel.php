@@ -112,7 +112,8 @@ class OrderModel extends \Model
 
             // Obliczenie sum
             foreach ($items as $item) {
-                $qty = (float)($item['quantity'] ?? 0);
+                $rawQty = is_string($item['quantity'] ?? null) ? str_replace(',', '.', trim($item['quantity'])) : ($item['quantity'] ?? 0);
+                $qty = (float)$rawQty;
                 if ($qty > 0) {
                     $totalItems++;
                     $isCustom = !empty($item['is_custom']);
@@ -144,7 +145,8 @@ class OrderModel extends \Model
             ');
 
             foreach ($items as $item) {
-                $qty = (float)($item['quantity'] ?? 0);
+                $rawQty = is_string($item['quantity'] ?? null) ? str_replace(',', '.', trim($item['quantity'])) : ($item['quantity'] ?? 0);
+                $qty = (float)$rawQty;
                 if ($qty <= 0) {
                     continue; // Zapisujemy tylko zamówione pozycje
                 }

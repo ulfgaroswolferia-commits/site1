@@ -89,6 +89,13 @@ $clientOrderD1 = [
     ]
 ];
 
+// Test jest powtarzalny: usuń pozostałość po poprzednim uruchomieniu (order_number jest UNIQUE).
+$staleIds = $repo->getPdo()->query("SELECT id FROM b2b_orders WHERE order_number = 'ZAM/D1/001'")->fetchAll(PDO::FETCH_COLUMN);
+foreach ($staleIds as $staleId) {
+    $repo->getPdo()->exec('DELETE FROM b2b_order_items WHERE order_id = ' . (int)$staleId);
+    $repo->getPdo()->exec('DELETE FROM b2b_orders WHERE id = ' . (int)$staleId);
+}
+
 $orderIdD1 = $repo->createOrder([
     'order_number'              => 'ZAM/D1/001',
     'client_id'                 => 1,
@@ -186,6 +193,12 @@ try {
     $attemptStaleOrder = true;
 }
 assertSim("Ochrona koszyka: próba zamówienia wycofanego produktu z nieaktualnej karty rzuca wyjątek niedostępności", $attemptStaleOrder);
+
+// Sprzątanie zamówienia testowego
+if (!empty($orderIdD1)) {
+    $repo->getPdo()->exec('DELETE FROM b2b_order_items WHERE order_id = ' . (int)$orderIdD1);
+    $repo->getPdo()->exec('DELETE FROM b2b_orders WHERE id = ' . (int)$orderIdD1);
+}
 
 echo "\n====================================================================\n";
 echo "  PODSUMOWANIE SYMULACJI: PASS = {$pass}, FAIL = {$fail}\n";

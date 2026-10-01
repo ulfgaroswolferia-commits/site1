@@ -20,6 +20,7 @@ $appName   = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
             --bg: #f8fafc;
             --fg: #0f172a;
             --muted: #64748b;
+            --muted-strong: #475569;
             --card: rgba(255, 255, 255, 0.88);
             --card-inner: rgba(255, 255, 255, 0.96);
             --border: rgba(226, 232, 240, 0.85);
@@ -216,7 +217,7 @@ $appName   = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
         .table-wrap {
             border: 1px solid var(--border);
             border-radius: var(--radius-inner);
-            overflow: hidden;
+            overflow-x: auto;
             background: #fff;
         }
 
@@ -269,6 +270,24 @@ $appName   = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
         .tr-custom {
             background: rgba(254, 243, 199, 0.28);
         }
+
+        /* Drobny tekst (≤ 0.75rem) — ciemniejszy odcień dla kontrastu WCAG AA */
+        .meta-label,
+        .table th {
+            color: var(--muted-strong);
+        }
+
+        /* Spójny wskaźnik fokusu klawiatury */
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible {
+            outline: 3px solid var(--blue);
+            outline-offset: 2px;
+            border-radius: 8px;
+        }
+
+        .money { white-space: nowrap; }
     </style>
 </head>
 <body>
@@ -334,7 +353,7 @@ $appName   = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
 
                 <div class="meta-item">
                     <span class="meta-label">Łączna kwota</span>
-                    <span class="meta-val" style="color: #1e3a8a;"><?= number_format((float)$order['total_amount'], 2, '.', ' ') ?> zł</span>
+                    <span class="meta-val money" style="color: #1e3a8a;"><?= Tools::h(Tools::money($order['total_amount'])) ?></span>
                 </div>
             </div>
 
@@ -371,7 +390,7 @@ $appName   = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
                                         <?php if ($isCustom): ?>
                                             <span style="color: var(--muted); font-style: italic; font-size: 0.88rem;">Do wyceny</span>
                                         <?php else: ?>
-                                            <?= number_format((float)$it['unit_price'], 2, '.', ' ') ?> zł
+                                            <span class="money"><?= Tools::h(Tools::money($it['unit_price'])) ?></span>
                                         <?php endif; ?>
                                     </td>
                                     <td><strong style="color: <?= $isCustom ? '#b45309' : 'var(--blue)' ?>; font-size: 1rem;"><?= (float)$it['quantity'] ?></strong></td>
@@ -380,14 +399,14 @@ $appName   = defined('APP_NAME') ? APP_NAME : 'TwiiCoreF';
                                         <?php if ($isCustom): ?>
                                             <span style="font-size: 0.88rem; font-style: italic; color: #b45309;">Do wyceny</span>
                                         <?php else: ?>
-                                            <?= number_format((float)$it['item_total'], 2, '.', ' ') ?> zł
+                                            <span class="money"><?= Tools::h(Tools::money($it['item_total'])) ?></span>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
                             <tr class="total-row">
                                 <td colspan="5" style="text-align: right;">RAZEM DO ZAPŁATY:</td>
-                                <td style="text-align: right; color: #1e3a8a;"><?= number_format((float)$order['total_amount'], 2, '.', ' ') ?> zł</td>
+                                <td class="money" style="text-align: right; color: #1e3a8a;"><?= Tools::h(Tools::money($order['total_amount'])) ?></td>
                             </tr>
                         </tbody>
                     </table>

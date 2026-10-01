@@ -15,7 +15,7 @@ $sampleOrders = [
     [
         'id'                        => 101,
         'order_number'              => 'B2B/2026/09/19/01',
-        'client_name_snapshot'      => 'Zieleniak Pod DÄ™bem',
+        'client_name_snapshot'      => 'Zieleniak Pod Dębem',
         'client_phone_snapshot'     => '500600700',
         'delivery_address_snapshot' => 'ul. Kwiatowa 5, 00-001 Warszawa',
         'nip'                       => '1234567890',
@@ -34,13 +34,13 @@ $sampleOrders = [
                 'package_summary' => '2 skrzynki'
             ],
             [
-                'product_name'    => 'Koperek ĹšwieĹĽy',
-                'erp_code'        => '', // brak kodu â€” powinien uĹĽyÄ‡ nazwy
+                'product_name'    => 'Koperek Świeży',
+                'erp_code'        => '', // brak kodu — powinien użyć nazwy
                 'quantity'        => 15.0,
-                'unit'            => 'pÄ™czek',
+                'unit'            => 'pęczek',
                 'price'           => 2.90,
                 'item_total'      => 43.50,
-                'package_summary' => '15 pÄ™czkĂłw'
+                'package_summary' => '15 pęczków'
             ]
         ]
     ]
@@ -96,8 +96,8 @@ $wfmagOk = ($hasWfMagHeader && $hasWfMagNip && $hasWfMagMag && $hasWfMagStatus &
 echo "4. Eksport Asseco WAPRO Wf-Mag (.xml z magazynem i VAT): " . ($wfmagOk ? "PASS" : "FAIL") . "\n";
 
 if (!$subiektOk || !$optimaOk || !$symfoniaOk || !$wfmagOk) {
-    echo "=== TEST ZAKOĹCZONY BĹÄDEM (Stan RED) ===\n";
+    echo "=== TEST ZAKOŃCZONY BŁĘDEM (Stan RED) ===\n";
     exit(1);
 }
 
-echo "=== TEST ZAKOĹCZONY SUKCESEM (Stan GREEN) ===\n";
+echo "=== TEST ZAKOŃCZONY SUKCESEM (Stan GREEN) ===\n";

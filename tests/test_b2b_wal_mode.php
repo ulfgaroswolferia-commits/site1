@@ -27,8 +27,8 @@ $timeoutOk = ($busyTimeout >= 5000);
 echo ($timeoutOk ? "PASS" : "FAIL") . "\n";
 
 if (!$walOk || !$timeoutOk) {
-    echo "=== TEST ZAKOĹCZONY BĹÄDEM (Stan RED) ===\n";
+    echo "=== TEST ZAKOŃCZONY BŁĘDEM (Stan RED) ===\n";
     exit(1);
 }
 
-echo "=== TEST ZAKOĹCZONY SUKCESEM (Stan GREEN) ===\n";
+echo "=== TEST ZAKOŃCZONY SUKCESEM (Stan GREEN) ===\n";

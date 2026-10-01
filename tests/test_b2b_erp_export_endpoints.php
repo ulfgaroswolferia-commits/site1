@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Test TDD: Weryfikacja endpointĂłw eksportu ERP (pojedynczy, zbiorczy) i zapisu ustawieĹ„ w B2bController
+ * Test TDD: Weryfikacja endpointów eksportu ERP (pojedynczy, zbiorczy) i zapisu ustawień w B2bController
  */
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', dirname(__DIR__));
@@ -11,7 +11,7 @@ require_once BASE_PATH . '/program/config/includes.php';
 
 use App\B2bRepository;
 
-echo "=== TEST: Endpointy eksportu ERP i panel ustawieĹ„ hurtownika ===\n";
+echo "=== TEST: Endpointy eksportu ERP i panel ustawień hurtownika ===\n";
 
 $repo = new B2bRepository();
 
@@ -19,9 +19,9 @@ $stmtProd = $repo->getPdo()->prepare("INSERT INTO b2b_products (name, erp_code, 
 $stmtProd->execute(['Papryka Czerwona Test', 'PAP-CZERW-01', 'Warzywa', 'kg', 8.80, 5.0, 'karton', date('Y-m-d H:i:s')]);
 $testProdId = (int)$repo->getPdo()->lastInsertId();
 
-// 1. Utworzenie zamĂłwienia testowego do eksportu
+// 1. Utworzenie zamówienia testowego do eksportu
 $orderId = $repo->createOrder([
-    'order_number'              => 'B2B/ERP/TEST/' . time(),
+    'order_number'              => 'B2B/ERP/TEST/' . time() . '/' . bin2hex(random_bytes(3)),
     'client_id'                 => 1,
     'client_name_snapshot'      => 'Sklep Testowy ERP',
     'delivery_address_snapshot' => 'ul. Testowa 10, Warszawa',
@@ -42,7 +42,7 @@ $orderId = $repo->createOrder([
         'item_total'      => 88.00
     ]
 ]);
-assert($orderId > 0, "BĹ‚Ä…d tworzenia zamĂłwienia testowego!");
+assert($orderId > 0, "Błąd tworzenia zamówienia testowego!");
 
 $cookieFile = tempnam(sys_get_temp_dir(), 'cook_erp_');
 $ch = curl_init();
@@ -59,7 +59,7 @@ $loginCsrf = $mCsrf[1] ?? '';
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
     'login' => APP_LOGIN,
-    'password' => APP_PASSWORD,
+    'password' => (getenv('APP_TEST_PASSWORD') ?: 'admin123'),
     '_csrf' => $loginCsrf
 ]));
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -72,7 +72,7 @@ $adminHtml = curl_exec($ch);
 preg_match('/const CSRF_TOKEN\s*=\s*\'([^\']+)\';/', $adminHtml, $mAdminCsrf);
 $adminCsrf = $mAdminCsrf[1] ?? '';
 
-// 2. Test zapisu ustawieĹ„ przez POST /b2b/savesettings
+// 2. Test zapisu ustawień przez POST /b2b/savesettings
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_URL, 'http://localhost/b2b/savesettings');
 curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
@@ -84,13 +84,13 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-Requested-With: XMLHttpRequest', 'Accep
 $respSettings = curl_exec($ch);
 $settingsData = json_decode($respSettings, true);
 $saveSettingsOk = (!empty($settingsData['ok']) && $repo->getSetting('cutoff_time') === '22:15');
-echo "1. Zapis ustawieĹ„ przez /b2b/savesettings: " . ($saveSettingsOk ? "PASS" : "FAIL") . "\n";
+echo "1. Zapis ustawień przez /b2b/savesettings: " . ($saveSettingsOk ? "PASS" : "FAIL") . "\n";
 
-// PrzywrĂłcenie domyĹ›lnych
+// Przywrócenie domyślnych
 $repo->setSetting('cutoff_time', '21:30');
 $repo->setSetting('default_erp_format', 'subiekt');
 
-// 3. Test eksportu pojedynczego zamĂłwienia GET /b2b/exporterp?id=...&format=subiekt
+// 3. Test eksportu pojedynczego zamówienia GET /b2b/exporterp?id=...&format=subiekt
 curl_setopt($ch, CURLOPT_HTTPGET, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, []);
 curl_setopt($ch, CURLOPT_URL, "http://localhost/b2b/exporterp?id={$orderId}&format=subiekt");
@@ -99,7 +99,7 @@ $httpCodeEpp = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $eppValid = ($httpCodeEpp === 200 && strpos($eppContent, '[INFO]') !== false && strpos($eppContent, 'PAP-CZERW-01') !== false);
 echo "2. Pobranie pliku Subiekt EPP (/b2b/exporterp): " . ($eppValid ? "PASS" : "FAIL (Code: $httpCodeEpp, Content: " . substr($eppContent, 0, 100) . ")") . "\n";
 
-// 4. Test eksportu pojedynczego zamĂłwienia w formacie Comarch Optima XML
+// 4. Test eksportu pojedynczego zamówienia w formacie Comarch Optima XML
 curl_setopt($ch, CURLOPT_URL, "http://localhost/b2b/exporterp?id={$orderId}&format=optima");
 $xmlContent = curl_exec($ch);
 $httpCodeOptima = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -116,14 +116,14 @@ echo "4. Pobranie paczki zbiorczej ERP (/b2b/exportbatch): " . ($batchValid ? "P
 curl_close($ch);
 @unlink($cookieFile);
 
-// SprzÄ…tanie
+// Sprzątanie
 $repo->getPdo()->exec("DELETE FROM b2b_order_items WHERE order_id = {$orderId}");
 $repo->getPdo()->exec("DELETE FROM b2b_orders WHERE id = {$orderId}");
 $repo->getPdo()->exec("DELETE FROM b2b_products WHERE id = {$testProdId}");
 
 if (!$saveSettingsOk || !$eppValid || !$optimaValid || !$batchValid) {
-    echo "=== TEST ZAKOĹCZONY BĹÄDEM (Stan RED) ===\n";
+    echo "=== TEST ZAKOŃCZONY BŁĘDEM (Stan RED) ===\n";
     exit(1);
 }
 
-echo "=== TEST ZAKOĹCZONY SUKCESEM (Stan GREEN) ===\n";
+echo "=== TEST ZAKOŃCZONY SUKCESEM (Stan GREEN) ===\n";

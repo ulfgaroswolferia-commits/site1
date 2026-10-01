@@ -24,6 +24,7 @@ $routes      = class_exists('Config') ? (Config::get('routes') ?: []) : [];
             --bg: #f8fafc;
             --fg: #0f172a;
             --muted: #64748b;
+            --muted-strong: #475569;
             --card: rgba(255, 255, 255, 0.82);
             --card-inner: rgba(255, 255, 255, 0.95);
             --border: rgba(226, 232, 240, 0.85);
@@ -575,6 +576,25 @@ $routes      = class_exists('Config') ? (Config::get('routes') ?: []) : [];
         .dashboard-footer a:hover {
             text-decoration: underline;
         }
+
+        /* Drobny tekst (≤ 0.78rem) na półprzezroczystych kartach — ciemniejszy odcień (WCAG AA) */
+        .user-role,
+        .metric-label,
+        .metric-sub,
+        .action-info p,
+        .routes-table th {
+            color: var(--muted-strong);
+        }
+
+        /* Spójny wskaźnik fokusu klawiatury */
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible {
+            outline: 3px solid var(--blue);
+            outline-offset: 2px;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
@@ -669,7 +689,6 @@ $routes      = class_exists('Config') ? (Config::get('routes') ?: []) : [];
                 <div class="metric-body">
                     <span class="metric-label">Środowisko PHP</span>
                     <span class="metric-value">PHP <?= PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION ?></span>
-                    <span class="metric-sub">Wersja <?= PHP_VERSION ?></span>
                 </div>
             </div>
 
@@ -769,19 +788,6 @@ $routes      = class_exists('Config') ? (Config::get('routes') ?: []) : [];
                         <div class="action-info">
                             <h4>Test parametrów URL</h4>
                             <p>Wywołaj akcję testową <code>/home/example/id/42</code></p>
-                        </div>
-                    </a>
-
-                    <a href="<?= $base ?>docs/index.html" target="_blank" rel="noopener" class="action-tile">
-                        <div class="action-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                            </svg>
-                        </div>
-                        <div class="action-info">
-                            <h4>Dokumentacja HTML</h4>
-                            <p>Przejrzyj interaktywny opis architektury i stylów</p>
                         </div>
                     </a>
 
@@ -914,7 +920,7 @@ $routes      = class_exists('Config') ? (Config::get('routes') ?: []) : [];
         <!-- Dashboard Footer -->
         <footer class="dashboard-footer">
             <span>&copy; <?= date('Y') ?> <strong><?= Tools::h($appName) ?></strong> — Mikro-framework PHP MVC.</span>
-            <span>Dokumentacja architektury: <a href="<?= $base ?>docs/MVC.md" target="_blank">docs/MVC.md</a></span>
+            <span>Dokumentacja architektury: docs/MVC.md w repozytorium projektu</span>
         </footer>
     </div>
 

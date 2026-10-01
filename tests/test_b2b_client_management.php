@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Test weryfikujÄ…cy edycjÄ™ danych klienta B2B oraz wysyĹ‚kÄ™ linku z tokenem (email/SMS)
+ * Test weryfikujący edycję danych klienta B2B oraz wysyłkę linku z tokenem (email/SMS)
  */
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', dirname(__DIR__));
@@ -35,7 +35,7 @@ function httpReq($url, $post = null, $headers = []) {
     return ['code' => $code, 'body' => $body];
 }
 
-echo "=== TEST: ZarzÄ…dzanie klientami B2B (Edycja i WysyĹ‚ka Linku) ===\n";
+echo "=== TEST: Zarządzanie klientami B2B (Edycja i Wysyłka Linku) ===\n";
 
 // 1. Logowanie do panelu administratora
 $resLoginGet = httpReq('http://localhost/home/login');
@@ -44,7 +44,7 @@ $loginCsrf = $m[1] ?? '';
 
 httpReq('http://localhost/home/login', [
     'login' => APP_LOGIN,
-    'password' => APP_PASSWORD,
+    'password' => (getenv('APP_TEST_PASSWORD') ?: 'admin123'),
     '_csrf' => $loginCsrf
 ]);
 
@@ -62,10 +62,10 @@ $hasEditBtn     = strpos($html, 'openEditClientModal(') !== false;
 $hasEmailBtn    = strpos($html, 'sendTokenEmail(') !== false;
 $hasSmsBtn      = strpos($html, 'openSendSmsModal(') !== false;
 
-echo "1. Modal edycji klienta obecny w HTML: " . ($hasModalEdit ? "OK" : "BĹÄ„D") . "\n";
-echo "2. Modal wysyĹ‚ki SMS/WhatsApp obecny w HTML: " . ($hasModalSms ? "OK" : "BĹÄ„D") . "\n";
-echo "3. SĹ‚ownik CLIENTS_DATA w skrypcie: " . ($hasClientsData ? "OK" : "BĹÄ„D") . "\n";
-echo "4. Przyciski akcji (Edytuj, E-mail, SMS) w tabeli: " . (($hasEditBtn && $hasEmailBtn && $hasSmsBtn) ? "OK" : "BĹÄ„D") . "\n";
+echo "1. Modal edycji klienta obecny w HTML: " . ($hasModalEdit ? "OK" : "BŁĄD") . "\n";
+echo "2. Modal wysyłki SMS/WhatsApp obecny w HTML: " . ($hasModalSms ? "OK" : "BŁĄD") . "\n";
+echo "3. Słownik CLIENTS_DATA w skrypcie: " . ($hasClientsData ? "OK" : "BŁĄD") . "\n";
+echo "4. Przyciski akcji (Edytuj, E-mail, SMS) w tabeli: " . (($hasEditBtn && $hasEmailBtn && $hasSmsBtn) ? "OK" : "BŁĄD") . "\n";
 
 // 3. Utworzenie klienta przez API
 $uniqueSuffix = time() . '_' . mt_rand(100, 999);
@@ -81,7 +81,7 @@ $resCreate = httpReq('http://localhost/b2b/createclient', [
 $dataCreate = json_decode($resCreate['body'], true);
 $clientId = (int)($dataCreate['client_id'] ?? 0);
 $initialToken = $dataCreate['auth_token'] ?? '';
-echo "5. Utworzenie klienta testowego (ID: {$clientId}): " . ($clientId > 0 ? "OK" : "BĹÄ„D: {$resCreate['body']}") . "\n";
+echo "5. Utworzenie klienta testowego (ID: {$clientId}): " . ($clientId > 0 ? "OK" : "BŁĄD: {$resCreate['body']}") . "\n";
 
 // 4. Edycja klienta przez API /b2b/updateclient
 $resUpdate = httpReq('http://localhost/b2b/updateclient', [
@@ -90,7 +90,7 @@ $resUpdate = httpReq('http://localhost/b2b/updateclient', [
     'nip'              => '1112223344',
     'phone'            => '+48 600 700 800',
     'email'            => 'nowy_email_' . $uniqueSuffix . '@example.com',
-    'delivery_address' => 'ul. Nowoowocowa 99, KrakĂłw',
+    'delivery_address' => 'ul. Nowoowocowa 99, Kraków',
     'regenerate_token' => '1',
     '_csrf'            => $csrfToken
 ], ['X-Requested-With: XMLHttpRequest', 'Accept: application/json']);
@@ -105,24 +105,24 @@ $fieldsMatch = (
     $updatedClient['nip'] === '1112223344' &&
     $updatedClient['phone'] === '+48 600 700 800' &&
     $updatedClient['email'] === 'nowy_email_' . $uniqueSuffix . '@example.com' &&
-    $updatedClient['delivery_address'] === 'ul. Nowoowocowa 99, KrakĂłw' &&
+    $updatedClient['delivery_address'] === 'ul. Nowoowocowa 99, Kraków' &&
     !empty($newToken) &&
     $newToken !== $initialToken
 );
 
-echo "6. Aktualizacja danych klienta przez /b2b/updateclient: " . ($updateOk && $fieldsMatch ? "OK" : "BĹÄ„D") . "\n";
+echo "6. Aktualizacja danych klienta przez /b2b/updateclient: " . ($updateOk && $fieldsMatch ? "OK" : "BŁĄD") . "\n";
 echo "   - Nowa nazwa: {$updatedClient['company_name']}\n";
 echo "   - Zregenerowany token: {$newToken} (poprzedni: {$initialToken})\n";
 
-// 5. Test generatora wiadomoĹ›ci e-mail B2bController::buildTokenEmailHtml
+// 5. Test generatora wiadomości e-mail B2bController::buildTokenEmailHtml
 require_once BASE_PATH . '/program/script/B2bController.php';
 $tokenUrl = 'http://localhost/b2b?token=' . $newToken;
 $emailHtml = B2bController::buildTokenEmailHtml($updatedClient, $tokenUrl);
 $hasCompanyInEmail = strpos($emailHtml, 'Warzywniak Zaktualizowany') !== false;
 $hasUrlInEmail     = strpos($emailHtml, $tokenUrl) !== false;
-$hasCtaBtn         = strpos($emailHtml, 'PrzejdĹş do skĹ‚adania zamĂłwienia') !== false;
+$hasCtaBtn         = strpos($emailHtml, 'Przejdź do składania zamówienia') !== false;
 
-echo "7. Generowanie szablonu HTML e-mail z tokenem: " . (($hasCompanyInEmail && $hasUrlInEmail && $hasCtaBtn) ? "OK" : "BĹÄ„D") . "\n";
+echo "7. Generowanie szablonu HTML e-mail z tokenem: " . (($hasCompanyInEmail && $hasUrlInEmail && $hasCtaBtn) ? "OK" : "BŁĄD") . "\n";
 
 // 6. Test endpointu /b2b/sendtoken
 $resSend = httpReq('http://localhost/b2b/sendtoken', [
@@ -132,12 +132,12 @@ $resSend = httpReq('http://localhost/b2b/sendtoken', [
 ], ['X-Requested-With: XMLHttpRequest', 'Accept: application/json']);
 
 $dataSend = json_decode($resSend['body'], true);
-// Endpoint powinien odpowiedzieÄ‡ kodem 200 z sukcesem LUB kontrolowanym bĹ‚Ä™dem poczty (np. brak skonfigurowanego serwera SMTP) z fallback_mailto
+// Endpoint powinien odpowiedzieć kodem 200 z sukcesem LUB kontrolowanym błędem poczty (np. brak skonfigurowanego serwera SMTP) z fallback_mailto
 $sendHandled = (
     ($resSend['code'] === 200 && ($dataSend['ok'] ?? false) === true) ||
     ($resSend['code'] === 500 && isset($dataSend['fallback_mailto']))
 );
-echo "8. ObsĹ‚uga endpointu /b2b/sendtoken: " . ($sendHandled ? "OK (OdpowiedĹş kontrolowana: " . ($dataSend['ok'] ? 'WysĹ‚ano' : 'Brak SMTP, wygenerowano fallback mailto') . ")" : "BĹÄ„D: {$resSend['body']}") . "\n";
+echo "8. Obsługa endpointu /b2b/sendtoken: " . ($sendHandled ? "OK (Odpowiedź kontrolowana: " . ($dataSend['ok'] ? 'Wysłano' : 'Brak SMTP, wygenerowano fallback mailto') . ")" : "BŁĄD: {$resSend['body']}") . "\n";
 
 @unlink($cookieFile);
 

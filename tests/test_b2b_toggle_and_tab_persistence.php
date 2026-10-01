@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Test TDD: Weryfikacja blokowania klienta oraz zachowania aktywnej zakĹ‚adki (Klienci Hurtowni).
+ * Test TDD: Weryfikacja blokowania klienta oraz zachowania aktywnej zakładki (Klienci Hurtowni).
  */
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', dirname(__DIR__));
@@ -35,7 +35,7 @@ function httpReq($url, $post = null, $headers = []) {
     return ['code' => $code, 'body' => $body];
 }
 
-echo "=== TEST: Blokowanie klienta i zachowanie zakĹ‚adki Klienci ===\n";
+echo "=== TEST: Blokowanie klienta i zachowanie zakładki Klienci ===\n";
 
 // 1. Zalogowanie do panelu administratora
 $resLoginGet = httpReq('http://localhost/home/login');
@@ -44,7 +44,7 @@ $loginCsrf = $m[1] ?? '';
 
 httpReq('http://localhost/home/login', [
     'login' => APP_LOGIN,
-    'password' => APP_PASSWORD,
+    'password' => (getenv('APP_TEST_PASSWORD') ?: 'admin123'),
     '_csrf' => $loginCsrf
 ]);
 
@@ -67,7 +67,7 @@ $resCreate = httpReq('http://localhost/b2b/createclient', [
 $dataCreate = json_decode($resCreate['body'], true);
 $clientId = (int)($dataCreate['client_id'] ?? 0);
 $token = $dataCreate['auth_token'] ?? '';
-assert($clientId > 0, "BĹ‚Ä…d tworzenia klienta testowego");
+assert($clientId > 0, "Błąd tworzenia klienta testowego");
 echo "1. Klient testowy utworzony (ID: {$clientId}, Token: {$token})\n";
 
 // 3. Test API /b2b/toggleclient: zablokowanie
@@ -79,14 +79,14 @@ $resToggle1 = httpReq('http://localhost/b2b/toggleclient', [
 $dataToggle1 = json_decode($resToggle1['body'], true);
 echo "2. Wynik toggleclient (zablokowanie): " . json_encode($dataToggle1) . "\n";
 
-// Oczekujemy, ĹĽe API zwraca is_active = 0
+// Oczekujemy, że API zwraca is_active = 0
 if (!isset($dataToggle1['is_active']) || $dataToggle1['is_active'] !== 0) {
     echo "FAIL: API toggleclient nie zwraca is_active: 0!\n";
 } else {
     echo "PASS: API toggleclient poprawnie zwraca is_active: 0.\n";
 }
 
-// 4. Sprawdzenie prĂłby dostÄ™pu przez klienta po zablokowaniu
+// 4. Sprawdzenie próby dostępu przez klienta po zablokowaniu
 $ch2 = curl_init();
 curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch2, CURLOPT_URL, "http://localhost/b2b?token={$token}");
@@ -96,9 +96,9 @@ $clientHttpCode = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
 curl_close($ch2);
 
 if (in_array($clientHttpCode, [301, 302, 303, 403]) || strpos($resClientAccess, 'login') !== false) {
-    echo "PASS: Zablokowany klient nie ma dostÄ™pu do katalogu (HTTP {$clientHttpCode})\n";
+    echo "PASS: Zablokowany klient nie ma dostępu do katalogu (HTTP {$clientHttpCode})\n";
 } else {
-    echo "FAIL: Zablokowany klient uzyskaĹ‚ dostÄ™p! HTTP {$clientHttpCode}\n";
+    echo "FAIL: Zablokowany klient uzyskał dostęp! HTTP {$clientHttpCode}\n";
 }
 
 // 5. Test API /b2b/toggleclient: odblokowanie
@@ -121,15 +121,15 @@ $resUpdateStatus = httpReq('http://localhost/b2b/updateclient', [
 $dataUpdateStatus = json_decode($resUpdateStatus['body'], true);
 $updatedActive = (int)($dataUpdateStatus['client']['is_active'] ?? -1);
 if ($updatedActive === 0) {
-    echo "PASS: Edycja klienta przez updateclient poprawnie zablokowaĹ‚a konto (is_active = 0).\n";
+    echo "PASS: Edycja klienta przez updateclient poprawnie zablokowała konto (is_active = 0).\n";
 } else {
-    echo "FAIL: Edycja klienta nie ustawiĹ‚a is_active = 0!\n";
+    echo "FAIL: Edycja klienta nie ustawiła is_active = 0!\n";
     exit(1);
 }
 
 // 6. Sprawdzenie skryptu w admin.php:
-// - Czy toggleClient nie robi bezmyĹ›lnego reloadu do strony gĹ‚Ăłwnej
-// - Czy zaimplementowane jest zapamiÄ™tywanie/przywracanie aktywnej zakĹ‚adki (localStorage / hash)
+// - Czy toggleClient nie robi bezmyślnego reloadu do strony głównej
+// - Czy zaimplementowane jest zapamiętywanie/przywracanie aktywnej zakładki (localStorage / hash)
 $adminSource = file_get_contents(BASE_PATH . '/views/b2b/admin.php');
 
 $hasTabPersistence = (strpos($adminSource, 'b2b_admin_tab') !== false || strpos($adminSource, 'b2b_active_tab') !== false) &&
@@ -137,10 +137,10 @@ $hasTabPersistence = (strpos($adminSource, 'b2b_admin_tab') !== false || strpos(
 
 $toggleClientDoesNotBlindlyReload = !preg_match('/function toggleClient[^{]*\{[^}]*window\.location\.reload\(\)/s', $adminSource);
 
-echo "4. ObsĹ‚uga zapamiÄ™tywania aktywnej zakĹ‚adki (Klienci/Cennik/ZamĂłwienia): " . ($hasTabPersistence ? "PASS" : "FAIL") . "\n";
-echo "5. toggleClient nie przeĹ‚adowuje caĹ‚ego okna do domyĹ›lnej zakĹ‚adki: " . ($toggleClientDoesNotBlindlyReload ? "PASS" : "FAIL") . "\n";
+echo "4. Obsługa zapamiętywania aktywnej zakładki (Klienci/Cennik/Zamówienia): " . ($hasTabPersistence ? "PASS" : "FAIL") . "\n";
+echo "5. toggleClient nie przeładowuje całego okna do domyślnej zakładki: " . ($toggleClientDoesNotBlindlyReload ? "PASS" : "FAIL") . "\n";
 
 if (!$hasTabPersistence || !$toggleClientDoesNotBlindlyReload || !isset($dataToggle1['is_active']) || $dataToggle1['is_active'] !== 0) {
     exit(1);
 }
-echo "=== WSZYSTKIE TESTY ZAKOĹCZONE SUKCESEM ===\n";
+echo "=== WSZYSTKIE TESTY ZAKOŃCZONE SUKCESEM ===\n";

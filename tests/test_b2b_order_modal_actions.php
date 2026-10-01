@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Test TDD: Weryfikacja opcji zmiany statusu oraz pobrania Excela w oknie podglÄ…du zamĂłwienia (panel hurtownika)
+ * Test TDD: Weryfikacja opcji zmiany statusu oraz pobrania Excela w oknie podglądu zamówienia (panel hurtownika)
  */
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', dirname(__DIR__));
@@ -11,11 +11,11 @@ require_once BASE_PATH . '/program/config/includes.php';
 
 use App\B2bRepository;
 
-echo "=== TEST: Zmiana statusu i pobranie Excela w modalu zamĂłwienia ===\n";
+echo "=== TEST: Zmiana statusu i pobranie Excela w modalu zamówienia ===\n";
 
 $repo = new B2bRepository();
 
-// Upewnij siÄ™, ĹĽe mamy przynajmniej jedno zamĂłwienie
+// Upewnij się, że mamy przynajmniej jedno zamówienie
 $orders = $repo->getAllOrders(1);
 if (empty($orders)) {
     $orderNumber = $repo->generateOrderNumber();
@@ -30,7 +30,7 @@ if (empty($orders)) {
     ], [
         [
             'product_id'      => 1,
-            'product_name'    => 'JabĹ‚ka',
+            'product_name'    => 'Jabłka',
             'price'           => 5.0,
             'quantity'        => 10,
             'unit'            => 'kg',
@@ -59,7 +59,7 @@ $loginCsrf = $m[1] ?? '';
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
     'login' => APP_LOGIN,
-    'password' => APP_PASSWORD,
+    'password' => (getenv('APP_TEST_PASSWORD') ?: 'admin123'),
     '_csrf' => $loginCsrf
 ]));
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -80,7 +80,7 @@ echo "2. Selektor zmiany statusu (#modal-order-status) w modalu: " . ($hasStatus
 
 // 3. Sprawdzenie funkcji changeModalOrderStatus w skrypcie JS
 $hasChangeFn = strpos($html, 'changeModalOrderStatus') !== false;
-echo "3. Funkcja obsĹ‚ugi zmiany statusu z poziomu modalu (changeModalOrderStatus): " . ($hasChangeFn ? "PASS" : "FAIL") . "\n";
+echo "3. Funkcja obsługi zmiany statusu z poziomu modalu (changeModalOrderStatus): " . ($hasChangeFn ? "PASS" : "FAIL") . "\n";
 
 // 4. Test endpointu pobierania Excela b2b/download?id=...
 curl_setopt($ch, CURLOPT_URL, "http://localhost/b2b/download?id={$orderId}");
@@ -89,7 +89,7 @@ $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
 
 $excelOk = ($httpCode === 200 && strlen($excelBody) > 1000);
-echo "4. Pobranie karty kompletacji Excel (/b2b/download?id={$orderId}): " . ($excelOk ? "PASS" : "FAIL") . " (HTTP {$httpCode}, " . strlen($excelBody) . " bajtĂłw)\n";
+echo "4. Pobranie karty kompletacji Excel (/b2b/download?id={$orderId}): " . ($excelOk ? "PASS" : "FAIL") . " (HTTP {$httpCode}, " . strlen($excelBody) . " bajtów)\n";
 
 // 5. Test aktualizacji statusu przez API
 preg_match('/const CSRF_TOKEN\s*=\s*\'([^\']+)\'/', $html, $mAdminCsrf);
@@ -108,13 +108,13 @@ $updateOk = (($updateData['ok'] ?? false) === true);
 
 $orderAfter = $repo->getOrderById($orderId);
 $statusChanged = ($orderAfter && $orderAfter['status'] === 'processing');
-echo "5. Zmiana statusu zamĂłwienia na 'processing': " . (($updateOk && $statusChanged) ? "PASS" : "FAIL") . "\n";
+echo "5. Zmiana statusu zamówienia na 'processing': " . (($updateOk && $statusChanged) ? "PASS" : "FAIL") . "\n";
 
 @unlink($cookieFile);
 
 if (!$hasDownloadBtn || !$hasStatusSelect || !$hasChangeFn || !$excelOk || !$updateOk || !$statusChanged) {
-    echo "=== TESTY ZAKOĹCZONE BĹÄDEM ===\n";
+    echo "=== TESTY ZAKOŃCZONE BŁĘDEM ===\n";
     exit(1);
 }
 
-echo "=== WSZYSTKIE TESTY MODALU ZAMĂ“WIENIA ZAKOĹCZONE SUKCESEM ===\n";
+echo "=== WSZYSTKIE TESTY MODALU ZAMÓWIENIA ZAKOŃCZONE SUKCESEM ===\n";

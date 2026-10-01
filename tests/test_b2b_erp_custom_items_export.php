@@ -223,7 +223,7 @@ echo "\n--- 5. INTEGRACJA HTTP B2B CONTROLLER ---\n";
 
 // Zapisujemy zamówienie w bazie, aby przetestować rzeczywisty endpoint
 $realOrderId = $repo->createOrder([
-    'order_number'              => 'B2B/ERP/TEST/' . time(),
+    'order_number'              => 'B2B/ERP/TEST/' . time() . '/' . bin2hex(random_bytes(3)),
     'client_id'                 => (int)$client['id'],
     'client_name_snapshot'      => $client['company_name'],
     'client_phone_snapshot'     => $client['phone'] ?? '',
@@ -251,7 +251,7 @@ $loginCsrf = $mCsrf[1] ?? '';
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
     'login' => defined('APP_LOGIN') ? APP_LOGIN : 'admin',
-    'password' => defined('APP_PASSWORD') ? APP_PASSWORD : 'admin123',
+    'password' => (getenv('APP_TEST_PASSWORD') ?: 'admin123'),
     '_csrf' => $loginCsrf
 ]));
 curl_exec($ch);

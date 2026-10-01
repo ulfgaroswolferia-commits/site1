@@ -7,7 +7,21 @@ Wskazówki dla Claude Code przy pracy z projektami opartymi na szkielecie **Twii
 
 ## Opis projektu
 
-_(uzupełnij: co robi aplikacja, kto jest użytkownikiem, gdzie stoi)_
+Panel zamówień hurtowni owocowo-warzywnej:
+
+- **Zamówienia** (`order/*`) — wewnętrzny panel: import cennika XLSX, zamówienie, historia, e-mail.
+- **B2B „Hurtownia Magdy”** (`b2b/*`) — portal dla sklepów-klientów (katalog, koszyk, historia,
+  logowanie linkiem z tokenem lub loginem/hasłem) i panel hurtownika `b2b/admin` (cennik, klienci,
+  zamówienia, eksport do ERP: Subiekt EPP, Optima XML, Symfonia, Wf-Mag).
+- Dane B2B: SQLite `db/b2b.sqlite` (tryb WAL; `B2B_DB_DRIVER` opcjonalne, domyślnie `sqlite`).
+
+**Serwer docelowy: PHP 8.x** (kod używa `match`, `str_contains`, typów unijnych) — to NIE jest
+serwer 3W (5.3) ani 3W-ADAX (7.4). Lint lokalnie binarką PHP 8.3.
+
+**Style B2B** to Tailwind CSS v3 budowany statycznie do `assets/css/b2b.css` (bez CDN).
+Po dodaniu nowych klas w `views/b2b/*` przebuduj CSS — instrukcja w `bin/tailwind/README.md`.
+Nagłówek CSP (`program/config/headers.php`) dopuszcza skrypty i style tylko z własnej domeny
+(+ Google Fonts) — nie dodawaj zasobów z CDN.
 
 ## Architektura
 

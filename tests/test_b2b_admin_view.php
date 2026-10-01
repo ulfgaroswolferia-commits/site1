@@ -22,7 +22,7 @@ $csrf = $m[1] ?? '';
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
     'login' => APP_LOGIN,
-    'password' => APP_PASSWORD,
+    'password' => (getenv('APP_TEST_PASSWORD') ?: 'admin123'),
     '_csrf' => $csrf
 ]));
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
@@ -35,7 +35,8 @@ $html = curl_exec($ch);
 
 echo "=== TEST: B2B Admin View ===\n";
 
-$hasTailwind    = strpos($html, 'tailwindcss') !== false;
+// Tailwind jest budowany statycznie do assets/css/b2b.css (bez CDN — patrz bin/tailwind/README.md)
+$hasTailwind    = strpos($html, 'assets/css/b2b.css') !== false && strpos($html, 'cdn.tailwindcss.com') === false;
 $hasTitle       = strpos($html, 'Hurtownia Magdy') !== false;
 $hasTabProducts = strpos($html, 'tab-products') !== false;
 $hasTabOrders   = strpos($html, 'tab-orders') !== false;
@@ -43,13 +44,13 @@ $hasTabClients  = strpos($html, 'tab-clients') !== false;
 $hasDropzone    = strpos($html, 'dropzone') !== false || strpos($html, 'file-input') !== false;
 $hasCopyBtn     = strpos($html, 'copy-token') !== false || strpos($html, 'copyToken') !== false;
 
-echo "1. Tailwind CSS zaĹ‚adowany: " . ($hasTailwind ? "OK" : "BĹÄ„D") . "\n";
-echo "2. Branding 'Hurtownia Magdy': " . ($hasTitle ? "OK" : "BĹÄ„D") . "\n";
-echo "3. ZakĹ‚adka 'Cennik & Oferta': " . ($hasTabProducts ? "OK" : "BĹÄ„D") . "\n";
-echo "4. ZakĹ‚adka 'SpĹ‚ywajÄ…ce ZamĂłwienia': " . ($hasTabOrders ? "OK" : "BĹÄ„D") . "\n";
-echo "5. ZakĹ‚adka 'Klienci Hurtowni': " . ($hasTabClients ? "OK" : "BĹÄ„D") . "\n";
-echo "6. Strefa Uploadu Excela: " . ($hasDropzone ? "OK" : "BĹÄ„D") . "\n";
-echo "7. Kopiowanie linku z tokenem: " . ($hasCopyBtn ? "OK" : "BĹÄ„D") . "\n";
+echo "1. Tailwind CSS załadowany: " . ($hasTailwind ? "OK" : "BŁĄD") . "\n";
+echo "2. Branding 'Hurtownia Magdy': " . ($hasTitle ? "OK" : "BŁĄD") . "\n";
+echo "3. Zakładka 'Cennik & Oferta': " . ($hasTabProducts ? "OK" : "BŁĄD") . "\n";
+echo "4. Zakładka 'Spływające Zamówienia': " . ($hasTabOrders ? "OK" : "BŁĄD") . "\n";
+echo "5. Zakładka 'Klienci Hurtowni': " . ($hasTabClients ? "OK" : "BŁĄD") . "\n";
+echo "6. Strefa Uploadu Excela: " . ($hasDropzone ? "OK" : "BŁĄD") . "\n";
+echo "7. Kopiowanie linku z tokenem: " . ($hasCopyBtn ? "OK" : "BŁĄD") . "\n";
 
 @unlink($cookieFile);
 

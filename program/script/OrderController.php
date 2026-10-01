@@ -103,35 +103,11 @@ class OrderController extends AppController
 
         $file = $_FILES['price_list'];
         $originalName = $file['name'];
-        $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
-
-        if ($ext !== 'xlsx') {
-            App::json(['ok' => false, 'error' => 'Dozwolony jest wyłącznie format .xlsx (Excel).'], 400);
+        // Rozszerzenie, limit rozmiaru (ochrona przed DoS) i typ MIME z finfo.
+        $uploadError = Tools::validateXlsxUpload($file);
+        if ($uploadError !== null) {
+            App::json(['ok' => false, 'error' => $uploadError], 400);
             return;
-        }
-
-        // Limit rozmiaru pliku — ochrona przed DoS przez duże pliki.
-        $maxBytes = 20 * 1024 * 1024; // 20 MB
-        if ($file['size'] > $maxBytes) {
-            App::json(['ok' => false, 'error' => 'Plik jest za duży. Maksymalny rozmiar to 20 MB.'], 400);
-            return;
-        }
-
-        // Walidacja MIME przez finfo — rozszerzenie z $_FILES['name'] jest kontrolowane przez przeglądarkę.
-        // XLSX to plik ZIP, więc akceptujemy oba odpowiednie typy MIME.
-        $allowedMimes = [
-            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'application/zip',
-            'application/x-zip-compressed',
-        ];
-        if (function_exists('finfo_open')) {
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $detectedMime = finfo_file($finfo, $file['tmp_name']);
-            finfo_close($finfo);
-            if (!in_array($detectedMime, $allowedMimes, true)) {
-                App::json(['ok' => false, 'error' => 'Nieprawidłowy typ pliku. Dozwolony jest wyłącznie format .xlsx (Excel).'], 400);
-                return;
-            }
         }
 
         $tmpDir = BASE_PATH . '/tmp';
@@ -240,7 +216,8 @@ class OrderController extends AppController
         $totalAmount = 0.0;
 
         foreach ($items as $item) {
-            $qty = (float)($item['quantity'] ?? 0);
+            $rawQty = is_string($item['quantity'] ?? null) ? str_replace(',', '.', trim($item['quantity'])) : ($item['quantity'] ?? 0);
+            $qty = (float)$rawQty;
             if ($qty > 0) {
                 $isCustom = !empty($item['is_custom']) ? 1 : 0;
                 $name = trim(strip_tags((string)($item['name'] ?? $item['product_name'] ?? '')));

@@ -1,6 +1,6 @@
 ﻿<?php
 /**
- * Test weryfikacyjny konta klienta Magda (hasĹ‚o: Magda123) oraz usuniÄ™cia linku do Zamawiarki Magdy z panelu B2B.
+ * Test weryfikacyjny konta klienta Magda (hasło: Magda123) oraz usunięcia linku do Zamawiarki Magdy z panelu B2B.
  */
 if (!defined('BASE_PATH')) {
     define('BASE_PATH', dirname(__DIR__));
@@ -9,6 +9,23 @@ require_once BASE_PATH . '/program/config/data.php';
 require_once BASE_PATH . '/program/config/autoload.php';
 
 echo "=== TEST: KONTO MAGDA & B2B CLIENT VIEW ===\n";
+
+// Fixture: konto klienta 'Sklep Magda' (Magda / Magda123) — tworzone lub przywracane, jeśli go brak.
+$repo = new \App\B2bRepository();
+$stmtMagda = $repo->getPdo()->prepare("SELECT id FROM b2b_clients WHERE LOWER(login) = 'magda' LIMIT 1");
+$stmtMagda->execute();
+$magdaId = (int)$stmtMagda->fetchColumn();
+if ($magdaId > 0) {
+    $repo->updateClient($magdaId, ['company_name' => 'Sklep Magda', 'password' => 'Magda123', 'is_active' => 1]);
+} else {
+    $repo->createClient([
+        'company_name'     => 'Sklep Magda',
+        'login'            => 'Magda',
+        'password'         => 'Magda123',
+        'phone'            => '500000000',
+        'delivery_address' => 'Adres testowy',
+    ]);
+}
 
 $cookieFile = tempnam(sys_get_temp_dir(), 'cook_magda_');
 $ch = curl_init();
@@ -32,7 +49,7 @@ function req($url, $post = null, $follow = false) {
     return ['code' => $code, 'url' => $urlEff, 'body' => $body];
 }
 
-// 1. Logowanie na /b2b/login loginem 'Magda' i hasĹ‚em 'Magda123'
+// 1. Logowanie na /b2b/login loginem 'Magda' i hasłem 'Magda123'
 $resLoginGet = req('http://localhost/b2b/login');
 preg_match('/name="csrf_token"\s+value="([^"]+)"/', $resLoginGet['body'], $m);
 $csrfToken = $m[1] ?? '';
@@ -49,14 +66,14 @@ echo "   Docelowy URL: {$resLoginPost['url']}\n";
 $hasClientName = strpos($resLoginPost['body'], 'Sklep Magda') !== false;
 $hasCatalogTable = strpos($resLoginPost['body'], 'catalogTable') !== false;
 $hasFloatingCart = strpos($resLoginPost['body'], 'floatingCart') !== false;
-$isNotAdmin = strpos($resLoginPost['body'], 'Panel Hurtownika â€” ZarzÄ…dzanie') === false;
+$isNotAdmin = strpos($resLoginPost['body'], 'Panel Hurtownika — Zarządzanie') === false;
 
-echo "2. Rozpoznano firmÄ™ 'Sklep Magda': " . ($hasClientName ? "OK" : "BĹÄ„D") . "\n";
-echo "3. WyĹ›wietlono widok katalogu klienta B2B (tabela i koszyk): " . (($hasCatalogTable && $hasFloatingCart) ? "OK" : "BĹÄ„D") . "\n";
-echo "4. Brak widoku panelu hurtownika (widok wyĹ‚Ä…cznie klienta): " . ($isNotAdmin ? "OK" : "BĹÄ„D") . "\n";
+echo "2. Rozpoznano firmę 'Sklep Magda': " . ($hasClientName ? "OK" : "BŁĄD") . "\n";
+echo "3. Wyświetlono widok katalogu klienta B2B (tabela i koszyk): " . (($hasCatalogTable && $hasFloatingCart) ? "OK" : "BŁĄD") . "\n";
+echo "4. Brak widoku panelu hurtownika (widok wyłącznie klienta): " . ($isNotAdmin ? "OK" : "BŁĄD") . "\n";
 
 $hasLogoLink = (strpos($resLoginPost['body'], 'b2b" class="flex items-center gap-3 group') !== false || strpos($resLoginPost['body'], 'href="http://localhost/b2b"') !== false);
-echo "4a. Logo zawiera link do startu zamĂłwienia (/b2b): " . ($hasLogoLink ? "OK" : "BĹÄ„D") . "\n";
+echo "4a. Logo zawiera link do startu zamówienia (/b2b): " . ($hasLogoLink ? "OK" : "BŁĄD") . "\n";
 
 // Wylogowanie
 req('http://localhost/b2b/logout', null, true);
@@ -75,7 +92,7 @@ $resHomeLoginPost = req('http://localhost/home/login', [
 echo "5. Logowanie przez /home/login jako Magda (HTTP code): {$resHomeLoginPost['code']}\n";
 echo "   Docelowy URL: {$resHomeLoginPost['url']}\n";
 $hasClientName2 = strpos($resHomeLoginPost['body'], 'Sklep Magda') !== false;
-echo "6. Automatyczne przekierowanie do katalogu B2B z nazwÄ… 'Sklep Magda': " . ($hasClientName2 ? "OK" : "BĹÄ„D") . "\n";
+echo "6. Automatyczne przekierowanie do katalogu B2B z nazwą 'Sklep Magda': " . ($hasClientName2 ? "OK" : "BŁĄD") . "\n";
 
 // 3. Weryfikacja braku linku do "Zamawiarka Magdy" w panelu B2B
 $cookieAdmin = tempnam(sys_get_temp_dir(), 'cook_admin_test_');
@@ -92,7 +109,7 @@ preg_match('/name="_csrf"\s+value="([^"]+)"/', $bodyL, $m3);
 curl_setopt($chAdmin, CURLOPT_POST, true);
 curl_setopt($chAdmin, CURLOPT_POSTFIELDS, http_build_query([
     'login'    => APP_LOGIN,
-    'password' => APP_PASSWORD,
+    'password' => (getenv('APP_TEST_PASSWORD') ?: 'admin123'),
     '_csrf'    => $m3[1] ?? ''
 ]));
 curl_exec($chAdmin);
@@ -105,8 +122,8 @@ $adminPanelBody = curl_exec($chAdmin);
 $hasNoZamawiarka = strpos($adminPanelBody, 'Zamawiarka Magdy') === false;
 $hasNoOrderLink  = strpos($adminPanelBody, 'order/index') === false;
 
-echo "7. Link 'Zamawiarka Magdy' usuniÄ™ty z panelu B2B: " . ($hasNoZamawiarka ? "OK" : "BĹÄ„D") . "\n";
-echo "8. ĹšcieĹĽka 'order/index' usuniÄ™ta z panelu B2B: " . ($hasNoOrderLink ? "OK" : "BĹÄ„D") . "\n";
+echo "7. Link 'Zamawiarka Magdy' usunięty z panelu B2B: " . ($hasNoZamawiarka ? "OK" : "BŁĄD") . "\n";
+echo "8. Ścieżka 'order/index' usunięta z panelu B2B: " . ($hasNoOrderLink ? "OK" : "BŁĄD") . "\n";
 
 @unlink($cookieFile);
 @unlink($cookieAdmin);

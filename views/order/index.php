@@ -1186,6 +1186,132 @@ $appName       = 'Zamawiarka Magdy';
             color: #b91c1c;
         }
 
+        /* Spójny wskaźnik fokusu klawiatury */
+        a:focus-visible,
+        button:focus-visible,
+        select:focus-visible,
+        input:focus-visible {
+            outline: 3px solid var(--blue);
+            outline-offset: 2px;
+        }
+
+        /* Komunikaty walidacji przy polach */
+        .field-error {
+            margin: 6px 0 0;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #b91c1c;
+        }
+
+        .form-input[aria-invalid="true"],
+        .form-select[aria-invalid="true"] {
+            border-color: #dc2626;
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+        }
+
+        /* Powiadomienia (toast) */
+        .toast-region {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: min(420px, calc(100vw - 32px));
+            pointer-events: none;
+        }
+
+        .toast {
+            pointer-events: auto;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 14px 12px 16px;
+            border-radius: var(--radius-inner);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--blue);
+            background: var(--card-inner);
+            color: var(--fg);
+            box-shadow: var(--shadow);
+            font-size: 0.9rem;
+            font-weight: 600;
+            line-height: 1.45;
+        }
+
+        .toast-error { border-left-color: #dc2626; }
+        .toast-warning { border-left-color: #d97706; }
+        .toast-success { border-left-color: var(--emerald); }
+
+        .toast-body { flex: 1; }
+
+        .toast-body a {
+            color: var(--blue);
+            font-weight: 700;
+        }
+
+        .toast-action {
+            margin-top: 8px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .toast-action button {
+            border: 1px solid var(--blue);
+            background: var(--blue-light);
+            color: var(--blue-hover);
+            border-radius: 8px;
+            padding: 5px 10px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .toast-close {
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            font-size: 1.2rem;
+            line-height: 1;
+            cursor: pointer;
+            padding: 2px 4px;
+            border-radius: 6px;
+        }
+
+        .toast-close:hover { color: var(--fg); }
+
+        @media (max-width: 600px) {
+            .toast-region {
+                left: 16px;
+                right: 16px;
+                bottom: 16px;
+                max-width: none;
+            }
+        }
+
+        /* Baner przywracania szkicu zamówienia */
+        .draft-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 14px 18px;
+            border-radius: var(--radius-inner);
+            border: 1px solid rgba(37, 99, 235, 0.3);
+            background: var(--blue-light);
+            color: #1e3a8a;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .draft-banner-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
         .hidden { display: none !important; }
     </style>
 </head>
@@ -1370,6 +1496,20 @@ $appName       = 'Zamawiarka Magdy';
                 <span style="font-size: 0.85rem; color: var(--muted);">Format: <strong>.xlsx</strong> (nawet ze zdjęciami i banerami)</span>
             </div>
 
+            <!-- Niezapisany szkic zamówienia (localStorage) -->
+            <div id="draft-banner" class="draft-banner hidden" role="region" aria-label="Niezapisany szkic zamówienia">
+                <span id="draft-banner-text"></span>
+                <div class="draft-banner-actions" id="draft-banner-actions">
+                    <button type="button" id="btn-draft-restore" class="btn-primary" style="padding: 8px 16px;">Przywróć szkic</button>
+                    <button type="button" id="btn-draft-discard" class="btn-secondary" style="padding: 8px 16px;">Odrzuć</button>
+                </div>
+                <div class="draft-banner-actions hidden" id="draft-banner-confirm">
+                    <span style="align-self: center;">Na pewno odrzucić szkic?</span>
+                    <button type="button" id="btn-draft-discard-yes" class="btn-secondary" style="padding: 8px 16px; color: #b91c1c;">Tak, odrzuć</button>
+                    <button type="button" id="btn-draft-discard-no" class="btn-secondary" style="padding: 8px 16px;">Anuluj</button>
+                </div>
+            </div>
+
             <p style="margin: 0; color: var(--muted); line-height: 1.5;">
                 Przeciągnij lub wybierz plik Excela otrzymany z hurtowni warzyw i owoców. Parser automatycznie pominie wszelkie logotypy i grafiki, odczytując surową tabelę z towarami i cenami.
             </p>
@@ -1431,6 +1571,7 @@ $appName       = 'Zamawiarka Magdy';
                                     </option>
                                 <?php endforeach; ?>
                             </select>
+                            <p id="history-order-select-error" class="field-error hidden"></p>
                         </div>
 
                         <div class="form-col" style="flex: 0 0 auto; justify-content: flex-end;">
@@ -1533,7 +1674,7 @@ $appName       = 'Zamawiarka Magdy';
                     <div style="width: 1px; height: 28px; background: rgba(37, 99, 235, 0.2);"></div>
                     <div class="summary-stat">
                         <span class="summary-label">Razem do zapłaty</span>
-                        <span id="summary-total-amount" class="summary-value">0.00 zł</span>
+                        <span id="summary-total-amount" class="summary-value">0,00&nbsp;zł</span>
                     </div>
                 </div>
 
@@ -1619,13 +1760,15 @@ $appName       = 'Zamawiarka Magdy';
                             Nazwa towaru <span style="color: var(--danger);">*</span>
                         </label>
                         <input type="text" id="custom-prod-name" class="form-input" style="height: 42px;" placeholder="np. Koper włoski, Awokado Hass, Kurki świeże...">
+                        <p id="custom-prod-name-error" class="field-error hidden"></p>
                     </div>
 
                     <div>
                         <label for="custom-prod-qty" class="custom-field-label">
                             Ilość <span style="color: var(--danger);">*</span>
                         </label>
-                        <input type="number" id="custom-prod-qty" class="form-input" style="height: 42px; font-weight: 700;" min="0.1" step="0.5" placeholder="np. 5">
+                        <input type="text" id="custom-prod-qty" class="form-input" style="height: 42px; font-weight: 700;" placeholder="np. 4,5 lub 5" inputmode="decimal" autocomplete="off">
+                        <p id="custom-prod-qty-error" class="field-error hidden"></p>
                     </div>
 
                     <div>
@@ -1736,10 +1879,19 @@ $appName       = 'Zamawiarka Magdy';
         </section>
     </div>
 
+    <!-- Region powiadomień (toast) -->
+    <div id="toast-region" class="toast-region" role="status" aria-live="polite"></div>
+
     <!-- Interaktywna logika kreatora (Vanilla JS) -->
     <script>
         const CSRF_TOKEN = '<?= $csrfToken ?>';
         const BASE_URL   = '<?= $base ?>';
+        const LOGIN_URL  = BASE_URL + 'home/login';
+        const DRAFT_PREFIX = 'zamawiarka.draft.v1:' + <?= json_encode((string)($view['user'] ?? ''), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE) ?> + ':';
+        const DRAFT_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
+        // Formatowanie kwot WYŁĄCZNIE do wyświetlania (nie do wartości wysyłanych na serwer)
+        const formatPLN = (v) => new Intl.NumberFormat('pl-PL', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(Number(v) || 0) + ' zł';
 
         let currentFileId = null;
         let originalFileName = null;
@@ -1781,6 +1933,133 @@ $appName       = 'Zamawiarka Magdy';
             uploadStatus.classList.remove('hidden');
         }
 
+        // ---- Powiadomienia (toast) ----
+        // actions: [{label, onClick}] — przyciski w powiadomieniu; link: {href, label}
+        function showToast(message, type = 'info', opts = {}) {
+            const region = document.getElementById('toast-region');
+            if (!region) return null;
+
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+
+            const body = document.createElement('div');
+            body.className = 'toast-body';
+            const text = document.createElement('div');
+            text.textContent = message;
+            body.appendChild(text);
+
+            if (opts.link) {
+                const a = document.createElement('a');
+                a.href = opts.link.href;
+                a.textContent = opts.link.label;
+                body.appendChild(document.createTextNode(' '));
+                body.appendChild(a);
+            }
+
+            const close = () => { if (toast.parentNode) toast.parentNode.removeChild(toast); };
+
+            if (opts.actions && opts.actions.length) {
+                const actions = document.createElement('div');
+                actions.className = 'toast-action';
+                opts.actions.forEach(act => {
+                    const b = document.createElement('button');
+                    b.type = 'button';
+                    b.textContent = act.label;
+                    b.addEventListener('click', () => { close(); act.onClick(); });
+                    actions.appendChild(b);
+                });
+                body.appendChild(actions);
+            }
+
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.className = 'toast-close';
+            closeBtn.setAttribute('aria-label', 'Zamknij powiadomienie');
+            closeBtn.textContent = '×';
+            closeBtn.addEventListener('click', close);
+
+            toast.appendChild(body);
+            toast.appendChild(closeBtn);
+            region.appendChild(toast);
+
+            const timeout = opts.sticky ? 0 : (opts.timeout || (type === 'error' ? 9000 : 6000));
+            if (timeout > 0) setTimeout(close, timeout);
+            return toast;
+        }
+
+        // ---- Komunikaty walidacji przy polach ----
+        function setFieldError(field, message) {
+            if (!field) return;
+            const errEl = document.getElementById(field.id + '-error');
+            field.setAttribute('aria-invalid', 'true');
+            if (errEl) {
+                errEl.textContent = message;
+                errEl.classList.remove('hidden');
+                field.setAttribute('aria-describedby', errEl.id);
+            }
+            field.focus();
+        }
+
+        function clearFieldError(field) {
+            if (!field) return;
+            const errEl = document.getElementById(field.id + '-error');
+            field.removeAttribute('aria-invalid');
+            field.removeAttribute('aria-describedby');
+            if (errEl) {
+                errEl.textContent = '';
+                errEl.classList.add('hidden');
+            }
+        }
+
+        ['custom-prod-name', 'custom-prod-qty', 'history-order-select'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('input', () => clearFieldError(el));
+                el.addEventListener('change', () => clearFieldError(el));
+            }
+        });
+
+        // ---- Wygaśnięcie sesji ----
+        let sessionToastShown = false;
+
+        function sessionExpiredError() {
+            const err = new Error('Sesja wygasła — zaloguj się ponownie.');
+            err.sessionExpired = true;
+            if (!sessionToastShown) {
+                sessionToastShown = true;
+                const t = showToast('Sesja wygasła — zaloguj się ponownie.', 'error', {
+                    sticky: true,
+                    link: { href: LOGIN_URL, label: 'Przejdź do logowania' }
+                });
+                if (t) t.querySelector('.toast-close').addEventListener('click', () => { sessionToastShown = false; });
+            }
+            return err;
+        }
+
+        // Sprawdza odpowiedź przed res.json(): 401/403/419, przekierowanie na stronę logowania
+        // albo HTML zamiast JSON oznaczają wygasłą sesję.
+        async function parseJsonResponse(res) {
+            const contentType = res.headers.get('content-type') || '';
+            const isJson = contentType.includes('application/json');
+
+            if (res.status === 401 || res.status === 403 || res.status === 419) {
+                throw sessionExpiredError();
+            }
+            if (!isJson) {
+                if (res.redirected || contentType.includes('text/html')) {
+                    throw sessionExpiredError();
+                }
+                throw new Error('Serwer zwrócił odpowiedź inną niż JSON (kod ' + res.status + ').');
+            }
+            return await res.json();
+        }
+
+        // Komunikat błędu w toaście (pomija błąd sesji — ten ma już własne powiadomienie)
+        function reportError(prefix, err) {
+            if (err && err.sessionExpired) return;
+            showToast(prefix + (err && err.message ? err.message : String(err)), 'error');
+        }
+
         // Pomocniczy wrapper AJAX wymuszający nagłówki i czysty JSON
         function apiFetch(url, options = {}) {
             options.headers = Object.assign({
@@ -1788,16 +2067,7 @@ $appName       = 'Zamawiarka Magdy';
                 'Accept': 'application/json'
             }, options.headers || {});
 
-            return fetch(url, options).then(async res => {
-                const contentType = res.headers.get('content-type') || '';
-                if (!contentType.includes('application/json')) {
-                    if (res.status === 401 || res.status === 403) {
-                        throw new Error('Sesja wygasła. Odśwież stronę i zaloguj się ponownie.');
-                    }
-                    throw new Error('Serwer zwrócił odpowiedź inną niż JSON (kod ' + res.status + '). Sprawdź uprawnienia.');
-                }
-                return await res.json();
-            });
+            return fetch(url, options).then(parseJsonResponse);
         }
 
         // 1. Upload pliku do actionUpload
@@ -1845,7 +2115,271 @@ $appName       = 'Zamawiarka Magdy';
             const customQty = document.getElementById('custom-prod-qty');
             if (customName) customName.value = '';
             if (customQty) customQty.value = '';
+            clearFieldError(customName);
+            clearFieldError(customQty);
+            // Szkic zostaje w localStorage — można go przywrócić z banera w kroku 1
+            flushDraftSave();
+            currentContext = null;
+            offerStoredDraft();
         }
+
+        // ---- Szkic zamówienia w localStorage ----
+        // Klucz: DRAFT_PREFIX + kontekst cennika ('history:<id>' albo 'file:<nazwa pliku>').
+        // Dodatkowy wskaźnik DRAFT_PREFIX + 'last' pamięta kontekst ostatnio edytowanego szkicu.
+        let currentContext = null;
+        let draftSaveTimer = null;
+        let orderSaved = false;
+
+        function storageGet(key) {
+            try { return window.localStorage.getItem(key); } catch (e) { return null; }
+        }
+        function storageSet(key, value) {
+            try { window.localStorage.setItem(key, value); return true; } catch (e) { return false; }
+        }
+        function storageRemove(key) {
+            try { window.localStorage.removeItem(key); } catch (e) { /* brak dostępu do storage */ }
+        }
+
+        function readDraft(context) {
+            if (!context) return null;
+            const raw = storageGet(DRAFT_PREFIX + context);
+            if (!raw) return null;
+            try {
+                const d = JSON.parse(raw);
+                if (!d || d.v !== 1 || !Array.isArray(d.products) || !Array.isArray(d.customItems)) return null;
+                if (Date.now() - (d.savedAt || 0) > DRAFT_MAX_AGE_MS) {
+                    storageRemove(DRAFT_PREFIX + context);
+                    return null;
+                }
+                return d;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function draftItemCount(d) {
+            if (!d) return 0;
+            return d.products.filter(p => Number(p.quantity) > 0).length + d.customItems.length;
+        }
+
+        function hasUnsavedQuantities() {
+            if (orderSaved || !currentContext) return false;
+            return productsList.some(p => p.quantity > 0) || customItems.length > 0;
+        }
+
+        function removeDraft(context) {
+            if (!context) return;
+            storageRemove(DRAFT_PREFIX + context);
+            if (storageGet(DRAFT_PREFIX + 'last') === context) {
+                storageRemove(DRAFT_PREFIX + 'last');
+            }
+        }
+
+        function saveDraftNow() {
+            draftSaveTimer = null;
+            if (!currentContext || orderSaved) return;
+            if (!hasUnsavedQuantities()) {
+                removeDraft(currentContext);
+                return;
+            }
+            const supplierInput = document.getElementById('supplier-name');
+            const draft = {
+                v: 1,
+                context: currentContext,
+                savedAt: Date.now(),
+                supplierName: supplierInput ? supplierInput.value : '',
+                originalFileName: originalFileName || 'cennik.xlsx',
+                products: productsList.map(p => ({
+                    name: p.name,
+                    price: Number(p.price) || 0,
+                    unit: p.unit,
+                    quantity: Number(p.quantity) || 0
+                })),
+                customItems: customItems.map(c => ({
+                    name: c.name,
+                    unit: c.unit,
+                    quantity: Number(c.quantity) || 0
+                }))
+            };
+            if (storageSet(DRAFT_PREFIX + currentContext, JSON.stringify(draft))) {
+                storageSet(DRAFT_PREFIX + 'last', currentContext);
+            }
+        }
+
+        function scheduleDraftSave() {
+            if (draftSaveTimer) clearTimeout(draftSaveTimer);
+            draftSaveTimer = setTimeout(saveDraftNow, 300);
+        }
+
+        function flushDraftSave() {
+            if (draftSaveTimer) {
+                clearTimeout(draftSaveTimer);
+                saveDraftNow();
+            }
+        }
+
+        function customItemsFromDraft(d) {
+            return d.customItems
+                .filter(c => c && c.name && Number(c.quantity) > 0)
+                .map(c => ({
+                    name: String(c.name),
+                    quantity: Number(c.quantity),
+                    unit: c.unit || 'kg',
+                    is_custom: 1,
+                    price: 0.00
+                }));
+        }
+
+        // Pełne przywrócenie szkicu (z banera w kroku 1): odtwarza cennik zapisany w szkicu
+        function restoreDraftSnapshot(d) {
+            currentContext = d.context;
+            originalFileName = d.originalFileName || 'cennik.xlsx';
+            const supplierInput = document.getElementById('supplier-name');
+            if (supplierInput) supplierInput.value = d.supplierName || '';
+            productsList = d.products
+                .filter(p => p && p.name)
+                .map(p => ({
+                    name: String(p.name),
+                    price: Number(p.price) || 0,
+                    unit: p.unit || 'kg',
+                    quantity: Math.max(0, Number(p.quantity) || 0)
+                }));
+            customItems = customItemsFromDraft(d);
+            hideDraftBanner();
+            step1.classList.add('hidden');
+            step2.classList.add('hidden');
+            step4.classList.add('hidden');
+            step3.classList.remove('hidden');
+            renderProductsTable();
+            renderCustomItemsTable();
+            showToast('Przywrócono niezapisany szkic zamówienia.', 'success');
+        }
+
+        // Nałożenie ilości ze szkicu na świeżo wczytany cennik — tylko dla produktów, które nadal w nim są
+        function mergeDraftIntoCurrent(d) {
+            const byName = new Map();
+            d.products.forEach(p => {
+                if (p && p.name && Number(p.quantity) > 0) byName.set(String(p.name), p);
+            });
+            let applied = 0;
+            productsList.forEach(p => {
+                const saved = byName.get(p.name);
+                if (saved) {
+                    p.quantity = Number(saved.quantity) || 0;
+                    if (saved.unit) p.unit = saved.unit;
+                    byName.delete(p.name);
+                    applied++;
+                }
+            });
+            customItems = customItemsFromDraft(d);
+            renderProductsTable();
+            renderCustomItemsTable();
+            scheduleDraftSave();
+
+            let msg = 'Przywrócono ilości ze szkicu (' + applied + ' poz. z cennika';
+            msg += customItems.length ? ', ' + customItems.length + ' spoza cennika).' : ').';
+            if (byName.size > 0) {
+                msg += ' Pominięto ' + byName.size + ' poz. nieobecnych w tym cenniku.';
+            }
+            showToast(msg, byName.size > 0 ? 'warning' : 'success');
+        }
+
+        // Wywoływane po wczytaniu cennika (upload/historia). Wczytanie jest jawną akcją
+        // użytkownika, więc wygrywa — szkic dla tego samego kontekstu jest tylko proponowany.
+        function activateContext(context) {
+            flushDraftSave();
+            orderSaved = false;
+            currentContext = context;
+            hideDraftBanner();
+            const d = readDraft(context);
+            if (d && draftItemCount(d) > 0) {
+                showToast('Masz niezapisany szkic dla tego cennika (' + draftItemCount(d) + ' poz.).', 'info', {
+                    timeout: 15000,
+                    actions: [{ label: 'Przywróć ilości ze szkicu', onClick: () => mergeDraftIntoCurrent(d) }]
+                });
+                return true;
+            }
+            return false;
+        }
+
+        let bannerDraft = null;
+
+        function hideDraftBanner() {
+            bannerDraft = null;
+            const banner = document.getElementById('draft-banner');
+            if (banner) banner.classList.add('hidden');
+        }
+
+        function offerStoredDraft() {
+            const last = storageGet(DRAFT_PREFIX + 'last');
+            const d = readDraft(last);
+            const banner = document.getElementById('draft-banner');
+            if (!banner) return;
+            if (!d || draftItemCount(d) === 0) {
+                hideDraftBanner();
+                return;
+            }
+            bannerDraft = d;
+            const when = new Date(d.savedAt);
+            const label = d.supplierName ? d.supplierName : (d.originalFileName || 'cennik');
+            document.getElementById('draft-banner-text').textContent =
+                'Masz niezapisany szkic zamówienia: ' + label + ' — ' + draftItemCount(d) + ' poz. (zapisany ' +
+                when.toLocaleString('pl-PL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) + ').';
+            document.getElementById('draft-banner-actions').classList.remove('hidden');
+            document.getElementById('draft-banner-confirm').classList.add('hidden');
+            banner.classList.remove('hidden');
+        }
+
+        document.getElementById('btn-draft-restore').addEventListener('click', () => {
+            if (bannerDraft) restoreDraftSnapshot(bannerDraft);
+        });
+        // Odrzucenie szkicu jest nieodwracalne — potwierdzenie inline zamiast confirm()
+        document.getElementById('btn-draft-discard').addEventListener('click', () => {
+            document.getElementById('draft-banner-actions').classList.add('hidden');
+            document.getElementById('draft-banner-confirm').classList.remove('hidden');
+            document.getElementById('btn-draft-discard-no').focus();
+        });
+        document.getElementById('btn-draft-discard-no').addEventListener('click', () => {
+            document.getElementById('draft-banner-confirm').classList.add('hidden');
+            document.getElementById('draft-banner-actions').classList.remove('hidden');
+            document.getElementById('btn-draft-discard').focus();
+        });
+        document.getElementById('btn-draft-discard-yes').addEventListener('click', () => {
+            if (bannerDraft) removeDraft(bannerDraft.context);
+            hideDraftBanner();
+            showToast('Szkic zamówienia został odrzucony.', 'info');
+        });
+
+        document.getElementById('supplier-name').addEventListener('input', () => {
+            if (currentContext) scheduleDraftSave();
+        });
+
+        window.addEventListener('beforeunload', (e) => {
+            flushDraftSave();
+            if (hasUnsavedQuantities()) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        // Sprzątanie przeterminowanych szkiców (starszych niż DRAFT_MAX_AGE_MS)
+        (function pruneOldDrafts() {
+            try {
+                const ls = window.localStorage;
+                const stale = [];
+                for (let i = 0; i < ls.length; i++) {
+                    const k = ls.key(i);
+                    if (!k || k.indexOf(DRAFT_PREFIX) !== 0 || k === DRAFT_PREFIX + 'last') continue;
+                    try {
+                        const d = JSON.parse(ls.getItem(k));
+                        if (!d || Date.now() - (d.savedAt || 0) > DRAFT_MAX_AGE_MS) stale.push(k);
+                    } catch (e) {
+                        stale.push(k);
+                    }
+                }
+                stale.forEach(k => ls.removeItem(k));
+            } catch (e) { /* brak dostępu do storage */ }
+        })();
 
         // 1b. Obsługa wczytywania cennika z historii
         const btnLoadHistory = document.getElementById('btn-load-history');
@@ -1854,9 +2388,10 @@ $appName       = 'Zamawiarka Magdy';
                 const select = document.getElementById('history-order-select');
                 const orderId = select ? select.value : null;
                 if (!orderId) {
-                    alert('Proszę wybrać zamówienie z listy.');
+                    setFieldError(select, 'Proszę wybrać zamówienie z listy.');
                     return;
                 }
+                clearFieldError(select);
 
                 const keepQty = document.getElementById('history-keep-qty')?.checked || false;
                 const originalText = btnLoadHistory.innerHTML;
@@ -1877,12 +2412,12 @@ $appName       = 'Zamawiarka Magdy';
                     btnLoadHistory.innerHTML = originalText;
 
                     if (!data.ok) {
-                        alert(data.error || 'Nie udało się wczytać cennika z historii.');
+                        showToast(data.error || 'Nie udało się wczytać cennika z historii.', 'error');
                         return;
                     }
 
                     if (!data.products || data.products.length === 0) {
-                        alert('Wybrane zamówienie nie zawiera pozycji asortymentowych.');
+                        showToast('Wybrane zamówienie nie zawiera pozycji asortymentowych.', 'warning');
                         return;
                     }
 
@@ -1916,11 +2451,15 @@ $appName       = 'Zamawiarka Magdy';
                     step3.classList.remove('hidden');
                     renderProductsTable();
                     renderCustomItemsTable();
+
+                    // Szkic dla tego zamówienia jest tylko proponowany (toast) — nie nadpisuje wczytanych danych
+                    const draftOffered = activateContext('history:' + orderId);
+                    if (keepQty && !draftOffered) scheduleDraftSave();
                 })
                 .catch(err => {
                     btnLoadHistory.disabled = false;
                     btnLoadHistory.innerHTML = originalText;
-                    alert('Błąd wczytywania cennika z historii: ' + err.message);
+                    reportError('Błąd wczytywania cennika z historii: ', err);
                 });
             });
         }
@@ -1964,7 +2503,7 @@ $appName       = 'Zamawiarka Magdy';
             // Wiersze podglądu
             for (const r in previewRows) {
                 const rowCells = previewRows[r];
-                let rowHtml = `<tr><td style="font-weight: 700; color: #94a3b8;">${r}</td>`;
+                let rowHtml = `<tr><td style="font-weight: 700; color: var(--muted);">${escapeHtml(r)}</td>`;
                 for (let c = 0; c < maxCols; c++) {
                     const val = rowCells[c] !== undefined ? rowCells[c] : '';
                     rowHtml += `<td>${escapeHtml(val)}</td>`;
@@ -2030,7 +2569,7 @@ $appName       = 'Zamawiarka Magdy';
             })
             .then(data => {
                 if (!data.ok) {
-                    alert(data.error || 'Błąd przetwarzania produktów.');
+                    showToast(data.error || 'Błąd przetwarzania produktów.', 'error');
                     return;
                 }
                 productsList = data.products.map(p => ({
@@ -2038,8 +2577,9 @@ $appName       = 'Zamawiarka Magdy';
                     quantity: 0
                 }));
                 renderStep3();
+                activateContext('file:' + (originalFileName || 'cennik.xlsx'));
             })
-            .catch(err => alert('Błąd: ' + err.message));
+            .catch(err => reportError('Błąd: ', err));
         });
 
         // 3. Krok 3: Lista produktów i interaktywna tabela
@@ -2068,28 +2608,29 @@ $appName       = 'Zamawiarka Magdy';
                 }
 
                 matchedCount++;
-                const itemTotal = (prod.quantity * prod.price).toFixed(2);
+                const itemTotal = formatPLN(prod.quantity * prod.price);
                 const hasQtyClass = prod.quantity > 0 ? 'has-qty' : '';
+                const nameAttr = escapeHtml(prod.name);
 
                 const tr = document.createElement('tr');
                 tr.className = hasQtyClass;
                 tr.innerHTML = `
-                    <td style="color: #94a3b8; font-weight: 600;">${index + 1}</td>
+                    <td style="color: var(--muted); font-weight: 600;">${index + 1}</td>
                     <td>
                         <span class="prod-name">${escapeHtml(prod.name)}</span>
                     </td>
                     <td>
-                        <span class="prod-price">${prod.price.toFixed(2)} zł</span>
+                        <span class="prod-price">${formatPLN(prod.price)}</span>
                     </td>
                     <td>
                         <div class="qty-control">
-                            <button type="button" class="qty-btn" onclick="changeQty(${index}, -1)">-</button>
-                            <input type="number" step="0.5" min="0" class="qty-input" value="${prod.quantity === 0 ? '' : prod.quantity}" placeholder="0" oninput="setQty(${index}, this.value)">
-                            <button type="button" class="qty-btn" onclick="changeQty(${index}, 1)">+</button>
+                            <button type="button" class="qty-btn" onclick="changeQty(${index}, -1)" aria-label="Zmniejsz ilość: ${nameAttr}">-</button>
+                            <input type="number" step="0.5" min="0" class="qty-input" value="${prod.quantity === 0 ? '' : prod.quantity}" placeholder="0" oninput="setQty(${index}, this.value)" aria-label="Ilość: ${nameAttr}">
+                            <button type="button" class="qty-btn" onclick="changeQty(${index}, 1)" aria-label="Zwiększ ilość: ${nameAttr}">+</button>
                         </div>
                     </td>
                     <td>
-                        <select class="form-select" style="padding: 6px 8px; font-size: 0.85rem;" onchange="setUnit(${index}, this.value)">
+                        <select class="form-select" style="padding: 6px 8px; font-size: 0.85rem;" onchange="setUnit(${index}, this.value)" aria-label="Jednostka: ${nameAttr}">
                             <option value="kg" ${prod.unit === 'kg' ? 'selected' : ''}>kg</option>
                             <option value="szt." ${prod.unit === 'szt.' ? 'selected' : ''}>szt.</option>
                             <option value="op." ${prod.unit === 'op.' ? 'selected' : ''}>op.</option>
@@ -2097,7 +2638,7 @@ $appName       = 'Zamawiarka Magdy';
                         </select>
                     </td>
                     <td>
-                        <span class="item-val" id="val-${index}">${itemTotal} zł</span>
+                        <span class="item-val" id="val-${index}">${itemTotal}</span>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -2115,20 +2656,22 @@ $appName       = 'Zamawiarka Magdy';
             current = Math.max(0, current + delta);
             productsList[index].quantity = current;
             renderProductsTable();
+            scheduleDraftSave();
         }
 
         function setQty(index, value) {
             let val = parseFloat(value) || 0;
             if (val < 0) val = 0;
             productsList[index].quantity = val;
-            const itemTotal = (val * productsList[index].price).toFixed(2);
             const valEl = document.getElementById('val-' + index);
-            if (valEl) valEl.textContent = itemTotal + ' zł';
+            if (valEl) valEl.textContent = formatPLN(val * productsList[index].price);
             updateSummary();
+            scheduleDraftSave();
         }
 
         function setUnit(index, unitVal) {
             productsList[index].unit = unitVal;
+            scheduleDraftSave();
         }
 
         function updateSummary() {
@@ -2154,7 +2697,7 @@ $appName       = 'Zamawiarka Magdy';
                 summaryCountEl.textContent = catalogCount;
             }
 
-            document.getElementById('summary-total-amount').textContent = totalAmount.toFixed(2) + ' zł';
+            document.getElementById('summary-total-amount').textContent = formatPLN(totalAmount);
         }
 
         // Obsługa produktów spoza cennika
@@ -2164,24 +2707,60 @@ $appName       = 'Zamawiarka Magdy';
             const unitEl = document.getElementById('custom-prod-unit');
 
             const name = nameEl ? nameEl.value.trim() : '';
-            const qty  = qtyEl ? parseFloat(qtyEl.value) : 0;
+            const rawQty = qtyEl ? qtyEl.value : '';
+
+            // Jeśli użytkownik wpisał jednostkę bezpośrednio w polu ilości (np. "4,5 kg"), zsynchronizuj selektor jednostki
+            const unitMatch = String(rawQty).trim().match(/\s*(kg|szt\.?|op\.?|pęczek|skrzynka|karton|worek)\s*$/i);
+            if (unitMatch && unitEl) {
+                const rawU = unitMatch[1].toLowerCase();
+                let normU = rawU;
+                if (normU.startsWith('szt')) normU = 'szt.';
+                else if (normU.startsWith('op')) normU = 'op.';
+                for (let opt of unitEl.options) {
+                    if (opt.value === normU) {
+                        unitEl.value = normU;
+                        break;
+                    }
+                }
+            }
+
+            let parsedQty = null;
+            if (rawQty) {
+                let s = String(rawQty).trim().replace(/\s+/g, ' ').replace(',', '.');
+                s = s.replace(/\s*(kg|szt\.?|op\.?|pęczek|skrzynka|karton|worek|g|l|litr)\s*$/i, '').trim();
+                if (/^\d+\/\d+$/.test(s)) {
+                    const parts = s.split('/');
+                    const den = parseFloat(parts[1]);
+                    if (den > 0) {
+                        const res = parseFloat(parts[0]) / den;
+                        if (Number.isFinite(res) && res > 0 && res < 100000) parsedQty = Math.round(res * 1000) / 1000;
+                    }
+                } else if (/^\d+(\.\d+)?$/.test(s) || /^\.\d+$/.test(s)) {
+                    const num = parseFloat(s);
+                    if (Number.isFinite(num) && num > 0 && num < 100000) {
+                        parsedQty = Math.round(num * 1000) / 1000;
+                    }
+                }
+            }
+
             const unit = unitEl ? unitEl.value.trim() : 'kg';
 
+            clearFieldError(nameEl);
+            clearFieldError(qtyEl);
+
             if (!name) {
-                alert('Proszę podać nazwę produktu spoza cennika.');
-                if (nameEl) nameEl.focus();
+                setFieldError(nameEl, 'Proszę podać nazwę produktu spoza cennika.');
                 return;
             }
 
-            if (!qty || qty <= 0 || isNaN(qty)) {
-                alert('Proszę podać prawidłową ilość (większą od zera).');
-                if (qtyEl) qtyEl.focus();
+            if (parsedQty === null) {
+                setFieldError(qtyEl, 'Proszę podać prawidłową ilość (np. 5 lub 4,5).');
                 return;
             }
 
             customItems.push({
                 name: name,
-                quantity: qty,
+                quantity: parsedQty,
                 unit: unit,
                 is_custom: 1,
                 price: 0.00
@@ -2192,6 +2771,7 @@ $appName       = 'Zamawiarka Magdy';
 
             renderCustomItemsTable();
             updateSummary();
+            scheduleDraftSave();
 
             const container = document.getElementById('custom-products-container');
             if (container) {
@@ -2201,9 +2781,22 @@ $appName       = 'Zamawiarka Magdy';
 
         function removeCustomProduct(idx) {
             if (idx >= 0 && idx < customItems.length) {
-                customItems.splice(idx, 1);
+                const removed = customItems.splice(idx, 1)[0];
                 renderCustomItemsTable();
                 updateSummary();
+                scheduleDraftSave();
+                // Usunięcie bez confirm(): pozycję można przywrócić z powiadomienia
+                showToast('Usunięto pozycję spoza cennika: ' + removed.name + '.', 'info', {
+                    actions: [{
+                        label: 'Cofnij',
+                        onClick: () => {
+                            customItems.splice(Math.min(idx, customItems.length), 0, removed);
+                            renderCustomItemsTable();
+                            updateSummary();
+                            scheduleDraftSave();
+                        }
+                    }]
+                });
             }
         }
 
@@ -2237,9 +2830,9 @@ $appName       = 'Zamawiarka Magdy';
                     </td>
                     <td style="text-align: center; font-weight: 800; color: #b45309;">${c.quantity} ${escapeHtml(c.unit)}</td>
                     <td style="font-size: 0.8rem; color: #92400e; font-style: italic;">Do potwierdzenia na rampie</td>
-                    <td style="text-align: right; font-size: 0.82rem; font-style: italic; color: #64748b;">Do wyceny</td>
+                    <td style="text-align: right; font-size: 0.82rem; font-style: italic; color: #475569;">Do wyceny</td>
                     <td style="text-align: center;">
-                        <button type="button" class="btn-del-custom" onclick="removeCustomProduct(${idx})" title="Usuń pozycję">×</button>
+                        <button type="button" class="btn-del-custom" onclick="removeCustomProduct(${idx})" title="Usuń pozycję" aria-label="Usuń pozycję: ${escapeHtml(c.name)}">×</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -2270,7 +2863,7 @@ $appName       = 'Zamawiarka Magdy';
             const allItems = [...catalogOrdered, ...customOrdered];
 
             if (allItems.length === 0) {
-                alert('Wprowadź ilość dla przynajmniej jednego produktu lub dodaj pozycję spoza cennika, aby utworzyć zamówienie.');
+                showToast('Wprowadź ilość dla przynajmniej jednego produktu lub dodaj pozycję spoza cennika, aby utworzyć zamówienie.', 'warning');
                 return;
             }
 
@@ -2304,9 +2897,14 @@ $appName       = 'Zamawiarka Magdy';
                 activeBtn.innerHTML = origHtml;
 
                 if (!data.ok) {
-                    alert(data.error || 'Błąd podczas zapisu zamówienia.');
+                    showToast(data.error || 'Błąd podczas zapisu zamówienia.', 'error');
                     return;
                 }
+
+                // Zamówienie zapisane — szkic nie jest już potrzebny (i nie blokuje beforeunload przy pobieraniu pliku)
+                if (draftSaveTimer) { clearTimeout(draftSaveTimer); draftSaveTimer = null; }
+                removeDraft(currentContext);
+                orderSaved = true;
 
                 // Sukces: przejście do Kroku 4
                 step3.classList.add('hidden');
@@ -2314,7 +2912,7 @@ $appName       = 'Zamawiarka Magdy';
 
                 document.getElementById('success-order-num').textContent = data.order_number;
                 document.getElementById('success-items-count').textContent = data.total_items + ' pozycji';
-                document.getElementById('success-total-amount').textContent = Number(data.total_amount).toFixed(2) + ' zł';
+                document.getElementById('success-total-amount').textContent = formatPLN(data.total_amount);
                 document.getElementById('btn-download-again').href = data.download_url;
 
                 // Prezentacja statusu wysyłki e-mail
@@ -2353,12 +2951,15 @@ $appName       = 'Zamawiarka Magdy';
                 btnSave.disabled = false;
                 btnSend.disabled = false;
                 activeBtn.innerHTML = origHtml;
-                alert('Błąd połączenia: ' + err.message);
+                reportError('Błąd połączenia: ', err);
             });
         }
 
         document.getElementById('btn-submit-order').addEventListener('click', () => submitOrder(false));
         document.getElementById('btn-submit-send-order').addEventListener('click', () => submitOrder(true));
+
+        // Przy starcie: zaproponuj przywrócenie ostatniego niezapisanego szkicu
+        offerStoredDraft();
 
         function escapeHtml(str) {
             if (!str) return '';

@@ -10,7 +10,7 @@ $base      = $view['base'] ?? App::baseUrl();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($title) ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="<?= Tools::h($base) ?>assets/css/b2b.css?v=<?= (int) @filemtime(BASE_PATH . '/assets/css/b2b.css') ?>">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
@@ -19,9 +19,9 @@ $base      = $view['base'] ?? App::baseUrl();
 <body class="h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-gradient-to-br from-emerald-50 via-slate-50 to-teal-50 min-h-screen">
     <div class="sm:mx-auto sm:w-full sm:max-w-md">
         <!-- Logo & Branding Link -->
-        <a href="<?= $base ?>b2b" class="flex justify-center items-center gap-3 group focus:outline-none" title="Przejdź do startu zamówienia">
+        <a href="<?= $base ?>b2b" class="flex justify-center items-center gap-3 group focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-4 rounded-2xl w-fit mx-auto" title="Przejdź do startu zamówienia">
             <div class="w-12 h-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-600/30 group-hover:bg-emerald-700 transition">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
             </div>
@@ -42,8 +42,8 @@ $base      = $view['base'] ?? App::baseUrl();
     <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
         <div class="bg-white py-8 px-6 shadow-xl shadow-slate-200/60 rounded-3xl border border-slate-100 sm:px-10">
             <?php if (!empty($error)): ?>
-                <div class="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-center gap-3">
-                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div id="loginError" role="alert" class="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-sm flex items-center gap-3">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                     </svg>
                     <span><?= htmlspecialchars($error) ?></span>
@@ -59,9 +59,10 @@ $base      = $view['base'] ?? App::baseUrl();
                         Login hurtownika lub NIP / e-mail sklepu
                     </label>
                     <div class="relative">
-                        <input id="login" name="login" type="text" required autofocus
-                            class="block w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
-                            placeholder="np. admin lub sklep@zielony.pl">
+                        <input id="login" name="login" type="text" required autofocus autocomplete="username" autocapitalize="none" spellcheck="false"
+                            <?php if (!empty($error)): ?>aria-invalid="true" aria-describedby="loginError"<?php endif; ?>
+                            class="block w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-base sm:text-sm transition"
+                            placeholder="Twój login">
                     </div>
                 </div>
 
@@ -70,15 +71,16 @@ $base      = $view['base'] ?? App::baseUrl();
                         Hasło dostępu
                     </label>
                     <div class="relative">
-                        <input id="password" name="password" type="password" required
-                            class="block w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm transition"
+                        <input id="password" name="password" type="password" required autocomplete="current-password"
+                            <?php if (!empty($error)): ?>aria-invalid="true" aria-describedby="loginError"<?php endif; ?>
+                            class="block w-full px-4 py-3 rounded-xl border border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-base sm:text-sm transition"
                             placeholder="••••••••">
                     </div>
                 </div>
 
                 <div>
                     <button type="submit"
-                        class="w-full flex justify-center py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-600/30 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition active:scale-[0.98]">
+                        class="w-full flex justify-center py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-600/30 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500 transition active:scale-[0.98]">
                         Zaloguj się do katalogu
                     </button>
                 </div>
@@ -98,7 +100,7 @@ $base      = $view['base'] ?? App::baseUrl();
             </div>
         </div>
 
-        <div class="text-center mt-6 text-xs text-slate-400">
+        <div class="text-center mt-6 text-xs text-slate-500">
             Hurtownia Owoców i Warzyw „Hurtownia Magdy” &bull; Wszystkie prawa zastrzeżone
         </div>
     </div>
