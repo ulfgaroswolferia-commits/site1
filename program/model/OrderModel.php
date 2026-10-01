@@ -44,6 +44,10 @@ class OrderModel extends \Model
             \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
             \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
         ]);
+        $pdo->exec('PRAGMA foreign_keys = ON;');
+        $pdo->exec('PRAGMA journal_mode = WAL;');
+        $pdo->exec('PRAGMA busy_timeout = 5000;');
+        $pdo->exec('PRAGMA synchronous = NORMAL;');
 
         $pdo->exec('
             CREATE TABLE IF NOT EXISTS orders (
@@ -74,6 +78,12 @@ class OrderModel extends \Model
         try {
             $pdo->exec("ALTER TABLE order_items ADD COLUMN is_custom INTEGER NOT NULL DEFAULT 0");
         } catch (\Throwable $e) {}
+        try {
+            $pdo->exec("ALTER TABLE orders ADD COLUMN idempotency_key TEXT DEFAULT NULL");
+        } catch (\Throwable $e) {}
+        try {
+            $pdo->exec("CREATE INDEX IF NOT EXISTS idx_orders_idempotency ON orders(idempotency_key)");
+        } catch (\Throwable $e) {}
 
         return $pdo;
     }
@@ -84,12 +94,19 @@ class OrderModel extends \Model
     public function generateOrderNumber(): string
     {
         $todayPrefix = 'ZAM/' . date('Y/m/d') . '/';
-        $stmt = $this->pdo()->prepare('SELECT COUNT(*) FROM orders WHERE order_number LIKE :prefix');
+        $stmt = $this->pdo()->prepare('SELECT order_number FROM orders WHERE order_number LIKE :prefix ORDER BY id DESC LIMIT 1');
         $stmt->execute([':prefix' => $todayPrefix . '%']);
-        $count = (int)$stmt->fetchColumn();
+        $lastOrder = $stmt->fetchColumn();
 
-        $seq = str_pad((string)($count + 1), 2, '0', STR_PAD_LEFT);
-        return $todayPrefix . $seq;
+        if ($lastOrder) {
+            $parts = explode('/', $lastOrder);
+            $seq = (int)end($parts);
+            $nextSeq = $seq + 1;
+        } else {
+            $nextSeq = 1;
+        }
+
+        return $todayPrefix . str_pad((string)$nextSeq, 2, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -98,82 +115,121 @@ class OrderModel extends \Model
     public function createOrder(array $orderData, array $items): int
     {
         $pdo = $this->pdo();
-        $pdo->beginTransaction();
+        $maxRetries = 5;
+        $attempt = 0;
 
-        try {
-            $orderNumber = $orderData['order_number'] ?? $this->generateOrderNumber();
-            $supplierName = trim($orderData['supplier_name'] ?? '');
-            $origFilename = $orderData['original_filename'] ?? 'cennik.xlsx';
-            $exportFilename = $orderData['export_filename'] ?? ('zamowienie_' . date('Ymd_His') . '.xlsx');
-            $createdAt = $orderData['created_at'] ?? date('Y-m-d H:i:s');
+        while ($attempt < $maxRetries) {
+            $attempt++;
+            $pdo->exec('BEGIN IMMEDIATE TRANSACTION');
 
-            $totalItems = 0;
-            $totalAmount = 0.0;
+            try {
+                $orderNumber = $orderData['order_number'] ?? $this->generateOrderNumber();
+                $supplierName = trim($orderData['supplier_name'] ?? '');
+                $origFilename = $orderData['original_filename'] ?? 'cennik.xlsx';
+                $exportFilename = $orderData['export_filename'] ?? ('zamowienie_' . date('Ymd_His') . '.xlsx');
+                $createdAt = $orderData['created_at'] ?? date('Y-m-d H:i:s');
 
-            // Obliczenie sum
-            foreach ($items as $item) {
-                $rawQty = is_string($item['quantity'] ?? null) ? str_replace(',', '.', trim($item['quantity'])) : ($item['quantity'] ?? 0);
-                $qty = (float)$rawQty;
-                if ($qty > 0) {
-                    $totalItems++;
-                    $isCustom = !empty($item['is_custom']);
-                    $price = $isCustom ? 0.00 : (float)($item['price'] ?? $item['unit_price'] ?? 0);
-                    $totalAmount += round($qty * $price, 2);
-                }
-            }
+                $totalItems = 0;
+                $totalAmount = 0.0;
 
-            $stmtOrder = $pdo->prepare('
-                INSERT INTO orders (order_number, supplier_name, original_filename, export_filename, total_items, total_amount, created_at)
-                VALUES (:num, :supplier, :orig_file, :exp_file, :items_cnt, :total_amt, :created)
-            ');
-
-            $stmtOrder->execute([
-                ':num'       => $orderNumber,
-                ':supplier'  => $supplierName,
-                ':orig_file' => $origFilename,
-                ':exp_file'  => $exportFilename,
-                ':items_cnt' => $totalItems,
-                ':total_amt' => round($totalAmount, 2),
-                ':created'   => $createdAt,
-            ]);
-
-            $orderId = (int)$pdo->lastInsertId();
-
-            $stmtItem = $pdo->prepare('
-                INSERT INTO order_items (order_id, is_custom, product_name, unit_price, quantity, unit, item_total)
-                VALUES (:order_id, :is_custom, :prod_name, :price, :qty, :unit, :item_total)
-            ');
-
-            foreach ($items as $item) {
-                $rawQty = is_string($item['quantity'] ?? null) ? str_replace(',', '.', trim($item['quantity'])) : ($item['quantity'] ?? 0);
-                $qty = (float)$rawQty;
-                if ($qty <= 0) {
-                    continue; // Zapisujemy tylko zamówione pozycje
+                // Obliczenie sum
+                foreach ($items as $item) {
+                    $rawQty = is_string($item['quantity'] ?? null) ? str_replace(',', '.', trim($item['quantity'])) : ($item['quantity'] ?? 0);
+                    $qty = (float)$rawQty;
+                    if ($qty > 0) {
+                        $totalItems++;
+                        $isCustom = !empty($item['is_custom']);
+                        $price = $isCustom ? 0.00 : (float)($item['price'] ?? $item['unit_price'] ?? 0);
+                        $totalAmount += round($qty * $price, 2);
+                    }
                 }
 
-                $isCustom = !empty($item['is_custom']) ? 1 : 0;
-                $name  = trim((string)($item['name'] ?? $item['product_name'] ?? ''));
-                $price = $isCustom ? 0.00 : (float)($item['price'] ?? $item['unit_price'] ?? 0);
-                $unit  = trim((string)($item['unit'] ?? 'kg'));
-                $itemTotal = round($qty * $price, 2);
+                $stmtOrder = $pdo->prepare('
+                    INSERT INTO orders (order_number, supplier_name, original_filename, export_filename, total_items, total_amount, idempotency_key, created_at)
+                    VALUES (:num, :supplier, :orig_file, :exp_file, :items_cnt, :total_amt, :idempotency, :created)
+                ');
 
-                $stmtItem->execute([
-                    ':order_id'   => $orderId,
-                    ':is_custom'  => $isCustom,
-                    ':prod_name'  => $name,
-                    ':price'      => $price,
-                    ':qty'        => $qty,
-                    ':unit'       => $unit,
-                    ':item_total' => $itemTotal,
+                $stmtOrder->execute([
+                    ':num'         => $orderNumber,
+                    ':supplier'    => $supplierName,
+                    ':orig_file'   => $origFilename,
+                    ':exp_file'    => $exportFilename,
+                    ':items_cnt'   => $totalItems,
+                    ':total_amt'   => round($totalAmount, 2),
+                    ':idempotency' => !empty($orderData['idempotency_key']) ? trim($orderData['idempotency_key']) : null,
+                    ':created'     => $createdAt,
                 ]);
-            }
 
-            $pdo->commit();
-            return $orderId;
-        } catch (\Throwable $e) {
-            $pdo->rollBack();
-            throw $e;
+                $orderId = (int)$pdo->lastInsertId();
+
+                $stmtItem = $pdo->prepare('
+                    INSERT INTO order_items (order_id, is_custom, product_name, unit_price, quantity, unit, item_total)
+                    VALUES (:order_id, :is_custom, :prod_name, :price, :qty, :unit, :item_total)
+                ');
+
+                foreach ($items as $item) {
+                    $rawQty = is_string($item['quantity'] ?? null) ? str_replace(',', '.', trim($item['quantity'])) : ($item['quantity'] ?? 0);
+                    $qty = (float)$rawQty;
+                    if ($qty <= 0) {
+                        continue; // Zapisujemy tylko zamówione pozycje
+                    }
+
+                    $isCustom = !empty($item['is_custom']) ? 1 : 0;
+                    $name  = trim((string)($item['name'] ?? $item['product_name'] ?? ''));
+                    $price = $isCustom ? 0.00 : (float)($item['price'] ?? $item['unit_price'] ?? 0);
+                    $unit  = trim((string)($item['unit'] ?? 'kg'));
+                    $itemTotal = round($qty * $price, 2);
+
+                    $stmtItem->execute([
+                        ':order_id'   => $orderId,
+                        ':is_custom'  => $isCustom,
+                        ':prod_name'  => $name,
+                        ':price'      => $price,
+                        ':qty'        => $qty,
+                        ':unit'       => $unit,
+                        ':item_total' => $itemTotal,
+                    ]);
+                }
+
+                $pdo->exec('COMMIT');
+                return $orderId;
+            } catch (\Throwable $e) {
+                try {
+                    $pdo->exec('ROLLBACK');
+                } catch (\Throwable $rbErr) {}
+
+                $msg = $e->getMessage();
+                $isConcurrencyError = (
+                    str_contains($msg, 'UNIQUE constraint failed') ||
+                    str_contains($msg, 'database is locked') ||
+                    str_contains($msg, 'busy')
+                );
+
+                if ($isConcurrencyError && $attempt < $maxRetries && empty($orderData['order_number'])) {
+                    usleep(rand(20000, 80000));
+                    continue;
+                }
+
+                throw $e;
+            }
         }
+
+        throw new \RuntimeException("Nie udało się utworzyć zamówienia po {$maxRetries} próbach współbieżnych.");
+    }
+
+    /**
+     * Zwraca zamówienie po kluczu idempotencji (ochrona przed duplikatami).
+     */
+    public function getOrderByIdempotencyKey(string $key): ?array
+    {
+        $key = trim($key);
+        if ($key === '') {
+            return null;
+        }
+        $stmt = $this->pdo()->prepare('SELECT * FROM orders WHERE idempotency_key = :k ORDER BY id DESC LIMIT 1');
+        $stmt->execute([':k' => $key]);
+        $row = $stmt->fetch();
+        return $row !== false ? $row : null;
     }
 
     /**

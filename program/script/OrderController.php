@@ -250,6 +250,25 @@ class OrderController extends AppController
 
         try {
             $model = new \App\OrderModel();
+            $idempotencyKey = trim((string)($_POST['idempotency_key'] ?? ''));
+            if ($idempotencyKey !== '') {
+                $existingOrder = $model->getOrderByIdempotencyKey($idempotencyKey);
+                if ($existingOrder) {
+                    App::json([
+                        'ok'            => true,
+                        'order_id'      => (int)$existingOrder['id'],
+                        'order_number'  => $existingOrder['order_number'],
+                        'download_url'  => App::baseUrl() . 'order/download/id/' . $existingOrder['id'],
+                        'total_items'   => (int)$existingOrder['total_items'],
+                        'total_amount'  => (float)$existingOrder['total_amount'],
+                        'email_status'  => 'skipped',
+                        'email_message' => 'Zamówienie zostało już wcześniej zapisane (ochrona przed duplikatem).',
+                        'replayed'      => true,
+                    ]);
+                    return;
+                }
+            }
+
             $orderNumber = $model->generateOrderNumber();
             $safeNum = str_replace('/', '_', $orderNumber);
             $exportFilename = 'zamowienie_' . $safeNum . '.xlsx';
@@ -273,6 +292,7 @@ class OrderController extends AppController
                 'supplier_name'     => $supplierName,
                 'original_filename' => $originalName,
                 'export_filename'   => $exportFilename,
+                'idempotency_key'   => $idempotencyKey !== '' ? $idempotencyKey : null,
             ], $validItems);
 
             // 3. Opcjonalna wysyłka e-mail do hurtowni

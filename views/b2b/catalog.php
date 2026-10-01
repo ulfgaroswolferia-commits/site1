@@ -1551,6 +1551,14 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                 });
             });
 
+            let currentIdempotencyKey = null;
+            function getIdempotencyKey() {
+                if (!currentIdempotencyKey) {
+                    currentIdempotencyKey = 'b2b_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+                }
+                return currentIdempotencyKey;
+            }
+
             // Złożenie zamówienia AJAX
             btnConfirmOrder.addEventListener('click', async () => {
                 const items = getOrderedItems();
@@ -1567,6 +1575,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     formData.append('items', JSON.stringify(items));
                     formData.append('notes', orderNotes.value.trim());
                     formData.append('_csrf', CSRF_TOKEN);
+                    formData.append('idempotency_key', getIdempotencyKey());
 
                     const checkedDelivery = document.querySelector('input[name="modal_delivery_date"]:checked');
                     if (checkedDelivery && checkedDelivery.value) {
@@ -1592,6 +1601,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
                     const { resOk, data } = result;
 
                     if (resOk && data.ok) {
+                        currentIdempotencyKey = null; // Sukces: zresetuj token na kolejne zamówienie
                         orderCompleted = true;
                         clearDraft();
                         checkoutModal.classList.add('hidden');
@@ -1623,6 +1633,7 @@ $title      = $view['title'] ?? 'Katalog Zamówień B2B — Hurtownia Magdy';
             });
 
             btnNewOrder.addEventListener('click', () => {
+                currentIdempotencyKey = null;
                 successModal.classList.add('hidden');
                 rows.forEach(row => {
                     row.querySelector('.input-qty').value = '';

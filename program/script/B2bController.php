@@ -179,6 +179,23 @@ class B2bController extends AppController
 
         $this->requireCsrf();
 
+        $idempotencyKey = trim((string)($_POST['idempotency_key'] ?? ''));
+        if ($idempotencyKey !== '') {
+            $existingOrder = $this->repo->getOrderByCustomerAndIdempotencyKey($clientId, $idempotencyKey);
+            if ($existingOrder) {
+                App::json([
+                    'ok'              => true,
+                    'order_id'        => (int)$existingOrder['id'],
+                    'order_number'    => $existingOrder['order_number'],
+                    'delivery_date'   => $existingOrder['delivery_date'],
+                    'total_amount'    => (float)$existingOrder['total_amount'],
+                    'export_filename' => $existingOrder['export_filename'],
+                    'replayed'        => true,
+                ]);
+                return;
+            }
+        }
+
         $rawItems = $_POST['items'] ?? null;
         if (is_string($rawItems)) {
             $items = json_decode($rawItems, true);
@@ -254,6 +271,7 @@ class B2bController extends AppController
             'export_filename'           => $fileName,
             'total_amount'              => $totalAmount,
             'notes'                     => $notes,
+            'idempotency_key'           => $idempotencyKey !== '' ? $idempotencyKey : null,
         ], $preparedItems);
 
         $responseData = [

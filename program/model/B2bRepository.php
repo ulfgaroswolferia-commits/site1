@@ -57,12 +57,59 @@ class B2bRepository
             $this->pdo->exec('PRAGMA synchronous = NORMAL;');
         }
 
-        $this->initDatabase();
+        if ($this->driver === 'sqlite') {
+            $marker = $dbDir . '/.b2b_v2';
+            if (!file_exists($marker) || !file_exists($dbPath)) {
+                $this->initDatabase();
+            }
+        } else {
+            $this->initDatabase();
+        }
     }
 
     public function getPdo(): PDO
     {
         return $this->pdo;
+    }
+
+    /**
+     * Rozpoczyna transakcję zapisu (BEGIN IMMEDIATE dla SQLite, gwarantując wyłączność zapisu).
+     */
+    public function beginWriteTransaction(): void
+    {
+        if ($this->driver === 'sqlite') {
+            $this->pdo->exec('BEGIN IMMEDIATE TRANSACTION');
+        } else {
+            $this->pdo->beginTransaction();
+        }
+    }
+
+    /**
+     * Zatwierdza aktywną transakcję zapisu.
+     */
+    public function commitWriteTransaction(): void
+    {
+        if ($this->driver === 'sqlite') {
+            $this->pdo->exec('COMMIT');
+        } else {
+            $this->pdo->commit();
+        }
+    }
+
+    /**
+     * Wycofuje aktywną transakcję zapisu.
+     */
+    public function rollbackWriteTransaction(): void
+    {
+        try {
+            if ($this->driver === 'sqlite') {
+                $this->pdo->exec('ROLLBACK');
+            } else {
+                if ($this->pdo->inTransaction()) {
+                    $this->pdo->rollBack();
+                }
+            }
+        } catch (\Throwable $e) {}
     }
 
     /**
@@ -123,6 +170,7 @@ class B2bRepository
                 total_items INT NOT NULL DEFAULT 0,
                 total_amount REAL NOT NULL DEFAULT 0.00,
                 notes TEXT DEFAULT NULL,
+                idempotency_key VARCHAR(64) DEFAULT NULL,
                 created_at DATETIME NOT NULL
             );
 
@@ -157,6 +205,12 @@ class B2bRepository
             $this->pdo->exec("ALTER TABLE b2b_orders ADD COLUMN delivery_date DATE DEFAULT NULL");
         } catch (\Throwable $e) {}
         try {
+            $this->pdo->exec("ALTER TABLE b2b_orders ADD COLUMN idempotency_key VARCHAR(64) DEFAULT NULL");
+        } catch (\Throwable $e) {}
+        try {
+            $this->pdo->exec("CREATE INDEX IF NOT EXISTS idx_b2b_orders_idempotency ON b2b_orders(client_id, idempotency_key)");
+        } catch (\Throwable $e) {}
+        try {
             $this->pdo->exec("ALTER TABLE b2b_order_items ADD COLUMN is_custom INT NOT NULL DEFAULT 0");
         } catch (\Throwable $e) {}
 
@@ -174,6 +228,10 @@ class B2bRepository
                 $stmt = $this->pdo->prepare("INSERT OR IGNORE INTO b2b_settings (setting_key, setting_value) VALUES (:k, :v)");
                 $stmt->execute([':k' => $sk, ':v' => $sv]);
             } catch (\Throwable $e) {}
+        }
+        if ($isSqlite) {
+            $dbDir = defined('BASE_PATH') ? (BASE_PATH . '/db') : (__DIR__ . '/../../db');
+            @touch($dbDir . '/.b2b_v2');
         }
     }
 
@@ -457,7 +515,7 @@ class B2bRepository
 
     public function saveProductsBatch(array $products, bool $clearOld = true): int
     {
-        $this->pdo->beginTransaction();
+        $this->beginWriteTransaction();
         try {
             // Pobierz aktualny asortyment, aby ZACHOWAĆ wcześniej skonfigurowane jednostki i opakowania zbiorcze
             $existingMap = [];
@@ -541,10 +599,10 @@ class B2bRepository
                 $count++;
             }
 
-            $this->pdo->commit();
+            $this->commitWriteTransaction();
             return $count;
         } catch (\Throwable $e) {
-            $this->pdo->rollBack();
+            $this->rollbackWriteTransaction();
             throw $e;
         }
     }
@@ -793,86 +851,109 @@ class B2bRepository
 
     public function createOrder(array $orderData, array $items): int
     {
-        $this->pdo->beginTransaction();
-        try {
-            $orderNumber = !empty($orderData['order_number']) ? $orderData['order_number'] : $this->generateOrderNumber();
+        $maxRetries = 5;
+        $attempt = 0;
 
-            $stmt = $this->pdo->prepare("
-                INSERT INTO b2b_orders (
-                    order_number, client_id, client_name_snapshot, client_phone_snapshot,
-                    delivery_address_snapshot, delivery_date, status, export_filename, total_items, total_amount, notes, created_at
-                ) VALUES (
-                    :order_number, :client_id, :client_name_snapshot, :client_phone_snapshot,
-                    :delivery_address_snapshot, :delivery_date, :status, :export_filename, :total_items, :total_amount, :notes, :created_at
-                )
-            ");
+        while ($attempt < $maxRetries) {
+            $attempt++;
+            $this->beginWriteTransaction();
+            try {
+                $orderNumber = !empty($orderData['order_number']) ? $orderData['order_number'] : $this->generateOrderNumber();
 
-            $stmt->execute([
-                ':order_number'               => $orderNumber,
-                ':client_id'                  => (int)($orderData['client_id'] ?? 0),
-                ':client_name_snapshot'       => trim($orderData['client_name_snapshot'] ?? ''),
-                ':client_phone_snapshot'      => trim($orderData['client_phone_snapshot'] ?? ''),
-                ':delivery_address_snapshot'  => trim($orderData['delivery_address_snapshot'] ?? ''),
-                ':delivery_date'              => !empty($orderData['delivery_date']) ? trim($orderData['delivery_date']) : null,
-                ':status'                     => trim($orderData['status'] ?? 'new'),
-                ':export_filename'            => trim($orderData['export_filename'] ?? ''),
-                ':total_items'                => count($items),
-                ':total_amount'               => (float)($orderData['total_amount'] ?? 0.0),
-                ':notes'                      => trim($orderData['notes'] ?? ''),
-                ':created_at'                 => date('Y-m-d H:i:s'),
-            ]);
+                $stmt = $this->pdo->prepare("
+                    INSERT INTO b2b_orders (
+                        order_number, client_id, client_name_snapshot, client_phone_snapshot,
+                        delivery_address_snapshot, delivery_date, status, export_filename, total_items, total_amount, notes, idempotency_key, created_at
+                    ) VALUES (
+                        :order_number, :client_id, :client_name_snapshot, :client_phone_snapshot,
+                        :delivery_address_snapshot, :delivery_date, :status, :export_filename, :total_items, :total_amount, :notes, :idempotency_key, :created_at
+                    )
+                ");
 
-            $orderId = (int)$this->pdo->lastInsertId();
+                $stmt->execute([
+                    ':order_number'               => $orderNumber,
+                    ':client_id'                  => (int)($orderData['client_id'] ?? 0),
+                    ':client_name_snapshot'       => trim($orderData['client_name_snapshot'] ?? ''),
+                    ':client_phone_snapshot'      => trim($orderData['client_phone_snapshot'] ?? ''),
+                    ':delivery_address_snapshot'  => trim($orderData['delivery_address_snapshot'] ?? ''),
+                    ':delivery_date'              => !empty($orderData['delivery_date']) ? trim($orderData['delivery_date']) : null,
+                    ':status'                     => trim($orderData['status'] ?? 'new'),
+                    ':export_filename'            => trim($orderData['export_filename'] ?? ''),
+                    ':total_items'                => count($items),
+                    ':total_amount'               => (float)($orderData['total_amount'] ?? 0.0),
+                    ':notes'                      => trim($orderData['notes'] ?? ''),
+                    ':idempotency_key'            => !empty($orderData['idempotency_key']) ? trim($orderData['idempotency_key']) : null,
+                    ':created_at'                 => date('Y-m-d H:i:s'),
+                ]);
 
-            $stmtItem = $this->pdo->prepare("
-                INSERT INTO b2b_order_items (
-                    order_id, product_id, is_custom, product_name, price, quantity, unit,
-                    package_size, package_unit, package_summary, item_total
-                ) VALUES (
-                    :order_id, :product_id, :is_custom, :product_name, :price, :quantity, :unit,
-                    :package_size, :package_unit, :package_summary, :item_total
-                )
-            ");
+                $orderId = (int)$this->pdo->lastInsertId();
 
-            foreach ($items as $item) {
-                $qty = (float)($item['quantity'] ?? 0);
-                if ($qty <= 0) continue;
+                $stmtItem = $this->pdo->prepare("
+                    INSERT INTO b2b_order_items (
+                        order_id, product_id, is_custom, product_name, price, quantity, unit,
+                        package_size, package_unit, package_summary, item_total
+                    ) VALUES (
+                        :order_id, :product_id, :is_custom, :product_name, :price, :quantity, :unit,
+                        :package_size, :package_unit, :package_summary, :item_total
+                    )
+                ");
 
-                $price = (float)($item['price'] ?? 0);
-                $pkgSize = (float)($item['package_size'] ?? 1.0);
-                $pkgUnit = trim($item['package_unit'] ?? 'op.');
-                $unit    = trim($item['unit'] ?? 'kg');
-                $isCustom = !empty($item['is_custom']) ? 1 : 0;
+                foreach ($items as $item) {
+                    $qty = (float)($item['quantity'] ?? 0);
+                    if ($qty <= 0) continue;
 
-                // Wyliczenie rozbicia na opakowania z poprawną odmianą gramatyczną
-                if (!empty($item['package_summary'])) {
-                    $pkgSummary = self::inflectSummaryString((string)$item['package_summary']);
-                } else {
-                    $pkgSummary = $this->formatPackageSummary($qty, $pkgSize, $pkgUnit, $unit);
+                    $price = (float)($item['price'] ?? 0);
+                    $pkgSize = (float)($item['package_size'] ?? 1.0);
+                    $pkgUnit = trim($item['package_unit'] ?? 'op.');
+                    $unit    = trim($item['unit'] ?? 'kg');
+                    $isCustom = !empty($item['is_custom']) ? 1 : 0;
+
+                    // Wyliczenie rozbicia na opakowania z poprawną odmianą gramatyczną
+                    if (!empty($item['package_summary'])) {
+                        $pkgSummary = self::inflectSummaryString((string)$item['package_summary']);
+                    } else {
+                        $pkgSummary = $this->formatPackageSummary($qty, $pkgSize, $pkgUnit, $unit);
+                    }
+
+                    $stmtItem->execute([
+                        ':order_id'        => $orderId,
+                        ':product_id'      => (!empty($item['product_id']) && (int)$item['product_id'] > 0) ? (int)$item['product_id'] : null,
+                        ':is_custom'       => $isCustom,
+                        ':product_name'    => trim($item['product_name'] ?? $item['name'] ?? ''),
+                        ':price'           => $price,
+                        ':quantity'        => $qty,
+                        ':unit'            => $unit,
+                        ':package_size'    => $pkgSize,
+                        ':package_unit'    => $pkgUnit,
+                        ':package_summary' => $pkgSummary,
+                        ':item_total'      => (float)($item['item_total'] ?? ($qty * $price)),
+                    ]);
                 }
 
-                $stmtItem->execute([
-                    ':order_id'        => $orderId,
-                    ':product_id'      => (!empty($item['product_id']) && (int)$item['product_id'] > 0) ? (int)$item['product_id'] : null,
-                    ':is_custom'       => $isCustom,
-                    ':product_name'    => trim($item['product_name'] ?? $item['name'] ?? ''),
-                    ':price'           => $price,
-                    ':quantity'        => $qty,
-                    ':unit'            => $unit,
-                    ':package_size'    => $pkgSize,
-                    ':package_unit'    => $pkgUnit,
-                    ':package_summary' => $pkgSummary,
-                    ':item_total'      => (float)($item['item_total'] ?? ($qty * $price)),
-                ]);
+                $this->commitWriteTransaction();
+                return $orderId;
+
+            } catch (\Throwable $e) {
+                $this->rollbackWriteTransaction();
+
+                $msg = $e->getMessage();
+                $isConcurrencyError = (
+                    str_contains($msg, 'UNIQUE constraint failed') ||
+                    str_contains($msg, 'Duplicate entry') ||
+                    str_contains($msg, 'database is locked') ||
+                    str_contains($msg, 'busy')
+                );
+
+                if ($isConcurrencyError && $attempt < $maxRetries && empty($orderData['order_number'])) {
+                    usleep(rand(20000, 80000));
+                    continue;
+                }
+
+                throw $e;
             }
-
-            $this->pdo->commit();
-            return $orderId;
-
-        } catch (\Throwable $e) {
-            $this->pdo->rollBack();
-            throw $e;
         }
+
+        throw new \RuntimeException("Nie udało się utworzyć zamówienia B2B po {$maxRetries} próbach współbieżnych.");
     }
 
     /**
@@ -1016,6 +1097,26 @@ class B2bRepository
         }
 
         return !empty($parts) ? implode(' + ', $parts) : "{$quantity} {$unit}";
+    }
+
+    public function getOrderByCustomerAndIdempotencyKey(int $clientId, string $idempotencyKey): ?array
+    {
+        $idempotencyKey = trim($idempotencyKey);
+        if ($idempotencyKey === '') {
+            return null;
+        }
+
+        $stmt = $this->pdo->prepare("
+            SELECT * FROM b2b_orders 
+            WHERE client_id = :client_id AND idempotency_key = :idempotency_key 
+            ORDER BY id DESC LIMIT 1
+        ");
+        $stmt->execute([
+            ':client_id'       => $clientId,
+            ':idempotency_key' => $idempotencyKey,
+        ]);
+        $row = $stmt->fetch();
+        return $row ?: null;
     }
 
     public function getOrderById(int $id): ?array

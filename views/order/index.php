@@ -2842,6 +2842,14 @@ $appName       = 'Zamawiarka Magdy';
         document.getElementById('product-search').addEventListener('input', renderProductsTable);
         document.getElementById('filter-ordered-only').addEventListener('change', renderProductsTable);
 
+        let orderIdempotencyKey = null;
+        function getOrderIdempotencyKey() {
+            if (!orderIdempotencyKey) {
+                orderIdempotencyKey = 'ord_' + Date.now() + '_' + Math.random().toString(36).substring(2, 10);
+            }
+            return orderIdempotencyKey;
+        }
+
         // 4. Zatwierdzenie i generowanie zamówienia (oraz opcjonalna wysyłka e-mail)
         function submitOrder(sendEmail = false) {
             const catalogOrdered = productsList.filter(p => p.quantity > 0).map(p => ({
@@ -2874,6 +2882,7 @@ $appName       = 'Zamawiarka Magdy';
             formData.append('items', JSON.stringify(allItems));
             formData.append('_csrf', CSRF_TOKEN);
             formData.append('csrf_token', CSRF_TOKEN);
+            formData.append('idempotency_key', getOrderIdempotencyKey());
             if (sendEmail) {
                 formData.append('send_email', '1');
             }
@@ -2901,10 +2910,10 @@ $appName       = 'Zamawiarka Magdy';
                     return;
                 }
 
-                // Zamówienie zapisane — szkic nie jest już potrzebny (i nie blokuje beforeunload przy pobieraniu pliku)
                 if (draftSaveTimer) { clearTimeout(draftSaveTimer); draftSaveTimer = null; }
                 removeDraft(currentContext);
                 orderSaved = true;
+                orderIdempotencyKey = null;
 
                 // Sukces: przejście do Kroku 4
                 step3.classList.add('hidden');
