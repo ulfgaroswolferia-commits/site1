@@ -1,8 +1,10 @@
-<?php
+﻿<?php
 /**
- * Test weryfikacyjny podglądu sklepu B2B dla administratora (hurtownika)
+ * Test weryfikacyjny podglÄ…du sklepu B2B dla administratora (hurtownika)
  */
-define('BASE_PATH', 'C:/laragon/www');
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 require_once BASE_PATH . '/program/config/data.php';
 require_once BASE_PATH . '/program/config/autoload.php';
 
@@ -28,7 +30,7 @@ function req($url, $post = null, $follow = false) {
     return ['code' => $code, 'url' => $urlEff, 'body' => $body];
 }
 
-echo "=== TEST: Podgląd sklepu B2B dla zalogowanego hurtownika (admin) ===\n";
+echo "=== TEST: PodglÄ…d sklepu B2B dla zalogowanego hurtownika (admin) ===\n";
 
 // 1. Pobierz formularz /b2b/login i odczytaj CSRF
 $resGet = req('http://localhost/b2b/login');
@@ -49,36 +51,36 @@ $resLogin = req('http://localhost/b2b/login', [
 
 echo "1. Logowanie hurtownika: HTTP {$resLogin['code']}, URL: {$resLogin['url']}\n";
 
-// 3. Sprawdź czy w panelu hurtownika link 'Podgląd sklepu B2B' istnieje i dokąd prowadzi
+// 3. SprawdĹş czy w panelu hurtownika link 'PodglÄ…d sklepu B2B' istnieje i dokÄ…d prowadzi
 $resAdmin = req('http://localhost/b2b/admin');
-preg_match('/<a[^>]+href="([^"]*b2b[^"]*)"[^>]*>\s*<svg[^>]*>.*?<\/svg>\s*Podgląd sklepu B2B/is', $resAdmin['body'], $linkMatches);
+preg_match('/<a[^>]+href="([^"]*b2b[^"]*)"[^>]*>\s*<svg[^>]*>.*?<\/svg>\s*PodglÄ…d sklepu B2B/is', $resAdmin['body'], $linkMatches);
 $previewHref = $linkMatches[1] ?? '';
-echo "2. Link podglądu w panelu hurtownika: [{$previewHref}]\n";
+echo "2. Link podglÄ…du w panelu hurtownika: [{$previewHref}]\n";
 
-// 4. Wejdź na /b2b z ciasteczkiem zalogowanego hurtownika (admin) BEZ automatycznego follow
+// 4. WejdĹş na /b2b z ciasteczkiem zalogowanego hurtownika (admin) BEZ automatycznego follow
 $resStoreNoFollow = req('http://localhost/b2b', null, false);
-echo "3. Wejście na /b2b (bez follow redirect): HTTP {$resStoreNoFollow['code']}\n";
+echo "3. WejĹ›cie na /b2b (bez follow redirect): HTTP {$resStoreNoFollow['code']}\n";
 
-// 5. Wejdź na /b2b z follow location
+// 5. WejdĹş na /b2b z follow location
 $resStore = req('http://localhost/b2b', null, true);
-echo "4. Efektywny URL po wejściu na /b2b: {$resStore['url']}\n";
+echo "4. Efektywny URL po wejĹ›ciu na /b2b: {$resStore['url']}\n";
 
-$isB2bCatalog = (strpos($resStore['url'], 'b2b/admin') === false && strpos($resStore['body'], 'Platforma zamówień B2B') !== false);
+$isB2bCatalog = (strpos($resStore['url'], 'b2b/admin') === false && strpos($resStore['body'], 'Platforma zamĂłwieĹ„ B2B') !== false);
 $hasProductsTable = (strpos($resStore['body'], 'catalogTable') !== false || strpos($resStore['body'], 'searchInput') !== false);
-$hasPreviewBanner = (strpos($resStore['body'], 'TRYB PODGLĄDU SKLEPU B2B') !== false);
-$hasReturnButton  = (strpos($resStore['body'], 'Wróć do Panelu Hurtownika') !== false);
+$hasPreviewBanner = (strpos($resStore['body'], 'TRYB PODGLÄ„DU SKLEPU B2B') !== false);
+$hasReturnButton  = (strpos($resStore['body'], 'WrĂłÄ‡ do Panelu Hurtownika') !== false);
 
-echo "5. Czy otwiera sklep B2B (a NIE b2b/admin): " . ($isB2bCatalog ? "TAK (SUKCES)" : "NIE (BŁĄD)") . "\n";
-echo "6. Czy widoczne są elementy katalogu (wyszukiwarka / tabela): " . ($hasProductsTable ? "TAK (SUKCES)" : "NIE (BŁĄD)") . "\n";
-echo "7. Czy wyświetla pasek trybu podglądu: " . ($hasPreviewBanner ? "TAK (SUKCES)" : "NIE (BŁĄD)") . "\n";
-echo "8. Czy zawiera przycisk powrotu do panelu hurtownika: " . ($hasReturnButton ? "TAK (SUKCES)" : "NIE (BŁĄD)") . "\n";
+echo "5. Czy otwiera sklep B2B (a NIE b2b/admin): " . ($isB2bCatalog ? "TAK (SUKCES)" : "NIE (BĹÄ„D)") . "\n";
+echo "6. Czy widoczne sÄ… elementy katalogu (wyszukiwarka / tabela): " . ($hasProductsTable ? "TAK (SUKCES)" : "NIE (BĹÄ„D)") . "\n";
+echo "7. Czy wyĹ›wietla pasek trybu podglÄ…du: " . ($hasPreviewBanner ? "TAK (SUKCES)" : "NIE (BĹÄ„D)") . "\n";
+echo "8. Czy zawiera przycisk powrotu do panelu hurtownika: " . ($hasReturnButton ? "TAK (SUKCES)" : "NIE (BĹÄ„D)") . "\n";
 
-// 6. Sprawdź kliknięcie 'Historia' dla admina w podglądzie
+// 6. SprawdĹş klikniÄ™cie 'Historia' dla admina w podglÄ…dzie
 $resHistory = req('http://localhost/b2b/history', null, false);
-echo "9. Wejście na /b2b/history w trybie admina: HTTP {$resHistory['code']}, przekierowanie do panelu\n";
+echo "9. WejĹ›cie na /b2b/history w trybie admina: HTTP {$resHistory['code']}, przekierowanie do panelu\n";
 
 @unlink($cookieFile);
 
 $passed = ($isB2bCatalog && $hasProductsTable && $resStoreNoFollow['code'] === 200 && $hasPreviewBanner && $hasReturnButton && $resHistory['code'] === 303);
-echo $passed ? "=== TEST PODGLĄDU SKLEPU B2B ZAKOŃCZONY SUKCESEM ===\n" : "=== TEST ZAKOŃCZONY BŁĘDEM ===\n";
+echo $passed ? "=== TEST PODGLÄ„DU SKLEPU B2B ZAKOĹCZONY SUKCESEM ===\n" : "=== TEST ZAKOĹCZONY BĹÄDEM ===\n";
 exit($passed ? 0 : 1);

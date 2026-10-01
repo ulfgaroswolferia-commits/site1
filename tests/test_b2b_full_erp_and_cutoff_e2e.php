@@ -1,8 +1,10 @@
-<?php
+﻿<?php
 /**
- * Kompletny test integracyjny E2E dla modułu eksportu ERP oraz harmonogramu dostaw z godziną graniczną (cut-off).
+ * Kompletny test integracyjny E2E dla moduĹ‚u eksportu ERP oraz harmonogramu dostaw z godzinÄ… granicznÄ… (cut-off).
  */
-define('BASE_PATH', 'C:/laragon/www');
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 require_once BASE_PATH . '/program/config/data.php';
 require_once BASE_PATH . '/program/config/autoload.php';
 require_once BASE_PATH . '/program/config/includes.php';
@@ -10,7 +12,7 @@ require_once BASE_PATH . '/program/config/includes.php';
 use App\B2bRepository;
 use App\ErpExporter;
 
-echo "=== ROZPOCZĘCIE TESTU E2E: EKSPORT ERP I HARMONOGRAM DOSTAW CUT-OFF ===\n\n";
+echo "=== ROZPOCZÄCIE TESTU E2E: EKSPORT ERP I HARMONOGRAM DOSTAW CUT-OFF ===\n\n";
 
 $repo = new B2bRepository();
 $passed = true;
@@ -20,7 +22,7 @@ function check($desc, $cond) {
     if ($cond) {
         echo " [OK] {$desc}\n";
     } else {
-        echo " [BŁĄD] {$desc}\n";
+        echo " [BĹÄ„D] {$desc}\n";
         $passed = false;
     }
 }
@@ -28,7 +30,7 @@ function check($desc, $cond) {
 // -----------------------------------------------------------------------------
 // 1. WAL Mode i pragmy SQLite
 // -----------------------------------------------------------------------------
-echo "1. Sprawdzanie trybu SQLite WAL i współbieżności...\n";
+echo "1. Sprawdzanie trybu SQLite WAL i wspĂłĹ‚bieĹĽnoĹ›ci...\n";
 $journalMode = $repo->getPdo()->query("PRAGMA journal_mode")->fetchColumn();
 check("Tryb journal_mode to WAL", strtolower((string)$journalMode) === 'wal');
 
@@ -38,7 +40,7 @@ check("Timeout blokady SQLite wynosi 5000 ms", (int)$busyTimeout === 5000);
 // -----------------------------------------------------------------------------
 // 2. Weryfikacja struktury bazy danych
 // -----------------------------------------------------------------------------
-echo "\n2. Weryfikacja rozszerzeń bazy danych (b2b_settings, erp_code, delivery_date)...\n";
+echo "\n2. Weryfikacja rozszerzeĹ„ bazy danych (b2b_settings, erp_code, delivery_date)...\n";
 $settingsCount = $repo->getPdo()->query("SELECT COUNT(*) FROM b2b_settings")->fetchColumn();
 check("Tabela b2b_settings istnieje i zawiera wpisy", $settingsCount >= 3);
 
@@ -82,9 +84,9 @@ $adminPanelHtml = curl_exec($ch);
 preg_match('/const CSRF_TOKEN\s*=\s*\'([^\']+)\';/', $adminPanelHtml, $mAdminCsrf);
 $adminCsrf = $mAdminCsrf[1] ?? '';
 check("Zalogowano do panelu hurtownika i pobrano token CSRF", !empty($adminCsrf));
-check("Panel zawiera zakładkę Ustawienia & ERP", strpos($adminPanelHtml, 'tab-btn-settings') !== false);
-check("Panel zawiera kolumnę Kod ERP w cenniku", strpos($adminPanelHtml, 'Kod ERP') !== false);
-check("Panel zawiera selektor paczki ERP w zamówieniach", strpos($adminPanelHtml, 'batch-erp-format') !== false);
+check("Panel zawiera zakĹ‚adkÄ™ Ustawienia & ERP", strpos($adminPanelHtml, 'tab-btn-settings') !== false);
+check("Panel zawiera kolumnÄ™ Kod ERP w cenniku", strpos($adminPanelHtml, 'Kod ERP') !== false);
+check("Panel zawiera selektor paczki ERP w zamĂłwieniach", strpos($adminPanelHtml, 'batch-erp-format') !== false);
 
 // -----------------------------------------------------------------------------
 // 4. Zapis konfiguracji hurtowni przez POST /b2b/savesettings
@@ -101,31 +103,31 @@ curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
 curl_setopt($ch, CURLOPT_HTTPHEADER, ['X-Requested-With: XMLHttpRequest', 'Accept: application/json']);
 $respSettings = curl_exec($ch);
 $settingsJson = json_decode($respSettings, true);
-check("Zapisano godzinę graniczną 21:45 i format optima", (!empty($settingsJson['ok']) && $repo->getSetting('cutoff_time') === '21:45' && $repo->getSetting('default_erp_format') === 'optima'));
+check("Zapisano godzinÄ™ granicznÄ… 21:45 i format optima", (!empty($settingsJson['ok']) && $repo->getSetting('cutoff_time') === '21:45' && $repo->getSetting('default_erp_format') === 'optima'));
 
 // -----------------------------------------------------------------------------
 // 5. Test logiki harmonogramu dostaw i cut-off
 // -----------------------------------------------------------------------------
 echo "\n5. Weryfikacja harmonogramu dostaw z cut-offem...\n";
-// Wtorek 14:00 (przed 21:45) -> domyślna dostawa to środa
+// Wtorek 14:00 (przed 21:45) -> domyĹ›lna dostawa to Ĺ›roda
 $tueAfternoon = strtotime('2026-09-22 14:00:00');
 $schedBefore = $repo->getDeliverySchedule($tueAfternoon);
 check("Przed cut-off: dostawa na jutro (2026-09-23)", $schedBefore['default_date'] === '2026-09-23' && !$schedBefore['is_cutoff_passed']);
 
-// Wtorek 22:00 (po 21:45) -> zamówienia na środę rano zamknięte, domyślna dostawa to czwartek
+// Wtorek 22:00 (po 21:45) -> zamĂłwienia na Ĺ›rodÄ™ rano zamkniÄ™te, domyĹ›lna dostawa to czwartek
 $tueNight = strtotime('2026-09-22 22:00:00');
 $schedAfter = $repo->getDeliverySchedule($tueNight);
-check("Po cut-off: dostawa przesunięta na pojutrze (2026-09-24)", $schedAfter['default_date'] === '2026-09-24' && $schedAfter['is_cutoff_passed']);
+check("Po cut-off: dostawa przesuniÄ™ta na pojutrze (2026-09-24)", $schedAfter['default_date'] === '2026-09-24' && $schedAfter['is_cutoff_passed']);
 
-// Sobota 22:00 -> niedziela wyłączona z dostaw, domyślna dostawa to poniedziałek
+// Sobota 22:00 -> niedziela wyĹ‚Ä…czona z dostaw, domyĹ›lna dostawa to poniedziaĹ‚ek
 $satNight = strtotime('2026-09-26 22:00:00');
 $schedSat = $repo->getDeliverySchedule($satNight);
-check("Sobota wieczorem: pominięcie niedzieli, dostawa na poniedziałek (2026-09-28)", $schedSat['default_date'] === '2026-09-28');
+check("Sobota wieczorem: pominiÄ™cie niedzieli, dostawa na poniedziaĹ‚ek (2026-09-28)", $schedSat['default_date'] === '2026-09-28');
 
 // -----------------------------------------------------------------------------
-// 6. Utworzenie produktu testowego z Kodem ERP oraz zamówienia ze sklepu B2B
+// 6. Utworzenie produktu testowego z Kodem ERP oraz zamĂłwienia ze sklepu B2B
 // -----------------------------------------------------------------------------
-echo "\n6. Tworzenie produktu z Kodem ERP i zamówienia B2B...\n";
+echo "\n6. Tworzenie produktu z Kodem ERP i zamĂłwienia B2B...\n";
 $stmtProd = $repo->getPdo()->prepare("INSERT INTO b2b_products (name, erp_code, category, unit, price, package_size, package_unit, is_available, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)");
 $stmtProd->execute(['Gruszka Konferencja E2E', 'GRUSZ-KONF-01', 'Owoce', 'kg', 6.50, 10.0, 'skrzynka', date('Y-m-d H:i:s')]);
 $testProdId = (int)$repo->getPdo()->lastInsertId();
@@ -134,12 +136,12 @@ check("Utworzono produkt z kodem ERP GRUSZ-KONF-01", $testProdId > 0);
 $orderId = $repo->createOrder([
     'order_number'              => 'B2B/E2E/TEST/' . time(),
     'client_id'                 => 1,
-    'client_name_snapshot'      => 'Sklep Warzywny Zielony Zakątek',
+    'client_name_snapshot'      => 'Sklep Warzywny Zielony ZakÄ…tek',
     'delivery_address_snapshot' => 'ul. Zielona 25, 00-001 Warszawa',
     'delivery_date'             => '2026-09-24',
     'status'                    => 'new',
     'total_amount'              => 130.00,
-    'notes'                     => 'Proszę o dostawę do godziny 7:00 rano'
+    'notes'                     => 'ProszÄ™ o dostawÄ™ do godziny 7:00 rano'
 ], [
     [
         'product_id'      => $testProdId,
@@ -153,15 +155,15 @@ $orderId = $repo->createOrder([
         'item_total'      => 130.00
     ]
 ]);
-check("Zapisano zamówienie B2B z wybraną datą dostawy 2026-09-24", $orderId > 0);
+check("Zapisano zamĂłwienie B2B z wybranÄ… datÄ… dostawy 2026-09-24", $orderId > 0);
 
 $savedOrder = $repo->getOrderById($orderId);
 check("Data dostawy w bazie to 2026-09-24", ($savedOrder['delivery_date'] ?? '') === '2026-09-24');
 
 // -----------------------------------------------------------------------------
-// 7. Eksport pojedynczego zamówienia do 4 formatów ERP
+// 7. Eksport pojedynczego zamĂłwienia do 4 formatĂłw ERP
 // -----------------------------------------------------------------------------
-echo "\n7. Weryfikacja eksportu pojedynczego zamówienia do 4 formatów ERP...\n";
+echo "\n7. Weryfikacja eksportu pojedynczego zamĂłwienia do 4 formatĂłw ERP...\n";
 curl_setopt($ch, CURLOPT_HTTPGET, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, []);
 
@@ -175,7 +177,7 @@ check("Eksport Subiekt GT/Nexo (.epp EDI++ Windows-1250)", $subiektOk);
 curl_setopt($ch, CURLOPT_URL, "http://localhost/b2b/exporterp?id={$orderId}&format=optima");
 $xmlOptima = curl_exec($ch);
 $optimaOk = (strpos($xmlOptima, 'http://www.comarch.pl/cdn/optima/offline') !== false && strpos($xmlOptima, 'GRUSZ-KONF-01') !== false && strpos($xmlOptima, '2026-09-24') !== false);
-check("Eksport Comarch ERP Optima (.xml z datą dostawy)", $optimaOk);
+check("Eksport Comarch ERP Optima (.xml z datÄ… dostawy)", $optimaOk);
 
 // Symfonia Handel (.txt)
 curl_setopt($ch, CURLOPT_URL, "http://localhost/b2b/exporterp?id={$orderId}&format=symfonia");
@@ -190,12 +192,12 @@ $wfmagOk = (strpos($xmlWfMag, '<DOKUMENTY_MAGAZYNOWE') !== false && strpos($xmlW
 check("Eksport Asseco WAPRO / Wf-Mag (.xml)", $wfmagOk);
 
 // -----------------------------------------------------------------------------
-// 8. Zbiorczy eksport paczki zamówień (/b2b/exportbatch)
+// 8. Zbiorczy eksport paczki zamĂłwieĹ„ (/b2b/exportbatch)
 // -----------------------------------------------------------------------------
 echo "\n8. Weryfikacja zbiorczego eksportu paczki dziennej ERP (/b2b/exportbatch)...\n";
 curl_setopt($ch, CURLOPT_URL, "http://localhost/b2b/exportbatch?format=subiekt&status=new");
 $batchSubiekt = curl_exec($ch);
-check("Paczka zbiorcza Subiekt EPP dla nowych zamówień", strpos($batchSubiekt, 'GRUSZ-KONF-01') !== false);
+check("Paczka zbiorcza Subiekt EPP dla nowych zamĂłwieĹ„", strpos($batchSubiekt, 'GRUSZ-KONF-01') !== false);
 
 curl_setopt($ch, CURLOPT_URL, "http://localhost/b2b/exportbatch?format=optima&date=2026-09-24");
 $batchOptima = curl_exec($ch);
@@ -225,7 +227,7 @@ $prodAfter = $repo->getProductById($testProdId);
 check("Zaktualizowano kod ERP produktu na GRUSZ-NOWY-KOD", (!empty($updJson['ok']) && ($prodAfter['erp_code'] ?? '') === 'GRUSZ-NOWY-KOD'));
 
 // -----------------------------------------------------------------------------
-// 10. Sprzątanie danych testowych
+// 10. SprzÄ…tanie danych testowych
 // -----------------------------------------------------------------------------
 curl_close($ch);
 @unlink($cookieAdmin);
@@ -234,16 +236,16 @@ $repo->getPdo()->exec("DELETE FROM b2b_order_items WHERE order_id = {$orderId}")
 $repo->getPdo()->exec("DELETE FROM b2b_orders WHERE id = {$orderId}");
 $repo->getPdo()->exec("DELETE FROM b2b_products WHERE id = {$testProdId}");
 
-// Przywrócenie domyślnych ustawień hurtowni
+// PrzywrĂłcenie domyĹ›lnych ustawieĹ„ hurtowni
 $repo->setSetting('cutoff_time', '21:30');
 $repo->setSetting('delivery_days', 'mon,tue,wed,thu,fri,sat');
 $repo->setSetting('default_erp_format', 'subiekt');
 
 echo "\n-------------------------------------------------------------\n";
 if ($passed) {
-    echo "=== WSZYSTKIE TESTY E2E ZAKOŃCZONE SUKCESEM (GREEN) ===\n";
+    echo "=== WSZYSTKIE TESTY E2E ZAKOĹCZONE SUKCESEM (GREEN) ===\n";
     exit(0);
 } else {
-    echo "=== TESTY E2E ZAKOŃCZONE BŁĘDEM (RED) ===\n";
+    echo "=== TESTY E2E ZAKOĹCZONE BĹÄDEM (RED) ===\n";
     exit(1);
 }

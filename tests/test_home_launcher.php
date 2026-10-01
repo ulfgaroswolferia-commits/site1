@@ -1,5 +1,7 @@
-<?php
-define('BASE_PATH', 'C:/laragon/www');
+﻿<?php
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 require_once BASE_PATH . '/program/config/data.php';
 
 $cookieFile = tempnam(sys_get_temp_dir(), 'cook_test_');
@@ -27,16 +29,16 @@ curl_setopt($ch, CURLOPT_HTTPGET, true);
 $res = curl_exec($ch);
 
 $hasName = strpos($res, 'Zamawiarka Magdy') !== false;
-$hasDesc = strpos($res, 'Zrób zamówienie z pliku excel') !== false;
-$noOldName = strpos($res, 'Zamówienia z cennika excel') === false;
-$hasPlaceholder = strpos($res, 'Następny moduł') !== false;
-$hasPlaceholderSub = strpos($res, 'może Ty masz pomysł co to może być?') !== false;
+$hasDesc = strpos($res, 'ZrĂłb zamĂłwienie z pliku excel') !== false;
+$noOldName = strpos($res, 'ZamĂłwienia z cennika excel') === false;
+$hasPlaceholder = strpos($res, 'NastÄ™pny moduĹ‚') !== false;
+$hasPlaceholderSub = strpos($res, 'moĹĽe Ty masz pomysĹ‚ co to moĹĽe byÄ‡?') !== false;
 
-echo "1. Nowa nazwa modułu ('Zamawiarka Magdy'): " . ($hasName ? "OK" : "BŁĄD") . "\n";
-echo "2. Nowy opis modułu ('Zrób zamówienie z pliku excel'): " . ($hasDesc ? "OK" : "BŁĄD") . "\n";
-echo "3. Stara nazwa usunięta: " . ($noOldName ? "OK" : "BŁĄD") . "\n";
-echo "4. Placeholder 'Następny moduł': " . ($hasPlaceholder ? "OK" : "BŁĄD") . "\n";
-echo "5. Podpis placeholderu ('może Ty masz pomysł...'): " . ($hasPlaceholderSub ? "OK" : "BŁĄD") . "\n";
+echo "1. Nowa nazwa moduĹ‚u ('Zamawiarka Magdy'): " . ($hasName ? "OK" : "BĹÄ„D") . "\n";
+echo "2. Nowy opis moduĹ‚u ('ZrĂłb zamĂłwienie z pliku excel'): " . ($hasDesc ? "OK" : "BĹÄ„D") . "\n";
+echo "3. Stara nazwa usuniÄ™ta: " . ($noOldName ? "OK" : "BĹÄ„D") . "\n";
+echo "4. Placeholder 'NastÄ™pny moduĹ‚': " . ($hasPlaceholder ? "OK" : "BĹÄ„D") . "\n";
+echo "5. Podpis placeholderu ('moĹĽe Ty masz pomysĹ‚...'): " . ($hasPlaceholderSub ? "OK" : "BĹÄ„D") . "\n";
 
 @unlink($cookieFile);
 exit(($hasName && $hasDesc && $noOldName && $hasPlaceholder && $hasPlaceholderSub) ? 0 : 1);

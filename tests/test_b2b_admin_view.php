@@ -1,8 +1,10 @@
-<?php
+﻿<?php
 /**
  * Test renderowania widoku panelu hurtownika views/b2b/admin.php
  */
-define('BASE_PATH', 'C:/laragon/www');
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 require_once BASE_PATH . '/program/config/data.php';
 
 $cookieFile = tempnam(sys_get_temp_dir(), 'cook_admin_view_');
@@ -41,13 +43,13 @@ $hasTabClients  = strpos($html, 'tab-clients') !== false;
 $hasDropzone    = strpos($html, 'dropzone') !== false || strpos($html, 'file-input') !== false;
 $hasCopyBtn     = strpos($html, 'copy-token') !== false || strpos($html, 'copyToken') !== false;
 
-echo "1. Tailwind CSS załadowany: " . ($hasTailwind ? "OK" : "BŁĄD") . "\n";
-echo "2. Branding 'Hurtownia Magdy': " . ($hasTitle ? "OK" : "BŁĄD") . "\n";
-echo "3. Zakładka 'Cennik & Oferta': " . ($hasTabProducts ? "OK" : "BŁĄD") . "\n";
-echo "4. Zakładka 'Spływające Zamówienia': " . ($hasTabOrders ? "OK" : "BŁĄD") . "\n";
-echo "5. Zakładka 'Klienci Hurtowni': " . ($hasTabClients ? "OK" : "BŁĄD") . "\n";
-echo "6. Strefa Uploadu Excela: " . ($hasDropzone ? "OK" : "BŁĄD") . "\n";
-echo "7. Kopiowanie linku z tokenem: " . ($hasCopyBtn ? "OK" : "BŁĄD") . "\n";
+echo "1. Tailwind CSS zaĹ‚adowany: " . ($hasTailwind ? "OK" : "BĹÄ„D") . "\n";
+echo "2. Branding 'Hurtownia Magdy': " . ($hasTitle ? "OK" : "BĹÄ„D") . "\n";
+echo "3. ZakĹ‚adka 'Cennik & Oferta': " . ($hasTabProducts ? "OK" : "BĹÄ„D") . "\n";
+echo "4. ZakĹ‚adka 'SpĹ‚ywajÄ…ce ZamĂłwienia': " . ($hasTabOrders ? "OK" : "BĹÄ„D") . "\n";
+echo "5. ZakĹ‚adka 'Klienci Hurtowni': " . ($hasTabClients ? "OK" : "BĹÄ„D") . "\n";
+echo "6. Strefa Uploadu Excela: " . ($hasDropzone ? "OK" : "BĹÄ„D") . "\n";
+echo "7. Kopiowanie linku z tokenem: " . ($hasCopyBtn ? "OK" : "BĹÄ„D") . "\n";
 
 @unlink($cookieFile);
 

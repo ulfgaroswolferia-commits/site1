@@ -1,9 +1,11 @@
-<?php
+﻿<?php
 /**
- * Test weryfikujący obsługę żądań AJAX, tokenów CSRF (zarówno _csrf jak i csrf_token)
- * oraz zapobieganie błędom JSON.parse przy wygasłej sesji i błędach CSRF.
+ * Test weryfikujÄ…cy obsĹ‚ugÄ™ ĹĽÄ…daĹ„ AJAX, tokenĂłw CSRF (zarĂłwno _csrf jak i csrf_token)
+ * oraz zapobieganie bĹ‚Ä™dom JSON.parse przy wygasĹ‚ej sesji i bĹ‚Ä™dach CSRF.
  */
-define('BASE_PATH', 'C:/laragon/www');
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 require_once BASE_PATH . '/program/config/data.php';
 
 $cookieFile = tempnam(sys_get_temp_dir(), 'cook_test_');
@@ -41,7 +43,7 @@ function httpReq($url, $post = null, $headers = [], $follow = false) {
 
 echo "=== TEST: CSRF & AJAX Upload ===\n";
 
-// 1. Niezalogowane żądanie AJAX nie powinno zwracać przekierowania HTML (303/200 text/html)
+// 1. Niezalogowane ĹĽÄ…danie AJAX nie powinno zwracaÄ‡ przekierowania HTML (303/200 text/html)
 $resUnauth = httpReq('http://localhost/order/upload', ['test' => 1], ['X-Requested-With: XMLHttpRequest', 'Accept: application/json']);
 echo "1. Unauth AJAX status: {$resUnauth['code']}\n";
 echo "   Unauth Content-Type: {$resUnauth['ct']}\n";
@@ -57,13 +59,13 @@ $resLoginPost = httpReq('http://localhost/home/login', [
     '_csrf' => $loginCsrf
 ], [], true);
 
-// 3. Pobranie tokena z kreatora zamówień
+// 3. Pobranie tokena z kreatora zamĂłwieĹ„
 $resOrderGet = httpReq('http://localhost/order/index');
 preg_match('/const CSRF_TOKEN = \'([^\']+)\'/', $resOrderGet['body'], $mOrder);
 $orderCsrf = $mOrder[1] ?? '';
 echo "2. CSRF Token uzyskany: " . (!empty($orderCsrf) ? "TAK" : "NIE") . "\n";
 
-// 4. Utworzenie przykładowego pliku XLSX
+// 4. Utworzenie przykĹ‚adowego pliku XLSX
 $sampleFile = sys_get_temp_dir() . '/sample_test_order.xlsx';
 $zip = new ZipArchive();
 $zip->open($sampleFile, ZipArchive::CREATE | ZipArchive::OVERWRITE);
@@ -75,7 +77,7 @@ $sheetXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet x
 $zip->addFromString('xl/worksheets/sheet1.xml', $sheetXml);
 $zip->close();
 
-// 5. Test wysłania z nazwą pola "csrf_token" (tak jak wcześniej wysyłał frontend)
+// 5. Test wysĹ‚ania z nazwÄ… pola "csrf_token" (tak jak wczeĹ›niej wysyĹ‚aĹ‚ frontend)
 $uploadDataWithCsrfToken = [
     'price_list' => new CURLFile($sampleFile, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'sample.xlsx'),
     'csrf_token' => $orderCsrf
@@ -83,7 +85,7 @@ $uploadDataWithCsrfToken = [
 $resUpload1 = httpReq('http://localhost/order/upload', $uploadDataWithCsrfToken, ['X-Requested-With: XMLHttpRequest', 'Accept: application/json']);
 echo "3. Upload z polem 'csrf_token' - status: {$resUpload1['code']}, json: " . (json_decode($resUpload1['body']) ? "TAK" : "NIE") . "\n";
 
-// 6. Test wysłania z nazwą pola "_csrf"
+// 6. Test wysĹ‚ania z nazwÄ… pola "_csrf"
 $uploadDataWithUnderscoreCsrf = [
     'price_list' => new CURLFile($sampleFile, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'sample.xlsx'),
     '_csrf' => $orderCsrf
@@ -91,14 +93,14 @@ $uploadDataWithUnderscoreCsrf = [
 $resUpload2 = httpReq('http://localhost/order/upload', $uploadDataWithUnderscoreCsrf, ['X-Requested-With: XMLHttpRequest', 'Accept: application/json']);
 echo "4. Upload z polem '_csrf' - status: {$resUpload2['code']}, json: " . (json_decode($resUpload2['body']) ? "TAK" : "NIE") . "\n";
 
-// 7. Test wysłania ze złym CSRF
+// 7. Test wysĹ‚ania ze zĹ‚ym CSRF
 $uploadBadCsrf = [
     'price_list' => new CURLFile($sampleFile, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'sample.xlsx'),
     '_csrf' => 'invalid_token_123'
 ];
 $resUploadBad = httpReq('http://localhost/order/upload', $uploadBadCsrf, ['X-Requested-With: XMLHttpRequest', 'Accept: application/json']);
-echo "5. Upload ze złym CSRF - status: {$resUploadBad['code']}, json: " . (json_decode($resUploadBad['body']) ? "TAK" : "NIE") . "\n";
-echo "   Treść błędu: " . ($resUploadBad['body']) . "\n";
+echo "5. Upload ze zĹ‚ym CSRF - status: {$resUploadBad['code']}, json: " . (json_decode($resUploadBad['body']) ? "TAK" : "NIE") . "\n";
+echo "   TreĹ›Ä‡ bĹ‚Ä™du: " . ($resUploadBad['body']) . "\n";
 
 @unlink($cookieFile);
 @unlink($sampleFile);

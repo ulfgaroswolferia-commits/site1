@@ -1,19 +1,21 @@
-<?php
+﻿<?php
 /**
- * Test TDD: Filtr statusu zamówień (domyślnie 'Nowe'), kolumna NUMER/DATA oraz przycisk 'Finalizuj zamówienie' ze specyfikacją logistyczną.
+ * Test TDD: Filtr statusu zamĂłwieĹ„ (domyĹ›lnie 'Nowe'), kolumna NUMER/DATA oraz przycisk 'Finalizuj zamĂłwienie' ze specyfikacjÄ… logistycznÄ….
  */
-define('BASE_PATH', 'C:/laragon/www');
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 require_once BASE_PATH . '/program/config/data.php';
 require_once BASE_PATH . '/program/config/autoload.php';
 require_once BASE_PATH . '/program/config/includes.php';
 
 use App\B2bRepository;
 
-echo "=== TEST: Filtr statusu, kolumna NUMER/DATA i Finalizacja zamówienia ===\n";
+echo "=== TEST: Filtr statusu, kolumna NUMER/DATA i Finalizacja zamĂłwienia ===\n";
 
 $repo = new B2bRepository();
 
-// Upewnij się, że mamy przynajmniej jedno zamówienie ze statusem 'new'
+// Upewnij siÄ™, ĹĽe mamy przynajmniej jedno zamĂłwienie ze statusem 'new'
 $orders = $repo->getAllOrders(1);
 if (empty($orders)) {
     $orderNumber = $repo->generateOrderNumber();
@@ -70,54 +72,54 @@ $html = curl_exec($ch);
 curl_close($ch);
 @unlink($cookieFile);
 
-// A. Sprawdzenie nagłówka kolumny NUMER / DATA
+// A. Sprawdzenie nagĹ‚Ăłwka kolumny NUMER / DATA
 $hasColNumerData = (strpos($html, 'NUMER / DATA') !== false || strpos($html, 'NUMER/DATA') !== false);
-echo "1. Nagłówek pierwszej kolumny zawiera 'NUMER / DATA': " . ($hasColNumerData ? "PASS" : "FAIL") . "\n";
+echo "1. NagĹ‚Ăłwek pierwszej kolumny zawiera 'NUMER / DATA': " . ($hasColNumerData ? "PASS" : "FAIL") . "\n";
 
-// B. Sprawdzenie czy wiersze zamówień posiadają datę w pierwszej kolumnie i atrybut data-order-status
+// B. Sprawdzenie czy wiersze zamĂłwieĹ„ posiadajÄ… datÄ™ w pierwszej kolumnie i atrybut data-order-status
 $hasDataOrderStatus = (strpos($html, 'data-order-status="') !== false);
-echo "2. Wiersze zamówień posiadają atrybut data-order-status: " . ($hasDataOrderStatus ? "PASS" : "FAIL") . "\n";
+echo "2. Wiersze zamĂłwieĹ„ posiadajÄ… atrybut data-order-status: " . ($hasDataOrderStatus ? "PASS" : "FAIL") . "\n";
 
-// C. Sprawdzenie filtrów statusów nad tabelą zamówień
+// C. Sprawdzenie filtrĂłw statusĂłw nad tabelÄ… zamĂłwieĹ„
 $hasFilterNew = (strpos($html, 'order-filter-new') !== false || strpos($html, 'filterOrdersByStatus(\'new\')') !== false || strpos($html, 'filterOrdersByStatus("new")') !== false);
 $hasFilterAll = (strpos($html, 'order-filter-all') !== false || strpos($html, 'filterOrdersByStatus(\'all\')') !== false || strpos($html, 'filterOrdersByStatus("all")') !== false);
 $hasFilterProcessing = (strpos($html, 'filterOrdersByStatus(\'processing\')') !== false || strpos($html, 'filterOrdersByStatus("processing")') !== false);
 $hasFilterCompleted = (strpos($html, 'filterOrdersByStatus(\'completed\')') !== false || strpos($html, 'filterOrdersByStatus("completed")') !== false);
 
 $hasStatusFilters = ($hasFilterNew && $hasFilterAll);
-echo "3. Przyciski filtru statusów obecne (Nowe, Wszystkie, W kompletacji, Zrealizowane): " . ($hasStatusFilters ? "PASS" : "FAIL") . "\n";
+echo "3. Przyciski filtru statusĂłw obecne (Nowe, Wszystkie, W kompletacji, Zrealizowane): " . ($hasStatusFilters ? "PASS" : "FAIL") . "\n";
 
-// D. Sprawdzenie funkcji JS filtrowania zamówień
+// D. Sprawdzenie funkcji JS filtrowania zamĂłwieĹ„
 $hasFilterJs = (strpos($html, 'filterOrdersByStatus') !== false);
 echo "4. Funkcja JavaScript filterOrdersByStatus(): " . ($hasFilterJs ? "PASS" : "FAIL") . "\n";
 
-// E. Sprawdzenie przycisku "Finalizuj zamówienie" w tabeli
-$hasFinalizeBtn = (strpos($html, 'Finalizuj zamówienie') !== false || strpos($html, 'Finalizuj') !== false);
-echo "5. Przycisk 'Finalizuj zamówienie' w wierszu zamówienia: " . ($hasFinalizeBtn ? "PASS" : "FAIL") . "\n";
+// E. Sprawdzenie przycisku "Finalizuj zamĂłwienie" w tabeli
+$hasFinalizeBtn = (strpos($html, 'Finalizuj zamĂłwienie') !== false || strpos($html, 'Finalizuj') !== false);
+echo "5. Przycisk 'Finalizuj zamĂłwienie' w wierszu zamĂłwienia: " . ($hasFinalizeBtn ? "PASS" : "FAIL") . "\n";
 
 // F. Sprawdzenie opcji wydruku specyfikacji logistycznej w modalu
 $hasPrintBtn = (strpos($html, 'modal-order-print-btn') !== false || strpos($html, 'printOrderSpecification') !== false);
 echo "6. Przycisk/opcja wydruku specyfikacji logistycznej (#modal-order-print-btn / printOrderSpecification): " . ($hasPrintBtn ? "PASS" : "FAIL") . "\n";
 
-// G. Sprawdzenie stylów @media print dla specyfikacji magazynowej
+// G. Sprawdzenie stylĂłw @media print dla specyfikacji magazynowej
 $hasPrintStyles = (strpos($html, '@media print') !== false);
-echo "7. Zdefiniowane reguły stylów do wydruku (@media print): " . ($hasPrintStyles ? "PASS" : "FAIL") . "\n";
+echo "7. Zdefiniowane reguĹ‚y stylĂłw do wydruku (@media print): " . ($hasPrintStyles ? "PASS" : "FAIL") . "\n";
 
-// H. Sprawdzenie wyróżnionego przycisku "Finalizuj zamówienie" na samym dole okna modalnego
+// H. Sprawdzenie wyrĂłĹĽnionego przycisku "Finalizuj zamĂłwienie" na samym dole okna modalnego
 $hasModalFinalizeBtn = (strpos($html, 'id="btn-modal-finalize-order"') !== false && strpos($html, 'finalizeOrderAndPrint') !== false);
-echo "8. Wyróżniony przycisk 'Finalizuj zamówienie' w modalu (#btn-modal-finalize-order): " . ($hasModalFinalizeBtn ? "PASS" : "FAIL") . "\n";
+echo "8. WyrĂłĹĽniony przycisk 'Finalizuj zamĂłwienie' w modalu (#btn-modal-finalize-order): " . ($hasModalFinalizeBtn ? "PASS" : "FAIL") . "\n";
 
 // I. Sprawdzenie podpisu pod przyciskiem
-$hasModalFinalizeSubtext = (strpos($html, 'Drukuje specyfikację i zmienia status na Zrealizowane') !== false);
-echo "9. Podpis pod przyciskiem 'Drukuje specyfikację i zmienia status na Zrealizowane': " . ($hasModalFinalizeSubtext ? "PASS" : "FAIL") . "\n";
+$hasModalFinalizeSubtext = (strpos($html, 'Drukuje specyfikacjÄ™ i zmienia status na Zrealizowane') !== false);
+echo "9. Podpis pod przyciskiem 'Drukuje specyfikacjÄ™ i zmienia status na Zrealizowane': " . ($hasModalFinalizeSubtext ? "PASS" : "FAIL") . "\n";
 
-// J. Sprawdzenie zamykania okna modalnego po finalizacji zamówienia
+// J. Sprawdzenie zamykania okna modalnego po finalizacji zamĂłwienia
 $hasModalCloseInFinalize = (bool)preg_match('/function finalizeOrderAndPrint\(\)[^}]+closeOrderModal\(\)/s', $html);
 echo "10. Funkcja finalizeOrderAndPrint zamyka okno modalne (closeOrderModal): " . ($hasModalCloseInFinalize ? "PASS" : "FAIL") . "\n";
 
 if (!$hasColNumerData || !$hasDataOrderStatus || !$hasStatusFilters || !$hasFilterJs || !$hasFinalizeBtn || !$hasPrintBtn || !$hasPrintStyles || !$hasModalFinalizeBtn || !$hasModalFinalizeSubtext || !$hasModalCloseInFinalize) {
-    echo "=== TESTY ZAKOŃCZONE BŁĘDEM (Stan RED) ===\n";
+    echo "=== TESTY ZAKOĹCZONE BĹÄDEM (Stan RED) ===\n";
     exit(1);
 }
 
-echo "=== WSZYSTKIE TESTY FILTRU, NUMER/DATA I FINALIZACJI ZAKOŃCZONE SUKCESEM ===\n";
+echo "=== WSZYSTKIE TESTY FILTRU, NUMER/DATA I FINALIZACJI ZAKOĹCZONE SUKCESEM ===\n";

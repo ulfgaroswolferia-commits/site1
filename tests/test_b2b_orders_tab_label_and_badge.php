@@ -1,24 +1,26 @@
-<?php
+﻿<?php
 /**
- * Test TDD: Weryfikacja zmiany etykiety na "Zamówienia" oraz licznika tylko nowych zamówień.
+ * Test TDD: Weryfikacja zmiany etykiety na "ZamĂłwienia" oraz licznika tylko nowych zamĂłwieĹ„.
  */
-define('BASE_PATH', 'C:/laragon/www');
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 require_once BASE_PATH . '/program/config/data.php';
 require_once BASE_PATH . '/program/config/autoload.php';
 require_once BASE_PATH . '/program/config/includes.php';
 
 use App\B2bRepository;
 
-echo "=== TEST: Etykieta 'Zamówienia' i licznik nowych zamówień ===\n";
+echo "=== TEST: Etykieta 'ZamĂłwienia' i licznik nowych zamĂłwieĹ„ ===\n";
 
 $repo = new B2bRepository();
 
-// Pobierz wszystkie zamówienia z bazy i policz nowe
+// Pobierz wszystkie zamĂłwienia z bazy i policz nowe
 $allOrders = $repo->getAllOrders(100);
 $newOrdersCount = count(array_filter($allOrders, fn($o) => ($o['status'] ?? '') === 'new'));
 $totalOrdersCount = count($allOrders);
 
-echo "1. Zamówienia w bazie: Łącznie = {$totalOrdersCount}, Nowe (status 'new') = {$newOrdersCount}\n";
+echo "1. ZamĂłwienia w bazie: ĹÄ…cznie = {$totalOrdersCount}, Nowe (status 'new') = {$newOrdersCount}\n";
 
 $cookieFile = tempnam(sys_get_temp_dir(), 'cook_orders_tab_');
 $ch = curl_init();
@@ -50,43 +52,43 @@ $html = curl_exec($ch);
 $tabBtnOk = false;
 if (preg_match('/<button[^>]*id="tab-btn-orders"[^>]*>(.*?)<\/button>/s', $html, $btnMatches)) {
     $btnContent = $btnMatches[1];
-    $hasSplywajace = strpos($btnContent, 'Spływające Zamówienia') !== false;
-    $hasZamowienia = strpos($btnContent, 'Zamówienia') !== false;
+    $hasSplywajace = strpos($btnContent, 'SpĹ‚ywajÄ…ce ZamĂłwienia') !== false;
+    $hasZamowienia = strpos($btnContent, 'ZamĂłwienia') !== false;
 
     if (!$hasSplywajace && $hasZamowienia) {
-        echo "2. Etykieta zakładki to 'Zamówienia' (usunięto 'Spływające'): PASS\n";
+        echo "2. Etykieta zakĹ‚adki to 'ZamĂłwienia' (usuniÄ™to 'SpĹ‚ywajÄ…ce'): PASS\n";
         $tabBtnOk = true;
     } else {
-        echo "FAIL: W przycisku zakładki nadal występuje 'Spływające Zamówienia' lub brak 'Zamówienia'!\n";
+        echo "FAIL: W przycisku zakĹ‚adki nadal wystÄ™puje 'SpĹ‚ywajÄ…ce ZamĂłwienia' lub brak 'ZamĂłwienia'!\n";
     }
 } else {
     echo "FAIL: Nie znaleziono przycisku #tab-btn-orders!\n";
 }
 
-// 2. Sprawdzenie wartości znacznika badge-orders-count
+// 2. Sprawdzenie wartoĹ›ci znacznika badge-orders-count
 $badgeOk = false;
 if (preg_match('/<span[^>]*id="badge-orders-count"[^>]*>(.*?)<\/span>/s', $html, $badgeMatches)) {
     $badgeVal = trim(strip_tags($badgeMatches[1]));
-    echo "3. Wartość znacznika badge-orders-count: '{$badgeVal}' (oczekiwano: '{$newOrdersCount}')\n";
+    echo "3. WartoĹ›Ä‡ znacznika badge-orders-count: '{$badgeVal}' (oczekiwano: '{$newOrdersCount}')\n";
     if ((int)$badgeVal === (int)$newOrdersCount) {
-        echo "   Licznik zawiera TYLKO nowe zamówienia: PASS\n";
+        echo "   Licznik zawiera TYLKO nowe zamĂłwienia: PASS\n";
         $badgeOk = true;
     } else {
-        echo "FAIL: Licznik w badge-orders-count to '{$badgeVal}', a powinno być '{$newOrdersCount}'!\n";
+        echo "FAIL: Licznik w badge-orders-count to '{$badgeVal}', a powinno byÄ‡ '{$newOrdersCount}'!\n";
     }
 } else {
     echo "FAIL: Nie znaleziono znacznika #badge-orders-count!\n";
 }
 
-// 3. Sprawdzenie funkcji odświeżania licznika w JS
+// 3. Sprawdzenie funkcji odĹ›wieĹĽania licznika w JS
 $hasJsRefresh = strpos($html, 'refreshNewOrdersBadge') !== false;
-echo "4. Funkcja odświeżania licznika nowych zamówień w JS: " . ($hasJsRefresh ? "PASS" : "FAIL") . "\n";
+echo "4. Funkcja odĹ›wieĹĽania licznika nowych zamĂłwieĹ„ w JS: " . ($hasJsRefresh ? "PASS" : "FAIL") . "\n";
 
 @unlink($cookieFile);
 
 if (!$tabBtnOk || !$badgeOk || !$hasJsRefresh) {
-    echo "=== TESTY ZAKOŃCZONE BŁĘDEM ===\n";
+    echo "=== TESTY ZAKOĹCZONE BĹÄDEM ===\n";
     exit(1);
 }
 
-echo "=== WSZYSTKIE TESTY ETYKIETY I LICZNIKA ZAMÓWIEŃ ZAKOŃCZONE SUKCESEM ===\n";
+echo "=== WSZYSTKIE TESTY ETYKIETY I LICZNIKA ZAMĂ“WIEĹ ZAKOĹCZONE SUKCESEM ===\n";

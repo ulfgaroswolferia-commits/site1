@@ -1,8 +1,10 @@
-<?php
+﻿<?php
 /**
  * Test integracyjny API administracyjnego B2bController
  */
-define('BASE_PATH', 'C:/laragon/www');
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 require_once BASE_PATH . '/program/config/data.php';
 require_once BASE_PATH . '/program/config/autoload.php';
 
@@ -52,25 +54,25 @@ httpReq('http://localhost/home/login', [
     '_csrf' => $loginCsrf
 ], [], true);
 
-// 2. Pobierz stronę /b2b/admin i odczytaj CSRF
+// 2. Pobierz stronÄ™ /b2b/admin i odczytaj CSRF
 $resAdminGet = httpReq('http://localhost/b2b/admin');
-echo "1. Wejście na /b2b/admin jako admin: {$resAdminGet['code']}\n";
+echo "1. WejĹ›cie na /b2b/admin jako admin: {$resAdminGet['code']}\n";
 preg_match('/const CSRF_TOKEN = \'([^\']+)\'/', $resAdminGet['body'], $mB2b);
 $csrfToken = $mB2b[1] ?? $loginCsrf;
 
-// 3. Utwórz nowego klienta B2B przez API
+// 3. UtwĂłrz nowego klienta B2B przez API
 $resClient = httpReq('http://localhost/b2b/createclient', [
     'company_name'     => 'Warzywkowo Sp. z o.o.',
     'nip'              => '9876543210',
     'phone'            => '600700800',
     'email'            => 'kontakt@warzywkowo.pl',
-    'delivery_address' => 'ul. Główna 12, Radom',
+    'delivery_address' => 'ul. GĹ‚Ăłwna 12, Radom',
     '_csrf'            => $csrfToken
 ], ['X-Requested-With: XMLHttpRequest', 'Accept: application/json']);
 
 $dataClient = json_decode($resClient['body'], true);
 $clientOk = ($resClient['code'] === 200 && ($dataClient['ok'] ?? false) === true && !empty($dataClient['auth_token']));
-echo "2. Utworzenie klienta B2B przez API: " . ($clientOk ? "OK (Token: {$dataClient['auth_token']})" : "BŁĄD: {$resClient['body']}") . "\n";
+echo "2. Utworzenie klienta B2B przez API: " . ($clientOk ? "OK (Token: {$dataClient['auth_token']})" : "BĹÄ„D: {$resClient['body']}") . "\n";
 
 // 4. Edycja produktu (cena, klatka) przez API
 $repo = new \App\B2bRepository();
@@ -78,7 +80,7 @@ $allProds = $repo->getAllProductsAdmin();
 if (empty($allProds)) {
     // Zainicjuj produkt do testu
     $repo->saveProductsBatch([[
-        'name' => 'Cytryna hiszpańska',
+        'name' => 'Cytryna hiszpaĹ„ska',
         'category' => 'Cytrusy',
         'unit' => 'kg',
         'price' => 7.00,
@@ -101,9 +103,9 @@ $resUpdate = httpReq('http://localhost/b2b/updateproduct', [
 
 $dataUpdate = json_decode($resUpdate['body'], true);
 $updateOk = ($resUpdate['code'] === 200 && ($dataUpdate['ok'] ?? false) === true);
-echo "3. Edycja produktu przez API: " . ($updateOk ? "OK" : "BŁĄD: {$resUpdate['body']}") . "\n";
+echo "3. Edycja produktu przez API: " . ($updateOk ? "OK" : "BĹÄ„D: {$resUpdate['body']}") . "\n";
 
-// 5. Przełącznik dostępności towaru
+// 5. PrzeĹ‚Ä…cznik dostÄ™pnoĹ›ci towaru
 $resToggle = httpReq('http://localhost/b2b/toggleproduct', [
     'id'    => $prodId,
     '_csrf' => $csrfToken
@@ -111,7 +113,7 @@ $resToggle = httpReq('http://localhost/b2b/toggleproduct', [
 
 $dataToggle = json_decode($resToggle['body'], true);
 $toggleOk = ($resToggle['code'] === 200 && ($dataToggle['ok'] ?? false) === true);
-echo "4. Przełączenie dostępności produktu: " . ($toggleOk ? "OK" : "BŁĄD") . "\n";
+echo "4. PrzeĹ‚Ä…czenie dostÄ™pnoĹ›ci produktu: " . ($toggleOk ? "OK" : "BĹÄ„D") . "\n";
 
 @unlink($cookieFile);
 

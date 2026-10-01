@@ -1,8 +1,10 @@
-<?php
+﻿<?php
 /**
- * Test przepływu klienta B2B: autologowanie tokenem, asystent opakowań i złożenie zamówienia
+ * Test przepĹ‚ywu klienta B2B: autologowanie tokenem, asystent opakowaĹ„ i zĹ‚oĹĽenie zamĂłwienia
  */
-define('BASE_PATH', 'C:/laragon/www');
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 require_once BASE_PATH . '/program/config/data.php';
 require_once BASE_PATH . '/program/config/autoload.php';
 
@@ -46,7 +48,7 @@ $repo = new \App\B2bRepository();
 // 1. Dodaj klienta testowego i produkty
 $clientToken = bin2hex(random_bytes(16));
 $clientId = $repo->createClient([
-    'company_name'     => 'Warzywniak Zielony Zakątek',
+    'company_name'     => 'Warzywniak Zielony ZakÄ…tek',
     'phone'            => '511222333',
     'delivery_address' => 'ul. Polna 8, Lublin',
     'auth_token'       => $clientToken
@@ -73,28 +75,28 @@ $repo->saveProductsBatch([
     ]
 ], true);
 
-// 2. Wejście z tokenem do /b2b?token=...
+// 2. WejĹ›cie z tokenem do /b2b?token=...
 $resCatalog = httpReq('http://localhost/b2b?token=' . $clientToken, null, [], true);
-echo "1. Wejście z tokenem autologowania: {$resCatalog['code']}\n";
+echo "1. WejĹ›cie z tokenem autologowania: {$resCatalog['code']}\n";
 
-$hasClientName = strpos($resCatalog['body'], 'Warzywniak Zielony Zakątek') !== false;
+$hasClientName = strpos($resCatalog['body'], 'Warzywniak Zielony ZakÄ…tek') !== false;
 $hasMango      = strpos($resCatalog['body'], 'Mango Brazylia') !== false;
 $hasBoxBadge   = strpos($resCatalog['body'], 'klatka') !== false;
 
-echo "2. Rozpoznano nazwę klienta w nagłówku: " . ($hasClientName ? "OK" : "BŁĄD") . "\n";
-echo "3. Wyświetlono towar 'Mango Brazylia': " . ($hasMango ? "OK" : "BŁĄD") . "\n";
-echo "4. Wyświetlono asystenta opakowań: " . ($hasBoxBadge ? "OK" : "BŁĄD") . "\n";
+echo "2. Rozpoznano nazwÄ™ klienta w nagĹ‚Ăłwku: " . ($hasClientName ? "OK" : "BĹÄ„D") . "\n";
+echo "3. WyĹ›wietlono towar 'Mango Brazylia': " . ($hasMango ? "OK" : "BĹÄ„D") . "\n";
+echo "4. WyĹ›wietlono asystenta opakowaĹ„: " . ($hasBoxBadge ? "OK" : "BĹÄ„D") . "\n";
 
 // 3. Odczyt CSRF z katalogu
 preg_match('/const CSRF_TOKEN = \'([^\']+)\'/', $resCatalog['body'], $m);
 $csrfToken = $m[1] ?? '';
 
-// 4. Złożenie zamówienia B2B przez API
+// 4. ZĹ‚oĹĽenie zamĂłwienia B2B przez API
 $itemsToOrder = [
     [
         'product_name' => 'Mango Brazylia',
         'price'        => 6.00,
-        'quantity'     => 14, // 2 pełne klatki
+        'quantity'     => 14, // 2 peĹ‚ne klatki
         'unit'         => 'szt.',
         'package_size' => 7.0,
         'package_unit' => 'klatka'
@@ -111,17 +113,17 @@ $itemsToOrder = [
 
 $resOrder = httpReq('http://localhost/b2b/saveorder', [
     'items' => json_encode($itemsToOrder),
-    'notes' => 'Dostawa przed godziną 6:30',
+    'notes' => 'Dostawa przed godzinÄ… 6:30',
     '_csrf' => $csrfToken
 ], ['X-Requested-With: XMLHttpRequest', 'Accept: application/json']);
 
-echo "5. Złożenie zamówienia B2B (HTTP code): {$resOrder['code']}\n";
-echo "   Odpowiedź JSON: {$resOrder['body']}\n";
+echo "5. ZĹ‚oĹĽenie zamĂłwienia B2B (HTTP code): {$resOrder['code']}\n";
+echo "   OdpowiedĹş JSON: {$resOrder['body']}\n";
 
 $dataOrder = json_decode($resOrder['body'], true);
 $orderOk = ($resOrder['code'] === 200 && ($dataOrder['ok'] ?? false) === true && !empty($dataOrder['order_number']));
 
-echo "6. Sukces zapisu zamówienia: " . ($orderOk ? "OK ({$dataOrder['order_number']})" : "BŁĄD") . "\n";
+echo "6. Sukces zapisu zamĂłwienia: " . ($orderOk ? "OK ({$dataOrder['order_number']})" : "BĹÄ„D") . "\n";
 
 @unlink($cookieFile);
 

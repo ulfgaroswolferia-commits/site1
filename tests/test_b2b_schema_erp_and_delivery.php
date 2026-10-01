@@ -1,8 +1,10 @@
-<?php
+﻿<?php
 /**
  * Test TDD: Weryfikacja rozszerzenia schematu bazy: delivery_date, erp_code oraz b2b_settings
  */
-define('BASE_PATH', 'C:/laragon\www');
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 require_once BASE_PATH . '/program/config/data.php';
 require_once BASE_PATH . '/program/config/autoload.php';
 
@@ -13,29 +15,29 @@ echo "=== TEST: Schemat bazy danych dla ERP i daty dostawy ===\n";
 $repo = new B2bRepository();
 $pdo = $repo->getPdo();
 
-// 1. Sprawdzenie tabeli b2b_settings i domyślnych wartości
+// 1. Sprawdzenie tabeli b2b_settings i domyĹ›lnych wartoĹ›ci
 $cutoff = $repo->getSetting('cutoff_time');
 $erpFormat = $repo->getSetting('default_erp_format');
 $deliveryDays = $repo->getSetting('delivery_days');
 
-echo "1. Domyślny cutoff_time: '{$cutoff}' (oczekiwano: 21:30): ";
+echo "1. DomyĹ›lny cutoff_time: '{$cutoff}' (oczekiwano: 21:30): ";
 $cutoffOk = ($cutoff === '21:30');
 echo ($cutoffOk ? "PASS" : "FAIL") . "\n";
 
-echo "2. Domyślny format ERP: '{$erpFormat}' (oczekiwano: subiekt): ";
+echo "2. DomyĹ›lny format ERP: '{$erpFormat}' (oczekiwano: subiekt): ";
 $erpOk = ($erpFormat === 'subiekt');
 echo ($erpOk ? "PASS" : "FAIL") . "\n";
 
 // Zmiana i odczyt ustawienia
 $repo->setSetting('cutoff_time', '22:00');
 $cutoffUpdated = $repo->getSetting('cutoff_time');
-$repo->setSetting('cutoff_time', '21:30'); // przywrócenie
+$repo->setSetting('cutoff_time', '21:30'); // przywrĂłcenie
 echo "3. Zapis i odczyt ustawienia w b2b_settings: " . ($cutoffUpdated === '22:00' ? "PASS" : "FAIL") . "\n";
 
 // 2. Sprawdzenie kolumny erp_code w b2b_products
 $prods = $repo->getAllProductsAdmin();
 $firstProd = !empty($prods) ? $prods[0] : null;
-assert($firstProd !== null, "Brak produktów w bazie!");
+assert($firstProd !== null, "Brak produktĂłw w bazie!");
 
 $testCode = 'TOW-TEST-99';
 $repo->updateProduct((int)$firstProd['id'], ['erp_code' => $testCode]);
@@ -53,7 +55,7 @@ $orderId = $repo->createOrder([
     'status'                    => 'new'
 ], [
     [
-        'product_name'    => 'Jabłko Test',
+        'product_name'    => 'JabĹ‚ko Test',
         'price'           => 5.0,
         'quantity'        => 10,
         'unit'            => 'kg',
@@ -68,13 +70,13 @@ $savedOrder = $repo->getOrderById($orderId);
 $deliveryDateOk = (isset($savedOrder['delivery_date']) && $savedOrder['delivery_date'] === '2026-09-22');
 echo "5. Zapis i odczyt delivery_date w b2b_orders: " . ($deliveryDateOk ? "PASS" : "FAIL (got " . ($savedOrder['delivery_date'] ?? 'null') . ")") . "\n";
 
-// Sprzątanie
+// SprzÄ…tanie
 $pdo->exec("DELETE FROM b2b_order_items WHERE order_id = {$orderId}");
 $pdo->exec("DELETE FROM b2b_orders WHERE id = {$orderId}");
 
 if (!$cutoffOk || !$erpOk || $cutoffUpdated !== '22:00' || !$erpCodeOk || !$deliveryDateOk) {
-    echo "=== TEST ZAKOŃCZONY BŁĘDEM (Stan RED) ===\n";
+    echo "=== TEST ZAKOĹCZONY BĹÄDEM (Stan RED) ===\n";
     exit(1);
 }
 
-echo "=== TEST ZAKOŃCZONY SUKCESEM (Stan GREEN) ===\n";
+echo "=== TEST ZAKOĹCZONY SUKCESEM (Stan GREEN) ===\n";

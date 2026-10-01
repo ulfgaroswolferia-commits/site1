@@ -1,15 +1,17 @@
-<?php
+﻿<?php
 /**
- * Test TDD: Błyskawiczne składanie zamówienia w B2B (ochrona przed blokowaniem przez SMTP i optymalizacja czasu odpowiedzi).
+ * Test TDD: BĹ‚yskawiczne skĹ‚adanie zamĂłwienia w B2B (ochrona przed blokowaniem przez SMTP i optymalizacja czasu odpowiedzi).
  */
-define('BASE_PATH', 'C:/laragon\www');
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 require_once BASE_PATH . '/program/config/data.php';
 require_once BASE_PATH . '/program/config/autoload.php';
 require_once BASE_PATH . '/program/config/includes.php';
 
 use App\B2bRepository;
 
-echo "=== TEST: Błyskawiczne składanie zamówienia B2B ===\n";
+echo "=== TEST: BĹ‚yskawiczne skĹ‚adanie zamĂłwienia B2B ===\n";
 
 // 1. Sprawdzenie czasu wykonania Mailer::send gdy SMTP_HOST jest pusty
 $t0 = microtime(true);
@@ -43,10 +45,10 @@ preg_match('/const CSRF_TOKEN = \'([^\']+)\';/', $catalogHtml, $mCsrf);
 $csrfToken = $mCsrf[1] ?? '';
 assert($csrfToken !== '', "Brak tokenu CSRF z katalogu!");
 
-// 3. Wysłanie zamówienia i pomiar czasu całego żądania HTTP
+// 3. WysĹ‚anie zamĂłwienia i pomiar czasu caĹ‚ego ĹĽÄ…dania HTTP
 $items = [
     [
-        'product_name'    => 'Marchewka Test Szybkości',
+        'product_name'    => 'Marchewka Test SzybkoĹ›ci',
         'price'           => 3.20,
         'quantity'        => 20,
         'unit'            => 'kg',
@@ -81,18 +83,18 @@ curl_close($ch);
 @unlink($cookieFile);
 
 echo "2. Kod HTTP: {$httpCode}: " . ($httpCode === 200 ? "PASS" : "FAIL") . "\n";
-echo "3. Czas odpowiedzi serwera na złożenie zamówienia: " . round($httpDurationMs, 2) . " ms (oczekiwano < 800 ms): ";
+echo "3. Czas odpowiedzi serwera na zĹ‚oĹĽenie zamĂłwienia: " . round($httpDurationMs, 2) . " ms (oczekiwano < 800 ms): ";
 $httpFast = ($httpDurationMs < 800);
 echo ($httpFast ? "PASS" : "FAIL") . "\n";
 
 $data = json_decode($responseJson, true);
 $orderOk = (!empty($data['ok']) && !empty($data['order_number']));
-echo "4. Prawidłowa odpowiedź JSON z numerem zamówienia: " . ($orderOk ? "PASS ({$data['order_number']})" : "FAIL") . "\n";
+echo "4. PrawidĹ‚owa odpowiedĹş JSON z numerem zamĂłwienia: " . ($orderOk ? "PASS ({$data['order_number']})" : "FAIL") . "\n";
 
 $hasMinDelay = (strpos($catalogHtml, 'setTimeout(resolve, 1000)') !== false);
-echo "5. Płynne opóźnienie UX (min 1 sekunda animacji w JS): " . ($hasMinDelay ? "PASS" : "FAIL") . "\n";
+echo "5. PĹ‚ynne opĂłĹşnienie UX (min 1 sekunda animacji w JS): " . ($hasMinDelay ? "PASS" : "FAIL") . "\n";
 
-// Sprzątanie po zamówieniu testowym
+// SprzÄ…tanie po zamĂłwieniu testowym
 if (!empty($data['order_id'])) {
     $repo->getPdo()->exec("DELETE FROM b2b_order_items WHERE order_id = " . (int)$data['order_id']);
     $repo->getPdo()->exec("DELETE FROM b2b_orders WHERE id = " . (int)$data['order_id']);
@@ -102,9 +104,9 @@ if (!empty($data['export_filename'])) {
 }
 
 if (!$mailFast || $httpCode !== 200 || !$httpFast || !$orderOk || !$hasMinDelay) {
-    echo "=== TEST ZAKOŃCZONY BŁĘDEM (Stan RED) ===\n";
+    echo "=== TEST ZAKOĹCZONY BĹÄDEM (Stan RED) ===\n";
     exit(1);
 }
 
-echo "=== TEST ZAKOŃCZONY SUKCESEM (Stan GREEN) ===\n";
+echo "=== TEST ZAKOĹCZONY SUKCESEM (Stan GREEN) ===\n";
 

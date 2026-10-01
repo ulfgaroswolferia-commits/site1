@@ -1,8 +1,10 @@
-<?php
+﻿<?php
 /**
  * Test TDD: Usuwanie klienta B2B z bazy danych (w oknie edycji klienta)
  */
-define('BASE_PATH', 'C:/laragon/www');
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 require_once BASE_PATH . '/program/config/data.php';
 require_once BASE_PATH . '/program/config/autoload.php';
 require_once BASE_PATH . '/program/config/includes.php';
@@ -46,7 +48,7 @@ $csrfToken = $mAdminCsrf[1] ?? $loginCsrf;
 $unique = time() . '_' . mt_rand(100, 999);
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-    'company_name'     => 'Klient Do Usunięcia ' . $unique,
+    'company_name'     => 'Klient Do UsuniÄ™cia ' . $unique,
     'nip'              => '1231231234',
     'phone'            => '555666777',
     'email'            => 'dousuniecia' . $unique . '@example.com',
@@ -59,14 +61,14 @@ $dataCreate = json_decode($resCreate, true);
 
 $clientId = (int)($dataCreate['client_id'] ?? 0);
 $token = $dataCreate['auth_token'] ?? '';
-assert($clientId > 0, "Nie udało się utworzyć klienta testowego!");
+assert($clientId > 0, "Nie udaĹ‚o siÄ™ utworzyÄ‡ klienta testowego!");
 echo "1. Utworzono klienta testowego (ID: {$clientId}, Token: {$token})\n";
 
-// Sprawdzenie obecności w bazie
+// Sprawdzenie obecnoĹ›ci w bazie
 $clientInDb = $repo->getClientById($clientId);
 echo "2. Klient istnieje w bazie: " . ($clientInDb ? "PASS" : "FAIL") . "\n";
 
-// 3. Test API usunięcia klienta /b2b/deleteclient
+// 3. Test API usuniÄ™cia klienta /b2b/deleteclient
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
     'id'    => $clientId,
@@ -77,14 +79,14 @@ $resDelete = curl_exec($ch);
 $dataDelete = json_decode($resDelete, true);
 
 $deleteApiOk = ($dataDelete && ($dataDelete['ok'] ?? false) === true);
-echo "3. Odpowiedź API /b2b/deleteclient: " . ($deleteApiOk ? "PASS" : "FAIL: {$resDelete}") . "\n";
+echo "3. OdpowiedĹş API /b2b/deleteclient: " . ($deleteApiOk ? "PASS" : "FAIL: {$resDelete}") . "\n";
 
-// 4. Sprawdzenie czy klient faktycznie został usunięty z bazy
+// 4. Sprawdzenie czy klient faktycznie zostaĹ‚ usuniÄ™ty z bazy
 $clientAfter = $repo->getClientById($clientId);
 $deletedFromDb = ($clientAfter === null);
-echo "4. Klient został trwale usunięty z bazy danych: " . ($deletedFromDb ? "PASS" : "FAIL") . "\n";
+echo "4. Klient zostaĹ‚ trwale usuniÄ™ty z bazy danych: " . ($deletedFromDb ? "PASS" : "FAIL") . "\n";
 
-// 5. Sprawdzenie czy klient nie może już zalogować się starym tokenem
+// 5. Sprawdzenie czy klient nie moĹĽe juĹĽ zalogowaÄ‡ siÄ™ starym tokenem
 $ch2 = curl_init();
 curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch2, CURLOPT_URL, "http://localhost/b2b?token={$token}");
@@ -94,20 +96,20 @@ $tokenHttpCode = curl_getinfo($ch2, CURLINFO_HTTP_CODE);
 curl_close($ch2);
 
 $tokenBlocked = in_array($tokenHttpCode, [301, 302, 303, 403, 404]) || strpos($resTokenAccess, 'login') !== false;
-echo "5. Dostęp usuniętego klienta przez token zablokowany: " . ($tokenBlocked ? "PASS" : "FAIL (HTTP {$tokenHttpCode})") . "\n";
+echo "5. DostÄ™p usuniÄ™tego klienta przez token zablokowany: " . ($tokenBlocked ? "PASS" : "FAIL (HTTP {$tokenHttpCode})") . "\n";
 
 // 6. Sprawdzenie widoku HTML i funkcji JS
 $hasDeleteBtn = strpos($html, 'id="btn-delete-client"') !== false;
 $hasDeleteFn = strpos($html, 'deleteCurrentClient') !== false;
 
-echo "6. Przycisk usunięcia w modalu edycji klienta (#btn-delete-client): " . ($hasDeleteBtn ? "PASS" : "FAIL") . "\n";
+echo "6. Przycisk usuniÄ™cia w modalu edycji klienta (#btn-delete-client): " . ($hasDeleteBtn ? "PASS" : "FAIL") . "\n";
 echo "7. Funkcja JavaScript deleteCurrentClient(): " . ($hasDeleteFn ? "PASS" : "FAIL") . "\n";
 
 @unlink($cookieFile);
 
 if (!$deleteApiOk || !$deletedFromDb || !$tokenBlocked || !$hasDeleteBtn || !$hasDeleteFn) {
-    echo "=== TESTY ZAKOŃCZONE BŁĘDEM ===\n";
+    echo "=== TESTY ZAKOĹCZONE BĹÄDEM ===\n";
     exit(1);
 }
 
-echo "=== WSZYSTKIE TESTY USUWANIA KLIENTA ZAKOŃCZONE SUKCESEM ===\n";
+echo "=== WSZYSTKIE TESTY USUWANIA KLIENTA ZAKOĹCZONE SUKCESEM ===\n";

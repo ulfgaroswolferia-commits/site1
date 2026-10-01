@@ -1,8 +1,10 @@
-<?php
+﻿<?php
 /**
- * Test weryfikacyjny wyszukiwarki klientów po nazwie w widoku Baza Odbiorców B2B
+ * Test weryfikacyjny wyszukiwarki klientĂłw po nazwie w widoku Baza OdbiorcĂłw B2B
  */
-define('BASE_PATH', 'C:/laragon/www');
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 require_once BASE_PATH . '/program/config/data.php';
 require_once BASE_PATH . '/program/config/autoload.php';
 
@@ -28,7 +30,7 @@ function req($url, $post = null, $follow = false) {
     return ['code' => $code, 'url' => $urlEff, 'body' => $body];
 }
 
-echo "=== TEST: Wyszukiwarka klientów po nazwie w Bazie Odbiorców B2B ===\n";
+echo "=== TEST: Wyszukiwarka klientĂłw po nazwie w Bazie OdbiorcĂłw B2B ===\n";
 
 // 1. Logowanie administratora hurtowni
 $resLoginGet = req('http://localhost/home/login');
@@ -48,14 +50,14 @@ $resAdmin = req('http://localhost/b2b/admin?tab=clients');
 $html = $resAdmin['body'];
 echo "2. Pobranie panelu hurtownika (tab=clients): HTTP {$resAdmin['code']}\n";
 
-// 3. Weryfikacja elementów wyszukiwarki
+// 3. Weryfikacja elementĂłw wyszukiwarki
 $checks = [
     'Pole wyszukiwarki (#client-search-admin)'     => strpos($html, 'id="client-search-admin"') !== false,
     'Przycisk czyszczenia (#client-search-clear)' => strpos($html, 'id="client-search-clear"') !== false,
-    'Licznik wyników (#clients-count-badge)'       => strpos($html, 'id="clients-count-badge"') !== false,
-    'Wiersze z klasą client-data-row'             => strpos($html, 'client-data-row') !== false,
+    'Licznik wynikĂłw (#clients-count-badge)'       => strpos($html, 'id="clients-count-badge"') !== false,
+    'Wiersze z klasÄ… client-data-row'             => strpos($html, 'client-data-row') !== false,
     'Atrybut data-client-name w wierszu klienta'  => strpos($html, 'data-client-name=') !== false,
-    'Wiersz braku wyników (#no-clients-search-row)'=> strpos($html, 'id="no-clients-search-row"') !== false,
+    'Wiersz braku wynikĂłw (#no-clients-search-row)'=> strpos($html, 'id="no-clients-search-row"') !== false,
     'Funkcja JavaScript filterClients()'          => strpos($html, 'function filterClients(') !== false,
     'Funkcja JavaScript clearClientSearch()'      => strpos($html, 'function clearClientSearch(') !== false,
     'Rejestracja zdarzenia input dla wyszukiwarki'=> strpos($html, "clientSearchInput.addEventListener('input', filterClients)") !== false,
@@ -64,12 +66,12 @@ $checks = [
 $allPassed = true;
 $idx = 1;
 foreach ($checks as $name => $ok) {
-    echo "{$idx}. {$name}: " . ($ok ? "OK" : "BŁĄD") . "\n";
+    echo "{$idx}. {$name}: " . ($ok ? "OK" : "BĹÄ„D") . "\n";
     if (!$ok) $allPassed = false;
     $idx++;
 }
 
 @unlink($cookieFile);
 
-echo $allPassed ? "=== TEST WYSZUKIWARKI KLIENTÓW ZAKOŃCZONY SUKCESEM ===\n" : "=== TEST ZAKOŃCZONY BŁĘDEM ===\n";
+echo $allPassed ? "=== TEST WYSZUKIWARKI KLIENTĂ“W ZAKOĹCZONY SUKCESEM ===\n" : "=== TEST ZAKOĹCZONY BĹÄDEM ===\n";
 exit($allPassed ? 0 : 1);

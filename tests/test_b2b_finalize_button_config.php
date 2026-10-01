@@ -1,23 +1,25 @@
-<?php
+﻿<?php
 /**
- * Test TDD: Konfiguracja akcji przycisku "Finalizuj zamówienie" w panelu hurtownika
+ * Test TDD: Konfiguracja akcji przycisku "Finalizuj zamĂłwienie" w panelu hurtownika
  */
-define('BASE_PATH', 'C:/laragon/www');
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 require_once BASE_PATH . '/program/config/data.php';
 require_once BASE_PATH . '/program/config/autoload.php';
 require_once BASE_PATH . '/program/config/includes.php';
 
 use App\B2bRepository;
 
-echo "=== TEST: Konfiguracja akcji przycisku Finalizacja zamówienia ===\n";
+echo "=== TEST: Konfiguracja akcji przycisku Finalizacja zamĂłwienia ===\n";
 
 $repo = new B2bRepository();
 
-// 1. Sprawdzenie domyślnych wartości w bazie
+// 1. Sprawdzenie domyĹ›lnych wartoĹ›ci w bazie
 $finalizeAction = $repo->getSetting('finalize_action', 'print');
 $finalizeErp = $repo->getSetting('finalize_erp_format', 'default');
-echo "1. Domyślna akcja finalizacji: '{$finalizeAction}' (oczekiwano: print): " . ($finalizeAction === 'print' ? "PASS" : "FAIL") . "\n";
-assert($finalizeAction === 'print', "Błędna domyślna akcja finalizacji");
+echo "1. DomyĹ›lna akcja finalizacji: '{$finalizeAction}' (oczekiwano: print): " . ($finalizeAction === 'print' ? "PASS" : "FAIL") . "\n";
+assert($finalizeAction === 'print', "BĹ‚Ä™dna domyĹ›lna akcja finalizacji");
 
 // 2. Test zapisu przez API POST /b2b/savesettings
 $cookieAdmin = tempnam(sys_get_temp_dir(), 'cook_fin_');
@@ -80,7 +82,7 @@ $json2 = json_decode($resp2, true);
 $okErp = (!empty($json2['ok']) && $repo->getSetting('finalize_action') === 'erp' && $repo->getSetting('finalize_erp_format') === 'optima');
 echo "3. Zapis akcji 'erp' z formatem 'optima': " . ($okErp ? "PASS" : "FAIL") . "\n";
 
-// 3. Sprawdzenie obecności kontrolek w widoku panelu admina
+// 3. Sprawdzenie obecnoĹ›ci kontrolek w widoku panelu admina
 curl_setopt($ch, CURLOPT_HTTPGET, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, []);
 curl_setopt($ch, CURLOPT_URL, 'http://localhost/b2b/admin?tab=settings');
@@ -98,13 +100,13 @@ echo "5. Dynamiczny opis przycisku w oknie modalnym (btn-modal-finalize-subtext)
 curl_close($ch);
 @unlink($cookieAdmin);
 
-// Przywrócenie domyślnych
+// PrzywrĂłcenie domyĹ›lnych
 $repo->setSetting('finalize_action', 'print');
 $repo->setSetting('finalize_erp_format', 'default');
 
 if (!$okExcel || !$okErp || !$hasRadioPrint || !$hasRadioExcel || !$hasRadioErp || !$hasErpSelect || !$hasSubtext) {
-    echo "=== TEST ZAKOŃCZONY BŁĘDEM (Stan RED) ===\n";
+    echo "=== TEST ZAKOĹCZONY BĹÄDEM (Stan RED) ===\n";
     exit(1);
 }
 
-echo "=== TEST ZAKOŃCZONY SUKCESEM (Stan GREEN) ===\n";
+echo "=== TEST ZAKOĹCZONY SUKCESEM (Stan GREEN) ===\n";

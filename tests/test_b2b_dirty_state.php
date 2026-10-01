@@ -1,9 +1,11 @@
-<?php
+﻿<?php
 /**
- * Test weryfikujący mechanizm dirty-state (podkreślenie edytowanych pozycji)
- * oraz rekomendację zatwierdzenia zmian w panelu hurtownika views/b2b/admin.php
+ * Test weryfikujÄ…cy mechanizm dirty-state (podkreĹ›lenie edytowanych pozycji)
+ * oraz rekomendacjÄ™ zatwierdzenia zmian w panelu hurtownika views/b2b/admin.php
  */
-define('BASE_PATH', 'C:/laragon/www');
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 require_once BASE_PATH . '/program/config/data.php';
 
 $cookieFile = tempnam(sys_get_temp_dir(), 'cook_dirty_state_');
@@ -35,24 +37,24 @@ $html = curl_exec($ch);
 echo "=== TEST: B2B Dirty State & Save Action UX ===\n";
 
 $checks = [
-    'Wskaźnik niezapisanych zmian (unsaved-alert-pill)' => strpos($html, 'id="unsaved-alert-pill"') !== false,
-    'Wiersze z klasą prod-row i data-prod-id'           => strpos($html, 'prod-row') !== false && strpos($html, 'data-prod-id=') !== false,
+    'WskaĹşnik niezapisanych zmian (unsaved-alert-pill)' => strpos($html, 'id="unsaved-alert-pill"') !== false,
+    'Wiersze z klasÄ… prod-row i data-prod-id'           => strpos($html, 'prod-row') !== false && strpos($html, 'data-prod-id=') !== false,
     'Etykieta dirty badge (dirty-badge-)'               => strpos($html, 'id="dirty-badge-') !== false,
-    'Pola edycyjne z klasą prod-field i data-initial'   => strpos($html, 'prod-field') !== false && strpos($html, 'data-initial=') !== false,
-    'Przycisk zapisu z etykietą tekstową save-label'    => strpos($html, 'save-label-') !== false,
+    'Pola edycyjne z klasÄ… prod-field i data-initial'   => strpos($html, 'prod-field') !== false && strpos($html, 'data-initial=') !== false,
+    'Przycisk zapisu z etykietÄ… tekstowÄ… save-label'    => strpos($html, 'save-label-') !== false,
     'Funkcja JS checkFieldDirty()'                      => strpos($html, 'function checkFieldDirty(') !== false,
     'Funkcja JS updateRowDirtyState()'                  => strpos($html, 'function updateRowDirtyState(') !== false,
     'Funkcja JS updateGlobalUnsavedCount()'             => strpos($html, 'function updateGlobalUnsavedCount(') !== false,
-    'Obsługa eventów input i change w tabeli'           => strpos($html, "addEventListener('input'") !== false && strpos($html, "addEventListener('change'") !== false,
-    'Obsługa klawisza Enter w wierszu'                  => strpos($html, "e.key === 'Enter'") !== false,
-    'Ochrona beforeunload przed utratą zmian'           => strpos($html, "addEventListener('beforeunload'") !== false,
-    'Animacja sukcesu i stan ładowania w saveProduct'   => strpos($html, 'Zapisywanie...') !== false && strpos($html, 'Zatwierdzono!') !== false,
+    'ObsĹ‚uga eventĂłw input i change w tabeli'           => strpos($html, "addEventListener('input'") !== false && strpos($html, "addEventListener('change'") !== false,
+    'ObsĹ‚uga klawisza Enter w wierszu'                  => strpos($html, "e.key === 'Enter'") !== false,
+    'Ochrona beforeunload przed utratÄ… zmian'           => strpos($html, "addEventListener('beforeunload'") !== false,
+    'Animacja sukcesu i stan Ĺ‚adowania w saveProduct'   => strpos($html, 'Zapisywanie...') !== false && strpos($html, 'Zatwierdzono!') !== false,
 ];
 
 $allPassed = true;
 $idx = 1;
 foreach ($checks as $name => $ok) {
-    echo "{$idx}. {$name}: " . ($ok ? "OK" : "BŁĄD") . "\n";
+    echo "{$idx}. {$name}: " . ($ok ? "OK" : "BĹÄ„D") . "\n";
     if (!$ok) $allPassed = false;
     $idx++;
 }

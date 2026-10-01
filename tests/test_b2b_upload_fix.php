@@ -1,8 +1,10 @@
-<?php
+﻿<?php
 /**
  * Test weryfikacyjny uploadu cennika Excel oraz mapowania w panelu hurtownika B2B
  */
-define('BASE_PATH', 'C:/laragon/www');
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 require_once BASE_PATH . '/program/config/data.php';
 require_once BASE_PATH . '/program/config/autoload.php';
 require_once BASE_PATH . '/program/lib/XlsxWriter.php';
@@ -50,7 +52,7 @@ httpReq('http://localhost/home/login', [
     '_csrf' => $loginCsrf
 ], [], true);
 
-// 2. Pobierz stronę /b2b/admin i odczytaj CSRF
+// 2. Pobierz stronÄ™ /b2b/admin i odczytaj CSRF
 $resAdminGet = httpReq('http://localhost/b2b/admin');
 preg_match('/const CSRF_TOKEN = \'([^\']+)\'/', $resAdminGet['body'], $mB2b);
 $csrfToken = $mB2b[1] ?? '';
@@ -65,8 +67,8 @@ echo "[OK] Zalogowano do panelu hurtownika, CSRF token: " . substr($csrfToken, 0
 $testExcelPath = sys_get_temp_dir() . '/test_cennik_hurtownia_' . time() . '.xlsx';
 $testItems = [
     ['name' => 'Papryka czerwona PL', 'price' => 11.50, 'quantity' => 10, 'unit' => 'kg'],
-    ['name' => 'Ogórek gruntowy',    'price' => 6.20,  'quantity' => 15, 'unit' => 'kg'],
-    ['name' => 'Kapusta młoda',       'price' => 4.50,  'quantity' => 20, 'unit' => 'szt.'],
+    ['name' => 'OgĂłrek gruntowy',    'price' => 6.20,  'quantity' => 15, 'unit' => 'kg'],
+    ['name' => 'Kapusta mĹ‚oda',       'price' => 4.50,  'quantity' => 20, 'unit' => 'szt.'],
 ];
 XlsxWriter::saveToFile($testExcelPath, $testItems, [
     'order_number' => 'CENNIK/HURT/01',
@@ -75,10 +77,10 @@ XlsxWriter::saveToFile($testExcelPath, $testItems, [
 ]);
 
 if (!file_exists($testExcelPath)) {
-    echo "[FAILED] Nie udało się utworzyć pliku tymczasowego Excel\n";
+    echo "[FAILED] Nie udaĹ‚o siÄ™ utworzyÄ‡ pliku tymczasowego Excel\n";
     exit(1);
 }
-echo "[OK] Utworzono testowy arkusz XLSX: " . filesize($testExcelPath) . " bajtów\n";
+echo "[OK] Utworzono testowy arkusz XLSX: " . filesize($testExcelPath) . " bajtĂłw\n";
 
 // 4. POST /b2b/upload
 $cfile = new CURLFile($testExcelPath, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'cennik.xlsx');
@@ -87,19 +89,19 @@ $resUpload = httpReq('http://localhost/b2b/upload', [
     '_csrf'  => $csrfToken
 ], ['X-Requested-With: XMLHttpRequest', 'Accept: application/json']);
 
-echo "Odpowiedź /b2b/upload: HTTP {$resUpload['code']}\n";
+echo "OdpowiedĹş /b2b/upload: HTTP {$resUpload['code']}\n";
 $dataUpload = json_decode($resUpload['body'], true);
 
 if (($dataUpload['ok'] ?? false) !== true) {
-    echo "[FAILED] Błąd uploadu: " . $resUpload['body'] . "\n";
+    echo "[FAILED] BĹ‚Ä…d uploadu: " . $resUpload['body'] . "\n";
     @unlink($testExcelPath);
     @unlink($cookieFile);
     exit(1);
 }
 
-echo "[OK] Upload powiódł się. File ID: {$dataUpload['file_id']}\n";
+echo "[OK] Upload powiĂłdĹ‚ siÄ™. File ID: {$dataUpload['file_id']}\n";
 
-// Sprawdź czy preview_rows i candidate_columns są obecne
+// SprawdĹş czy preview_rows i candidate_columns sÄ… obecne
 $previewRows = $dataUpload['preview_rows'] ?? null;
 $candidates = $dataUpload['candidate_columns'] ?? null;
 
@@ -107,14 +109,14 @@ if (empty($previewRows)) {
     echo "[FAILED] Brak preview_rows w odpowiedzi\n";
     exit(1);
 }
-echo "[OK] preview_rows zwrócone (liczba wierszy: " . count($previewRows) . ")\n";
+echo "[OK] preview_rows zwrĂłcone (liczba wierszy: " . count($previewRows) . ")\n";
 
 if (empty($candidates)) {
     echo "[FAILED] Brak candidate_columns w odpowiedzi\n";
     exit(1);
 }
 
-// Sprawdź czy candidate_columns ma właściwe indeksy
+// SprawdĹş czy candidate_columns ma wĹ‚aĹ›ciwe indeksy
 $headerRow = $candidates['header_row_index'] ?? $candidates['headerRow'] ?? null;
 $prodCol   = $candidates['product_col_index'] ?? $candidates['productCol'] ?? null;
 $priceCol  = $candidates['price_col_index'] ?? $candidates['priceCol'] ?? null;
@@ -133,15 +135,15 @@ $resImport = httpReq('http://localhost/b2b/processimport', [
 
 $dataImport = json_decode($resImport['body'], true);
 if (($dataImport['ok'] ?? false) !== true || ($dataImport['total_imported'] ?? 0) <= 0) {
-    echo "[FAILED] Import nie powiódł się: " . $resImport['body'] . "\n";
+    echo "[FAILED] Import nie powiĂłdĹ‚ siÄ™: " . $resImport['body'] . "\n";
     @unlink($testExcelPath);
     @unlink($cookieFile);
     exit(1);
 }
 
-echo "[OK] Import zakończony sukcesem! Zaimportowano: {$dataImport['total_imported']} produktów\n";
+echo "[OK] Import zakoĹ„czony sukcesem! Zaimportowano: {$dataImport['total_imported']} produktĂłw\n";
 
-// 6. Sprawdź w bazie danych
+// 6. SprawdĹş w bazie danych
 $repo = new \App\B2bRepository();
 $allProds = $repo->getAllProductsAdmin();
 $foundPapryka = false;
@@ -160,5 +162,5 @@ echo "[OK] Zaimportowany towar ('Papryka') poprawnie odnaleziony w ofercie hurto
 
 @unlink($testExcelPath);
 @unlink($cookieFile);
-echo "=== WSZYSTKIE TESTY UPLOADU I IMPORTU ZAKOŃCZONE SUKCESEM ===\n";
+echo "=== WSZYSTKIE TESTY UPLOADU I IMPORTU ZAKOĹCZONE SUKCESEM ===\n";
 exit(0);

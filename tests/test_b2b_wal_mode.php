@@ -1,8 +1,10 @@
-<?php
+﻿<?php
 /**
  * Test TDD: Weryfikacja trybu SQLite WAL i busy_timeout w B2bRepository
  */
-define('BASE_PATH', 'C:/laragon\www');
+if (!defined('BASE_PATH')) {
+    define('BASE_PATH', dirname(__DIR__));
+}
 require_once BASE_PATH . '/program/config/data.php';
 require_once BASE_PATH . '/program/config/autoload.php';
 
@@ -25,8 +27,8 @@ $timeoutOk = ($busyTimeout >= 5000);
 echo ($timeoutOk ? "PASS" : "FAIL") . "\n";
 
 if (!$walOk || !$timeoutOk) {
-    echo "=== TEST ZAKOŃCZONY BŁĘDEM (Stan RED) ===\n";
+    echo "=== TEST ZAKOĹCZONY BĹÄDEM (Stan RED) ===\n";
     exit(1);
 }
 
-echo "=== TEST ZAKOŃCZONY SUKCESEM (Stan GREEN) ===\n";
+echo "=== TEST ZAKOĹCZONY SUKCESEM (Stan GREEN) ===\n";
