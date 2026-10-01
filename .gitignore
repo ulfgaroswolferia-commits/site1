@@ -1,5 +1,6 @@
-# Konfiguracja lokalna z sekretami — szablon to program/config/data.sample.php
+# Konfiguracja lokalna z sekretami
 program/config/data.php
+program/config/data.sample.php
 
 # IDE
 .idea/
@@ -9,7 +10,7 @@ program/config/data.php
 .claude/
 .gemini/
 .superpowers/
-GEMINI.md
+
 
 # Logi i pliki tymczasowe
 *.log
