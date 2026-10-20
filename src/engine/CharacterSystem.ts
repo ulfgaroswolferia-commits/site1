@@ -5,6 +5,7 @@ import {
   GameState,
   SkillCheckSpec,
 } from '../types/game.js';
+import { ITEMS } from '../content/items.js';
 
 export const XP_THRESHOLDS = [0, 100, 250, 450, 700, 1000];
 
@@ -64,7 +65,11 @@ export function applyRadiation(state: GameState, rawRad: number): GameState {
   if (rawRad > 0) {
     const endMitigation = 1 - state.character.attributes.END * 0.03;
     const perkMitigation = state.character.perks.includes('lead_belly') ? 0.5 : 1;
-    delta = Math.max(1, Math.round(rawRad * endMitigation * perkMitigation));
+    const armor = state.character.equippedArmorId
+      ? ITEMS[state.character.equippedArmorId]
+      : null;
+    const armorMitigation = 1 - (armor?.radResistance ?? 0) / 100;
+    delta = Math.max(1, Math.round(rawRad * endMitigation * perkMitigation * armorMitigation));
   }
   const newRad = Math.max(0, Math.min(90, state.character.rad + delta));
   const effectiveMax = getEffectiveMaxHp(state.character.maxHp, newRad);

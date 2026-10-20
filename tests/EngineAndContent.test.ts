@@ -52,6 +52,20 @@ describe('DialogueEngine, WastelandTravel, SaveManager & Content Integrity', () 
 
     state = selectChoice(state, choices[0], () => 0.1);
     expect(state.currentSceneId).not.toBe('vault_intro');
+
+    // Non-combat lethal hpDelta transitions to game_over_death
+    state.character.hp = 5;
+    state = selectChoice(
+      state,
+      {
+        id: 'lethal_choice',
+        text: 'Dotknij odsłoniętego rdzenia',
+        nextSceneId: 'vault_atrium',
+        effect: { hpDelta: -10 },
+      },
+      () => 0.5
+    );
+    expect(state.currentSceneId).toBe('game_over_death');
   });
 
   it('handles wasteland travel with and without random encounters', () => {

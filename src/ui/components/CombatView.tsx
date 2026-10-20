@@ -27,6 +27,7 @@ export const CombatView: React.FC<Props> = ({
   if (!combat) return null;
 
   const stimpakCount = state.character.inventory.stimpak ?? 0;
+  const radawayCount = state.character.inventory.radaway ?? 0;
   const grenadeCount = state.character.inventory.pulse_grenade ?? 0;
 
   const mainOptions = [
@@ -34,6 +35,9 @@ export const CombatView: React.FC<Props> = ({
     { label: 'System Celowania V.A.T.S. (4 AP)', action: () => { setVatsMenu(true); setSelected(0); } },
     ...(stimpakCount > 0
       ? [{ label: `Użyj Stimpaka (${stimpakCount} szt., 2 AP)`, action: () => onUseItem('stimpak') }]
+      : []),
+    ...(radawayCount > 0
+      ? [{ label: `Użyj AntyRadu (${radawayCount} szt., 2 AP)`, action: () => onUseItem('radaway') }]
       : []),
     ...(grenadeCount > 0
       ? [{ label: `Rzuć Granat Pulsacyjny (${grenadeCount} szt., 2 AP)`, action: () => onUseItem('pulse_grenade') }]

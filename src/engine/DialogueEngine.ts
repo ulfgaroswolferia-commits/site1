@@ -148,6 +148,9 @@ export function selectChoice(
         ],
       };
       next = applyChoiceEffect(next, choice.effect);
+      if (next.character.hp <= 0) {
+        return { ...next, combat: null, currentSceneId: 'game_over_death' };
+      }
       if (!next.combat) {
         next = transitionToScene(next, choice.nextSceneId);
       }
@@ -161,6 +164,9 @@ export function selectChoice(
         ],
       };
       next = applyChoiceEffect(next, choice.failEffect);
+      if (next.character.hp <= 0) {
+        return { ...next, combat: null, currentSceneId: 'game_over_death' };
+      }
       if (!next.combat) {
         next = transitionToScene(next, choice.failSceneId ?? choice.nextSceneId);
       }
@@ -169,6 +175,9 @@ export function selectChoice(
   }
 
   let next = applyChoiceEffect(state, choice.effect);
+  if (next.character.hp <= 0) {
+    return { ...next, combat: null, currentSceneId: 'game_over_death' };
+  }
   if (!next.combat && !choice.effect?.openMerchant && !choice.effect?.openWorldMap) {
     next = transitionToScene(next, choice.nextSceneId);
   }

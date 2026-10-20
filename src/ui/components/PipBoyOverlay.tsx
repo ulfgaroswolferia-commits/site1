@@ -30,6 +30,7 @@ export const PipBoyOverlay: React.FC<Props> = ({
   const availablePerks = Object.values(PERKS).filter(
     (p) => !state.character.perks.includes(p.id)
   );
+  const safeInvSelected = Math.min(selected, Math.max(0, invEntries.length - 1));
 
   useInput((input, key) => {
     if (key.escape) {
@@ -43,7 +44,7 @@ export const PipBoyOverlay: React.FC<Props> = ({
       } else if (key.downArrow) {
         setSelected((prev) => (prev + 1) % invEntries.length);
       } else if (key.return) {
-        const itemId = invEntries[selected]?.[0];
+        const itemId = invEntries[safeInvSelected]?.[0];
         if (itemId) onEquipOrUse(itemId);
       }
     }
@@ -138,7 +139,7 @@ export const PipBoyOverlay: React.FC<Props> = ({
               const isEquipped =
                 state.character.equippedWeaponId === id ||
                 state.character.equippedArmorId === id;
-              const isSel = idx === selected;
+              const isSel = idx === safeInvSelected;
               return (
                 <Text
                   key={id}

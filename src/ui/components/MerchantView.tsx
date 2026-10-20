@@ -25,6 +25,7 @@ export const MerchantView: React.FC<Props> = ({ state, onBuy, onSell, onClose })
     .map(([id]) => id);
 
   const activeItems = tab === 'buy' ? buyList : sellList;
+  const safeSelected = Math.min(selected, Math.max(0, activeItems.length - 1));
 
   useInput((input, key) => {
     if (key.escape || input.toLowerCase() === 'q') {
@@ -42,7 +43,7 @@ export const MerchantView: React.FC<Props> = ({ state, onBuy, onSell, onClose })
     } else if (key.downArrow) {
       setSelected((prev) => (prev + 1) % activeItems.length);
     } else if (key.return) {
-      const id = activeItems[selected];
+      const id = activeItems[safeSelected];
       if (!id) return;
       if (tab === 'buy') onBuy(id);
       else onSell(id);
@@ -79,7 +80,7 @@ export const MerchantView: React.FC<Props> = ({ state, onBuy, onSell, onClose })
           const item = ITEMS[id];
           const price = tab === 'buy' ? getBuyPrice(state, id) : getSellPrice(state, id);
           const qty = state.character.inventory[id] ?? 0;
-          const isSel = idx === selected;
+          const isSel = idx === safeSelected;
           return (
             <Text
               key={id}

@@ -52,7 +52,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     description: 'Standardowy niebiesko-żółty kombinezon z podstawową izolacją.',
     value: 35,
     defense: 3,
-    radResistance: 10,
+    radResistance: 0,
   },
   leather_armor: {
     id: 'leather_armor',

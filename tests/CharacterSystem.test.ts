@@ -40,12 +40,17 @@ describe('CharacterSystem', () => {
     expect(failRoll.success).toBe(false);
   });
 
-  it('applies radiation mitigated by END and lead_belly perk and clamps HP', () => {
+  it('applies radiation mitigated by END, armor radResistance, and lead_belly perk and clamps HP', () => {
     let state = createNewGameState('Max', { STR: 5, PER: 5, END: 5, CHA: 5, INT: 5, AGI: 5 });
     state = applyRadiation(state, 40);
     // END 5 reduces 40 by 15% => 34 RAD
     expect(state.character.rad).toBe(34);
     expect(state.character.hp).toBeLessThanOrEqual(getEffectiveMaxHp(state.character.maxHp, state.character.rad));
+
+    state.character.equippedArmorId = 'recon_armor'; // 35% radResistance
+    state = applyRadiation(state, 40);
+    // 40 * 0.85 * 0.65 = 22.1 -> 22 => 34 + 22 = 56
+    expect(state.character.rad).toBe(56);
   });
 
   it('grants XP with INT bonus and handles level up with attribute + perk', () => {
