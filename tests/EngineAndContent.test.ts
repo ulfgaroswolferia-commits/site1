@@ -91,4 +91,35 @@ describe('DialogueEngine, WastelandTravel, SaveManager & Content Integrity', () 
     expect(loaded?.character.name).toBe('Arya');
     fs.unlinkSync(tmpFile);
   });
+
+  it('supports full Chapter 2 New Reno progression (casino, hospital, bandits alliance, sewers, boss, and Deputy Overseer ending)', () => {
+    expect(LOCATIONS.new_reno).toBeDefined();
+    expect(QUESTS.ch2_new_reno).toBeDefined();
+    expect(QUESTS.side_reno_hospital).toBeDefined();
+    expect(QUESTS.side_reno_jackals).toBeDefined();
+    expect(ENEMIES.giant_rad_rat).toBeDefined();
+    expect(ENEMIES.glowing_ghoul).toBeDefined();
+    expect(ENEMIES.doctor_morbus_full).toBeDefined();
+    expect(ENEMIES.doctor_morbus_weakened).toBeDefined();
+
+    // Chapter 1 completion transitions to Chapter 2 instead of ending immediately
+    expect(SCENES.ending_vault_saved.isEnding).toBeFalsy();
+    expect(SCENES.ending_wasteland_alliance.isEnding).toBeFalsy();
+    expect(SCENES.ending_deputy_overseer.isEnding).toBe(true);
+
+    let state = createNewGameState('Max', { STR: 7, PER: 7, END: 7, CHA: 8, INT: 8, AGI: 7 });
+    state.currentSceneId = 'ending_vault_saved';
+    const ch1EndScene = getCurrentScene(state);
+    const startCh2Choice = ch1EndScene.choices.find((c) => c.id === 'start_chapter_2_vault');
+    expect(startCh2Choice).toBeDefined();
+
+    state = selectChoice(state, startCh2Choice!, () => 0.1);
+    expect(state.flags.new_reno_unlocked).toBe(true);
+    expect(state.quests.ch2_new_reno?.status).toBe('active');
+
+    // Travel to New Reno
+    state = travelToLocation(state, 'new_reno', () => 0.99);
+    expect(state.currentLocationId).toBe('new_reno');
+    expect(state.currentSceneId).toBe('reno_gates');
+  });
 });

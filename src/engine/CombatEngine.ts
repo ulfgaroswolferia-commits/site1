@@ -42,11 +42,11 @@ export function getVatsHitChance(state: GameState, part: BodyPart): number {
   const weaponAcc = weapon?.accuracyBonus ?? 0;
   const base = 65 + state.character.attributes.PER * 3 + weaponAcc;
 
-  let modifier = 0;
+  let modifier = state.character.perks.includes('reno_gunslinger') ? 10 : 0;
   if (part === 'head') {
-    modifier = -25 + (state.character.perks.includes('vats_sniper') ? 15 : 0);
+    modifier += -25 + (state.character.perks.includes('vats_sniper') ? 15 : 0);
   } else if (part === 'limbs') {
-    modifier = -15;
+    modifier += -15;
   }
 
   return Math.max(15, Math.min(95, base + modifier));

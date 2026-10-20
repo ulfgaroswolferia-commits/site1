@@ -112,7 +112,12 @@ export interface SceneChoice {
   failEffect?: ChoiceEffect;
 }
 
-export type LocationId = 'vault_73' | 'rusty_crater' | 'robco_relay' | 'rust_fortress';
+export type LocationId =
+  | 'vault_73'
+  | 'rusty_crater'
+  | 'robco_relay'
+  | 'rust_fortress'
+  | 'new_reno';
 
 export interface SceneDefinition {
   id: string;

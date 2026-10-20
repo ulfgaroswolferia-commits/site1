@@ -26,4 +26,14 @@ export const PERKS: Record<string, PerkDefinition> = {
     name: 'Ołowiany Brzuch',
     description: 'Zmniejsza otrzymywane skażenie promieniowaniem (RAD) o 50%.',
   },
+  reno_gunslinger: {
+    id: 'reno_gunslinger',
+    name: 'Rewolwerowiec z New Reno',
+    description: '+10% do celności w V.A.T.S. dla wszystkich części ciała.',
+  },
+  cyborg_reflex: {
+    id: 'cyborg_reflex',
+    name: 'Implant Bojowy Vault-Tec',
+    description: '+15 do maksymalnego HP oraz dodatkowe wyostrzenie zmysłów na Pustkowiach.',
+  },
 };

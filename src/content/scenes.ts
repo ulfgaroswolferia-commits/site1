@@ -27,6 +27,13 @@ export const LOCATIONS: Record<LocationId, LocationDefinition> = {
     entrySceneId: 'fortress_gate',
     requiredFlag: 'found_relay_clue',
   },
+  new_reno: {
+    id: 'new_reno',
+    name: 'Metropolia New Reno',
+    description: 'Rozświetlone neonami miasto kasyn, gangów i zatrutych wodociągów.',
+    entrySceneId: 'reno_gates',
+    requiredFlag: 'new_reno_unlocked',
+  },
 };
 
 const baseScenes: Record<string, SceneDefinition> = {
@@ -74,11 +81,23 @@ const baseScenes: Record<string, SceneDefinition> = {
       'Stoisz przed monumentalnymi, zębatymi wrotami Krypty 73. Przy pulpicie sterującym stoi uszkodzony Strażnik RobCo — w jego zacisku widnieje Karta Dostępu Strażnika otwierająca zbrojownię oraz śluzę.',
     choices: [
       {
+        id: 'return_hero_chapter_2',
+        text: '[FINAŁ ROZDZIAŁU 2] Przedstaw Nadzorcy Pieczęć Oczyszczalni New Reno i odbierz nominację',
+        requiredItem: 'reno_purifier_seal',
+        nextSceneId: 'ending_deputy_overseer',
+        effect: {
+          setQuestState: { questId: 'ch2_new_reno', status: 'completed', stage: 'completed' },
+          xpDelta: 400,
+        },
+      },
+      {
         id: 'deliver_stabilizer',
-        text: '[FINAŁ] Zamontuj Moduł Stabilizatora G.E.C.K.-Lite w reaktorze Krypty 73',
+        text: '[FINAŁ ROZDZIAŁU 1] Zamontuj Moduł Stabilizatora G.E.C.K.-Lite w reaktorze Krypty 73',
         requiredItem: 'geck_stabilizer',
+        forbiddenFlag: 'new_reno_unlocked',
         nextSceneId: 'ending_vault_saved',
         effect: {
+          removeItems: { geck_stabilizer: 1 },
           setQuestState: { questId: 'main_stabilizer', status: 'completed', stage: 'completed' },
           xpDelta: 250,
         },
@@ -482,20 +501,535 @@ const baseScenes: Record<string, SceneDefinition> = {
   },
   ending_vault_saved: {
     id: 'ending_vault_saved',
-    title: 'EPILOG: Bohater Krypty 73',
+    title: 'KONIEC ROZDZIAŁU 1: Krypta 73 Ocalona — Nowe Wezwanie',
     locationId: 'vault_73',
-    isEnding: true,
     description:
-      'Gdy Moduł Stabilizatora G.E.C.K.-Lite wsuwa się w gniazdo reaktora, alarmowe czerwone światła gasną, ustępując kojącemu blaskowi lamp jarzeniowych. Hydroprocesor znów tłoczy czystą wodę.\n\nTwoje imię zostaje zapisane w kronikach Krypty 73 jako wybawcy podziemnego świata. Gratulacje — ukończyłeś grę!',
-    choices: [],
+      'Gdy Moduł Stabilizatora G.E.C.K.-Lite wsuwa się w gniazdo reaktora, alarmowe czerwone światła gasną, a hydroprocesor znów tłoczy czystą wodę. Nadzorca ściska Twoją dłoń na oczach wiwatujących mieszkańców, lecz po chwili jego twarz poważnieje:\n\n„Uratowałeś nasz dom, Wędrowcze, ale to dopiero początek. Przed chwilą odebraliśmy dramatyczny sygnał z metropolii New Reno — jedynego miasta zdolnego dostarczać nam rzadkie leki i części techniczne. Ktoś zatruwa ich wodociągi z podziemnych kanałów, a ulice terroryzuje gang Żelaznych Szakali. Jeśli New Reno upadnie, zostaniemy na Pustkowiach sami. Wyrusz do New Reno i ocal miasto!”',
+    choices: [
+      {
+        id: 'start_chapter_2_vault',
+        text: 'Przyjmij misję w New Reno (+120 kapsli, +2 Stimpaki) i otwórz Mapę Świata [Rozdział 2]',
+        nextSceneId: 'vault_atrium',
+        effect: {
+          capsDelta: 120,
+          addItems: { stimpak: 2, radaway: 1 },
+          setFlags: { new_reno_unlocked: true },
+          setQuestState: { questId: 'ch2_new_reno', status: 'active', stage: 'travel_reno' },
+        },
+      },
+    ],
   },
   ending_wasteland_alliance: {
     id: 'ending_wasteland_alliance',
-    title: 'EPILOG: Architekt Nowego Świtu',
+    title: 'KONIEC ROZDZIAŁU 1: Sojusz Nowego Świtu — Kierunek New Reno',
     locationId: 'rusty_crater',
+    description:
+      'Połączyłeś technologię Krypty 73 z odwagą osadników z Rdzawego Krateru. Stabilizator zasilił zarówno schron, jak i oczyszczalnię na powierzchni. Podczas narady Nadzorca Krypty 73 przekazuje Ci pilny komunikat radiowy:\n\n„Nasz nowy sojusz potrzebuje handlu z metropolią New Reno na zachodzie. Niestety miasto pogrąża się w agonii — ktoś zatruwa ich podziemne wodociągi śmiertelnym mutagenem, a gang Żelaznych Szakali przejmuje dzielnice. Udaj się do New Reno jako nasz wysłannik, powstrzymaj truciciela i wróć do Krypty 73!”',
+    choices: [
+      {
+        id: 'start_chapter_2_crater',
+        text: 'Wyrusz na ratunek New Reno (+120 kapsli, +2 Stimpaki) [Rozdział 2]',
+        nextSceneId: 'crater_hub',
+        effect: {
+          capsDelta: 120,
+          addItems: { stimpak: 2, radaway: 1 },
+          setFlags: { new_reno_unlocked: true },
+          setQuestState: { questId: 'ch2_new_reno', status: 'active', stage: 'travel_reno' },
+        },
+      },
+    ],
+  },
+  reno_gates: {
+    id: 'reno_gates',
+    title: 'New Reno — Aleja Neonów (Centrum Miasta)',
+    locationId: 'new_reno',
+    onEnterEffect: {
+      setQuestState: { questId: 'ch2_new_reno', status: 'active', stage: 'investigate_city' },
+    },
+    description:
+      'Stoisz w sercu New Reno. Nad popękanym asfaltem buczą przedwojenne neony, ale na ulicach widać oznaki agonii miasta — strażnicy rozdają racjonowaną wodę, a przed szpitalem ustawiają się kolejki chorych.\n\nPrzed sobą widzisz Biuro Szeryfa Vance’a, Zbrojownię Corso, Szpital Św. Atomu, rozświetlone Kasyno „Złoty Atom”, barykady w Dzielnicy Magazynów (melina gangu Żelaznych Szakali) oraz żeliwny właz do Podziemnych Kanałów.',
+    choices: [
+      {
+        id: 'go_reno_sheriff',
+        text: 'Wejdź do Biura Szeryfa Vance’a',
+        nextSceneId: 'reno_sheriff',
+      },
+      {
+        id: 'trade_corso',
+        text: 'Odwiedź Zbrojmistrza Corso [Ciężki sprzęt i Pancerze Wspomagane]',
+        nextSceneId: 'reno_gates',
+        effect: { openMerchant: 'corso_armorer' },
+      },
+      {
+        id: 'go_reno_hospital',
+        text: 'Udaj się do Szpitala Św. Atomu',
+        nextSceneId: 'reno_hospital',
+      },
+      {
+        id: 'go_reno_casino',
+        text: 'Wejdź do Kasyna „Złoty Atom”',
+        nextSceneId: 'reno_casino',
+      },
+      {
+        id: 'go_reno_bandits',
+        text: 'Idź do Dzielnicy Magazynów (Melina gangu Żelaznych Szakali)',
+        nextSceneId: 'reno_bandits',
+      },
+      {
+        id: 'go_reno_sewers',
+        text: 'Zejdź przez właz do Podziemnych Kanałów New Reno',
+        nextSceneId: 'reno_sewers_entry',
+      },
+      {
+        id: 'leave_reno_map',
+        text: 'Otwórz Mapę Świata (Podróż poza New Reno)',
+        nextSceneId: 'reno_gates',
+        effect: { openWorldMap: true },
+      },
+    ],
+  },
+  reno_sheriff: {
+    id: 'reno_sheriff',
+    title: 'New Reno — Biuro Szeryfa Vance’a',
+    locationId: 'new_reno',
+    description:
+      'Szeryf Vance opiera się o stół z planem kanalizacji New Reno: „Wędrowiec z Krypty 73? W samą porę. Mamy dwa śmiertelne problemy. Po pierwsze: w najgłębszym sektorze kanałów pod stacją uzdatniania zalęgł się szaleniec zwany Doktorem Morbusem — wpuszcza mutagen do głównego ujęcia wody, a kanały roją się od zmutowanych szczurów i świecących ghuli. Po drugie: gang Żelaznych Szakali pod wodzą Wściekłego Vinniego terroryzuje dzielnicę magazynów. Możesz wybić Szakali co do jednego... albo, jeśli masz dość tupetu, zmusić ich, żeby zeszli do kanałów i przelali krew w szturmie na Morbusa.”',
+    choices: [
+      {
+        id: 'ask_sheriff_tactics',
+        text: '[PER] Przeanalizuj z Szeryfem mapę kolektorów ściekowych (+50 XP)',
+        forbiddenFlag: 'sheriff_map_studied',
+        skillCheck: { attribute: 'PER', difficulty: 6 },
+        nextSceneId: 'reno_sheriff',
+        failSceneId: 'reno_sheriff',
+        effect: {
+          xpDelta: 50,
+          setFlags: { sheriff_map_studied: true },
+          setQuestState: { questId: 'side_reno_jackals', status: 'active', stage: 'confront_jackals' },
+        },
+        failEffect: {
+          setFlags: { sheriff_map_studied: true },
+          setQuestState: { questId: 'side_reno_jackals', status: 'active', stage: 'confront_jackals' },
+        },
+      },
+      {
+        id: 'claim_jackals_bounty',
+        text: 'Odbierz nagrodę 120 kapsli za rozbicie gangu Żelaznych Szakali',
+        requiredFlag: 'jackals_defeated',
+        forbiddenFlag: 'jackals_bounty_claimed',
+        nextSceneId: 'reno_sheriff',
+        effect: {
+          capsDelta: 120,
+          xpDelta: 80,
+          setFlags: { jackals_bounty_claimed: true },
+        },
+      },
+      {
+        id: 'back_reno_from_sheriff',
+        text: 'Wróć na Aleję Neonów',
+        nextSceneId: 'reno_gates',
+      },
+    ],
+  },
+  reno_hospital: {
+    id: 'reno_hospital',
+    title: 'New Reno — Szpital Św. Atomu',
+    locationId: 'new_reno',
+    description:
+      'Korytarze szpitala są przepełnione mieszkańcami cierpiącymi na zatrucie popromienne. Ordynator Lena spogląda znad mikroskopu:\n\n„Ta toksyna w wodzie to nie zwykły opad — to syntetyczny mutagen! Jeśli przyniesiesz mi nierozcieńczoną Próbkę Szlamu z pierwszego poziomu kanałów, zsyntetyzuję Surowicę Neutralizującą. Wlana do głównego zbiornika w kryjówce truciciela sparaliżuje jego zmutowane bestie i osłabi go o połowę!”',
+    choices: [
+      {
+        id: 'accept_hospital_quest',
+        text: 'Zaoferuj pomoc w zdobyciu Próbki Szlamu z kanałów',
+        forbiddenFlag: 'hospital_quest_started',
+        nextSceneId: 'reno_hospital',
+        effect: {
+          setFlags: { hospital_quest_started: true },
+          setQuestState: { questId: 'side_reno_hospital', status: 'active', stage: 'collect_sample' },
+        },
+      },
+      {
+        id: 'craft_neutralizing_serum',
+        text: 'Przekaż Próbkę Szlamu i odbierz Surowicę Neutralizującą (+100 XP, +2 Stimpaki)',
+        requiredItem: 'sewer_toxin_sample',
+        forbiddenFlag: 'serum_crafted',
+        nextSceneId: 'reno_hospital',
+        effect: {
+          removeItems: { sewer_toxin_sample: 1 },
+          addItems: { neutralizing_serum: 1, stimpak: 2 },
+          xpDelta: 100,
+          setFlags: { serum_crafted: true },
+          setQuestState: { questId: 'side_reno_hospital', status: 'completed', stage: 'completed' },
+        },
+      },
+      {
+        id: 'hospital_med_help',
+        text: '[INT] Pomóż lekarzom skalibrować aparaturę dializującą (+80 kapsli, +60 XP)',
+        forbiddenFlag: 'hospital_calibrated',
+        skillCheck: { attribute: 'INT', difficulty: 6 },
+        nextSceneId: 'reno_hospital',
+        failSceneId: 'reno_hospital',
+        effect: {
+          capsDelta: 80,
+          xpDelta: 60,
+          setFlags: { hospital_calibrated: true },
+        },
+        failEffect: {
+          setFlags: { hospital_calibrated: true },
+        },
+      },
+      {
+        id: 'hospital_full_heal',
+        text: 'Skorzystaj z komory regeneracyjnej Szpitala (25 kapsli: -100 RAD, +150 HP)',
+        requiredCaps: 25,
+        nextSceneId: 'reno_hospital',
+        effect: {
+          capsDelta: -25,
+          radDelta: -100,
+          hpDelta: 150,
+        },
+      },
+      {
+        id: 'back_reno_from_hospital',
+        text: 'Wróć na Aleję Neonów',
+        nextSceneId: 'reno_gates',
+      },
+    ],
+  },
+  reno_casino: {
+    id: 'reno_casino',
+    title: 'New Reno — Kasyno „Złoty Atom”',
+    locationId: 'new_reno',
+    description:
+      'Złote żyrandole oświetlają stoły do ruletki i automatów. Przy loży VIP siedzi Don Salvatore, właściciel kasyna:\n\n„Interesują Cię Żelazne Szakale? Ich herszt, Wściekły Vinnie, ma u mnie gigantyczny dług hazardowy. Jeśli zapłacisz 80 kapsli albo wyświadczysz mi przysługę przy stole, oddam Ci jego Weksel Dłużny — z tym papierem Vinnie i jego ludzie pójdą za Tobą nawet w ogień kanałów.”',
+    choices: [
+      {
+        id: 'gamble_roulette',
+        text: '[PER] Zagraj o wysoką stawkę przy stole Ruletki Atomowej (Stawka: 30 kapsli)',
+        requiredCaps: 30,
+        skillCheck: { attribute: 'PER', difficulty: 6 },
+        nextSceneId: 'reno_casino',
+        failSceneId: 'reno_casino',
+        effect: {
+          capsDelta: 60,
+          xpDelta: 30,
+        },
+        failEffect: {
+          capsDelta: -30,
+        },
+      },
+      {
+        id: 'persuade_salvatore_note',
+        text: '[CHA] Przekonaj Dona Salvatore, że oczyszczenie kanałów uratuje zyski kasyna (Odbierz Weksel za darmo)',
+        forbiddenFlag: 'debt_note_acquired',
+        skillCheck: { attribute: 'CHA', difficulty: 7 },
+        nextSceneId: 'reno_casino',
+        failSceneId: 'reno_casino',
+        effect: {
+          addItems: { jackals_debt_note: 1 },
+          xpDelta: 90,
+          setFlags: { debt_note_acquired: true },
+        },
+      },
+      {
+        id: 'buy_salvatore_note',
+        text: 'Wykup Weksel Dłużny Żelaznych Szakali za 80 kapsli',
+        requiredCaps: 80,
+        forbiddenFlag: 'debt_note_acquired',
+        nextSceneId: 'reno_casino',
+        effect: {
+          capsDelta: -80,
+          addItems: { jackals_debt_note: 1 },
+          xpDelta: 50,
+          setFlags: { debt_note_acquired: true },
+        },
+      },
+      {
+        id: 'back_reno_from_casino',
+        text: 'Wyjdź z Kasyna na Aleję Neonów',
+        nextSceneId: 'reno_gates',
+      },
+    ],
+  },
+  reno_bandits: {
+    id: 'reno_bandits',
+    title: 'New Reno — Dzielnica Magazynów (Melina „Żelaznych Szakali”)',
+    locationId: 'new_reno',
+    description:
+      'Wokół płonących beczek stoją uzbrojeni po zęby najemnicy. Na masce opancerzonego wozu siedzi Wściekły Vinnie, bawiąc się nożem sprężynowym:\n\n„Czego tu szukasz, przybłędo z Krypty? To terytorium Żelaznych Szakali! Chociaż... połowa moich chłopaków leży zatruta tą przeklętą wodą z kranów.”',
+    choices: [
+      {
+        id: 'use_debt_note_jackals',
+        text: '[Weksel Dłużny] Pokaż Vinnie’mu weksel od Dona Salvatore: „Dług zostanie anulowany, jeśli pomożecie mi rozbić laboratorium Morbusa w kanałach!”',
+        requiredItem: 'jackals_debt_note',
+        forbiddenFlag: 'jackals_resolved',
+        nextSceneId: 'reno_bandits',
+        effect: {
+          removeItems: { jackals_debt_note: 1 },
+          setFlags: { jackals_resolved: true, jackals_allied: true },
+          setQuestState: { questId: 'side_reno_jackals', status: 'completed', stage: 'allied' },
+          xpDelta: 120,
+        },
+      },
+      {
+        id: 'persuade_vinnie_alliance',
+        text: '[CHA] Przekonaj Vinniego, że bez czystej wody jego gang wyginie, a skarbiec Morbusa w kanałach jest pełen łupów',
+        forbiddenFlag: 'jackals_resolved',
+        skillCheck: { attribute: 'CHA', difficulty: 7 },
+        nextSceneId: 'reno_bandits',
+        failSceneId: 'reno_bandits',
+        effect: {
+          setFlags: { jackals_resolved: true, jackals_allied: true },
+          setQuestState: { questId: 'side_reno_jackals', status: 'completed', stage: 'allied' },
+          xpDelta: 120,
+        },
+        failEffect: {
+          setFlags: { jackals_resolved: true, jackals_defeated: true },
+          setQuestState: { questId: 'side_reno_jackals', status: 'completed', stage: 'eliminated' },
+          startCombat: {
+            enemyId: 'vinnie_jackal',
+            victorySceneId: 'reno_bandits',
+          },
+        },
+      },
+      {
+        id: 'fight_vinnie_jackals',
+        text: 'Zaatakuj Wściekłego Vinniego i rozbij gang Żelaznych Szakali siłą!',
+        forbiddenFlag: 'jackals_resolved',
+        nextSceneId: 'reno_bandits',
+        effect: {
+          setFlags: { jackals_resolved: true, jackals_defeated: true },
+          setQuestState: { questId: 'side_reno_jackals', status: 'completed', stage: 'eliminated' },
+          startCombat: {
+            enemyId: 'vinnie_jackal',
+            victorySceneId: 'reno_bandits',
+          },
+        },
+      },
+      {
+        id: 'back_reno_from_bandits',
+        text: 'Wróć na Aleję Neonów',
+        nextSceneId: 'reno_gates',
+      },
+    ],
+  },
+  reno_sewers_entry: {
+    id: 'reno_sewers_entry',
+    title: 'Podziemne Kanały New Reno — Sektor 1: Kolektor Ściekowy',
+    locationId: 'new_reno',
+    description:
+      'Schodzisz po śliskiej drabinie w zielonkawy półmrok. Woda w kanale bulgocze od toksycznych wyziewów, a z bocznych rur wypełza stado wygłodniałych Radioaktywnych Szczurów-Gigantów! Przy kracie odpływowej widać też osad z czystego mutagenu.',
+    choices: [
+      {
+        id: 'fight_sewer_rats',
+        text: 'Oczyść przejście ze stada Radioaktywnych Szczurów-Gigantów',
+        forbiddenFlag: 'sewer_rats_cleared',
+        nextSceneId: 'reno_sewers_entry',
+        effect: {
+          setFlags: { sewer_rats_cleared: true },
+          startCombat: {
+            enemyId: 'giant_rad_rat',
+            victorySceneId: 'reno_sewers_entry',
+            fleeSceneId: 'reno_gates',
+          },
+        },
+      },
+      {
+        id: 'collect_toxin_sample',
+        text: 'Pobierz Próbkę Szlamu Mutagenu dla Szpitala Św. Atomu',
+        requiredFlag: 'sewer_rats_cleared',
+        forbiddenFlag: 'toxin_sample_collected',
+        nextSceneId: 'reno_sewers_entry',
+        effect: {
+          addItems: { sewer_toxin_sample: 1 },
+          setFlags: { toxin_sample_collected: true },
+          setQuestState: { questId: 'side_reno_hospital', status: 'active', stage: 'deliver_sample' },
+          xpDelta: 45,
+        },
+      },
+      {
+        id: 'go_sewers_mid',
+        text: 'Idź w głąb kanałów do Zbiornika Filtracyjnego (Sektor 2)',
+        requiredFlag: 'sewer_rats_cleared',
+        nextSceneId: 'reno_sewers_mid',
+      },
+      {
+        id: 'exit_sewers_to_city',
+        text: 'Wspinaj się po drabinie z powrotem na Aleję Neonów',
+        nextSceneId: 'reno_gates',
+      },
+    ],
+  },
+  reno_sewers_mid: {
+    id: 'reno_sewers_mid',
+    title: 'Podziemne Kanały New Reno — Sektor 2: Zbiornik Filtracyjny',
+    locationId: 'new_reno',
+    description:
+      'Docierasz do ogromnej hali podziemnych filtrów. W radioaktywnej mgle żerują Świecący Ghul oraz Zmutowany Pożeracz Kanałowy pilnujący grodzi do Laboratorium Wodociągów.',
+    choices: [
+      {
+        id: 'fight_glowing_ghoul',
+        text: 'Pokonaj Świecącego Ghula z Kolektora',
+        forbiddenFlag: 'sewer_mid_ghoul_cleared',
+        nextSceneId: 'reno_sewers_mid',
+        effect: {
+          setFlags: { sewer_mid_ghoul_cleared: true },
+          startCombat: {
+            enemyId: 'glowing_ghoul',
+            victorySceneId: 'reno_sewers_mid',
+            fleeSceneId: 'reno_sewers_entry',
+          },
+        },
+      },
+      {
+        id: 'fight_sewer_devourer',
+        text: 'Zgładź Zmutowanego Pożeracza Kanałowego przed grodzią',
+        requiredFlag: 'sewer_mid_ghoul_cleared',
+        forbiddenFlag: 'sewer_mid_devourer_cleared',
+        nextSceneId: 'reno_sewers_mid',
+        effect: {
+          setFlags: { sewer_mid_devourer_cleared: true },
+          startCombat: {
+            enemyId: 'sewer_devourer',
+            victorySceneId: 'reno_sewers_mid',
+            fleeSceneId: 'reno_sewers_entry',
+          },
+        },
+      },
+      {
+        id: 'bypass_devourer_valve',
+        text: '[STR] Odkręć zardzewiały zawór parowy i zdmuchnij Pożeracza gorącą parą (+Granat Pulsacyjny)',
+        requiredFlag: 'sewer_mid_ghoul_cleared',
+        forbiddenFlag: 'sewer_mid_devourer_cleared',
+        skillCheck: { attribute: 'STR', difficulty: 7 },
+        nextSceneId: 'reno_sewers_mid',
+        failSceneId: 'reno_sewers_mid',
+        effect: {
+          setFlags: { sewer_mid_devourer_cleared: true },
+          addItems: { pulse_grenade: 1 },
+          xpDelta: 110,
+        },
+        failEffect: {
+          setFlags: { sewer_mid_devourer_cleared: true },
+          startCombat: {
+            enemyId: 'sewer_devourer',
+            victorySceneId: 'reno_sewers_mid',
+            fleeSceneId: 'reno_sewers_entry',
+          },
+        },
+      },
+      {
+        id: 'enter_morbus_lair',
+        text: 'Wyważ gródź i wejdź do Podziemnego Laboratorium Doktora Morbusa (Sektor 3 — BOSS)',
+        requiredFlag: 'sewer_mid_devourer_cleared',
+        nextSceneId: 'reno_sewers_boss',
+        effect: {
+          setQuestState: { questId: 'ch2_new_reno', status: 'active', stage: 'defeat_morbus' },
+        },
+      },
+      {
+        id: 'back_sewers_entry',
+        text: 'Cofnij się do Kolektora Ściekowego (Sektor 1)',
+        nextSceneId: 'reno_sewers_entry',
+      },
+    ],
+  },
+  reno_sewers_boss: {
+    id: 'reno_sewers_boss',
+    title: 'Podziemne Kanały New Reno — Sektor 3: Laboratorium Doktora Morbusa',
+    locationId: 'new_reno',
+    description:
+      'W centrum zalanej komory wodociągowej wznosi się aparatura pompująca zielony mutagen prosto do rur New Reno. Na pomoście stoi Doktor Morbus w egzoszkielecie połączonym kablami z gigantycznym Królem Kanałów!\n\n„New Reno zgniło od środka!” — skrzeczy Morbus przez maskę tlenową. — „Mój mutagen oczyści to miasto i stworzy nową rasę dzieci podziemi! Nikt mnie nie powstrzyma!”',
+    choices: [
+      {
+        id: 'boss_attack_with_jackals',
+        text: '[SOJUSZ Z BANDYTAMI] Daj sygnał Wściekłemu Vinnie’mu — Żelazne Szakale uderzają z flanki i osłabiają Morbusa!',
+        requiredFlag: 'jackals_allied',
+        nextSceneId: 'reno_sewers_victory',
+        effect: {
+          startCombat: {
+            enemyId: 'doctor_morbus_weakened',
+            victorySceneId: 'reno_sewers_victory',
+          },
+        },
+      },
+      {
+        id: 'boss_use_hospital_serum',
+        text: '[SUROWICA SZPITALNA] Wlej Surowicę Neutralizującą Dr Leny do głównej pompy, paraliżując mutacje Morbusa!',
+        requiredItem: 'neutralizing_serum',
+        nextSceneId: 'reno_sewers_victory',
+        effect: {
+          removeItems: { neutralizing_serum: 1 },
+          xpDelta: 100,
+          startCombat: {
+            enemyId: 'doctor_morbus_weakened',
+            victorySceneId: 'reno_sewers_victory',
+          },
+        },
+      },
+      {
+        id: 'boss_hack_pumps',
+        text: '[INT] Przeciąż zawory bezpieczeństwa aparatury Morbusa przed walką',
+        skillCheck: { attribute: 'INT', difficulty: 8 },
+        nextSceneId: 'reno_sewers_victory',
+        failSceneId: 'reno_sewers_victory',
+        effect: {
+          xpDelta: 120,
+          startCombat: {
+            enemyId: 'doctor_morbus_weakened',
+            victorySceneId: 'reno_sewers_victory',
+          },
+        },
+        failEffect: {
+          startCombat: {
+            enemyId: 'doctor_morbus_full',
+            victorySceneId: 'reno_sewers_victory',
+          },
+        },
+      },
+      {
+        id: 'boss_solo_full_fight',
+        text: 'Staw czoła Doktorowi Morbusowi i Królowi Kanałów w pojedynkę (Pełna Siła Bossa)!',
+        nextSceneId: 'reno_sewers_victory',
+        effect: {
+          startCombat: {
+            enemyId: 'doctor_morbus_full',
+            victorySceneId: 'reno_sewers_victory',
+          },
+        },
+      },
+    ],
+  },
+  reno_sewers_victory: {
+    id: 'reno_sewers_victory',
+    title: 'New Reno Ocalone — Czyste Źródła',
+    locationId: 'new_reno',
+    onEnterEffect: {
+      setQuestState: { questId: 'ch2_new_reno', status: 'active', stage: 'return_overseer' },
+    },
+    description:
+      'Doktor Morbus pada obok roztrzaskanej kadzi z mutagenem! Przełączasz główną dźwignię stacji filtracyjnej — krystalicznie czysta woda pod ciśnieniem wypłukuje toksyny z wodociągów New Reno.\n\nGdy wychodzisz na powierzchnię, mieszkańcy Alei Neonów, lekarze ze Szpitala i Szeryf Vance wiwatują na Twoją cześć. W dłoni trzymasz Pieczęć Oczyszczalni New Reno gwarantującą dozgonny sojusz i dostawy dla Krypty 73. Czas wrócić do domu jako bohater!',
+    choices: [
+      {
+        id: 'open_map_after_reno_victory',
+        text: 'Otwórz Mapę Świata i wróć w chwale do Krypty 73',
+        nextSceneId: 'reno_gates',
+        effect: { openWorldMap: true },
+      },
+      {
+        id: 'stay_reno_celebrate',
+        text: 'Przejdź się jeszcze po ocalonej Alei Neonów',
+        nextSceneId: 'reno_gates',
+      },
+    ],
+  },
+  ending_deputy_overseer: {
+    id: 'ending_deputy_overseer',
+    title: 'WIELKI FINAŁ: Zastępca Nadzorcy Krypty 73',
+    locationId: 'vault_73',
     isEnding: true,
     description:
-      'Zamiast zamykać się ponownie pod ziemią, połączyłeś technologię Krypty 73 z odwagą osadników z Rdzawego Krateru. Stabilizator zasilił zarówno schron, jak i oczyszczalnię na powierzchni.\n\nNarodziło się pierwsze wolne miasto Nowego Świtu. Gratulacje — ukończyłeś grę!',
+      'Wracasz do Krypty 73 witany jak żywa legenda Pustkowi. Karawany z ocalonego New Reno już rozładowują w śluzie medykamenty, czyste ogniwa energetyczne i zapasy żywności.\n\nPodczas uroczystego zgromadzenia w Atrium Nadzorca przypina do Twojego kombinezonu złote insygnia Vault-Tec:\n\n„Ocaliłeś nasz reaktor przed zagładą, a potem uratowałeś całe New Reno przed śmiercią. Od dziś mianuję Cię moim pierwszym Zastępcą Nadzorcy Krypty 73!”\n\nGRATULACJE — UKOŃCZYŁEŚ PEŁNĄ KAMPANIĘ (ROZDZIAŁ 1 i 2)!',
     choices: [],
   },
   game_over_death: {

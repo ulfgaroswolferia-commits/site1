@@ -7,7 +7,7 @@ import {
 } from '../types/game.js';
 import { ITEMS } from '../content/items.js';
 
-export const XP_THRESHOLDS = [0, 100, 250, 450, 700, 1000];
+export const XP_THRESHOLDS = [0, 100, 250, 450, 700, 1000, 1350, 1750, 2200];
 
 export function createInitialAttributes(): Attributes {
   return { STR: 5, PER: 5, END: 5, CHA: 5, INT: 5, AGI: 5 };
@@ -15,7 +15,9 @@ export function createInitialAttributes(): Attributes {
 
 export function getBaseMaxHp(attributes: Attributes, level: number, perks: string[]): number {
   const base = 70 + attributes.END * 10 + (level - 1) * 10;
-  const perkBonus = perks.includes('wasteland_toughness') ? 20 : 0;
+  const perkBonus =
+    (perks.includes('wasteland_toughness') ? 20 : 0) +
+    (perks.includes('cyborg_reflex') ? 15 : 0);
   return base + perkBonus;
 }
 
