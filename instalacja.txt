@@ -1,0 +1,66 @@
+========================================================================
+       KRYPTA 73: POPIOŁY NOWEGO ŚWITU — INSTRUKCJA INSTALACJI
+         (Tekstowa gra RPG w terminalu VS Code / PhpStorm)
+========================================================================
+
+1. WYMAGANIA WSTĘPNE
+------------------------------------------------------------------------
+Do uruchomienia gry wymagane jest środowisko Node.js (wersja 18 lub nowsza,
+zalecana wersja 20/22/24 LTS).
+
+Aby sprawdzić, czy masz już zainstalowanego Node.js, wpisz w terminalu:
+  node -v
+
+Jeśli polecenie nie jest rozpoznawane, pobierz i zainstaluj Node.js ze strony:
+  https://nodejs.org/
+
+
+2. INSTALACJA Z PACZKI (krypta-73-rpg-1.0.0.tgz)
+------------------------------------------------------------------------
+1) Pobierz plik "krypta-73-rpg-1.0.0.tgz" do dowolnego folderu na dysku.
+2) Otwórz terminal (w VS Code, PhpStorm, PowerShell lub CMD) w folderze,
+   w którym znajduje się plik .tgz.
+3) Zainstaluj grę globalnie poleceniem:
+
+   npm install -g ./krypta-73-rpg-1.0.0.tgz
+
+Po zakończeniu instalacji w systemie zostanie zarejestrowana globalna
+komenda "krypta73".
+
+
+3. URUCHAMIANIE GRY
+------------------------------------------------------------------------
+Otwórz terminal w VS Code (skrót Ctrl + ~) lub terminal w PhpStormie
+(Alt + F12) i wpisz:
+
+   krypta73
+
+Wskazówka: Zalecany minimalny rozmiar panelu terminala to 72 kolumny
+szerokości i 18 wierszy wysokości (w razie potrzeby przeciągnij górną
+krawędź panelu terminala nieco wyżej).
+
+
+4. STEROWANIE W GRZE (INTERFEJS PIP-BOY 3000)
+------------------------------------------------------------------------
+- Strzałki [↑ / ↓] + [Enter] lub klawisze [1 - 9] : Wybór opcji / akcji
+- Strzałki [← / →] : Rozdawanie punktów S.P.E.C.I.A.L. / Kupno-Sprzedaż
+- [S] : Karta Postaci S.P.E.C.I.A.L., Perki oraz Awans na nowy poziom
+- [I] : Ekwipunek (zakładanie broni/pancerza, używanie Stimpaków i AntyRadu)
+- [Q] : Dziennik Zadań (Quest Log) / Wyjście z okna handlu
+- [M] : Mapa Pustkowi (podróż między odkrytymi lokacjami)
+- [Z] lub [F5] : Szybki zapis gry
+- [ESC] : Zamknięcie otwartej zakładki Pip-Boya / Anulowanie
+
+Uwaga dla użytkowników PhpStorma:
+Domyślnie klawisz ESC w PhpStormie przenosi fokus z terminala do edytora
+kodu. Zakładki Pip-Boya możesz zamykać ponownym naciśnięciem klawisza
+danej zakładki ([S], [I], [Q], [M]), albo wyłączyć tę opcję w PhpStormie:
+Settings -> Tools -> Terminal -> odznacz "Move focus to editor on Escape".
+
+
+5. AKTUALIZACJA I ODINSTALOWANIE
+------------------------------------------------------------------------
+Aby odinstalować grę z systemu, wpisz w terminalu:
+
+   npm uninstall -g krypta-73-rpg
+========================================================================
