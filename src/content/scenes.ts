@@ -34,6 +34,27 @@ export const LOCATIONS: Record<LocationId, LocationDefinition> = {
     entrySceneId: 'reno_gates',
     requiredFlag: 'new_reno_unlocked',
   },
+  arroyo: {
+    id: 'arroyo',
+    name: 'Wioska Arroyo',
+    description: 'Tradycyjna osada plemienna na północnych pustkowiach, nękana przez zmutowane drapieżniki.',
+    entrySceneId: 'arroyo_village',
+    requiredFlag: 'arroyo_unlocked',
+  },
+  ncr: {
+    id: 'ncr',
+    name: 'Nowa Republika Kalifornii (NCR)',
+    description: 'Zorganizowane państwo z własnym rządem, armią i przedwojenną wiedzą technologiczną.',
+    entrySceneId: 'ncr_downtown',
+    requiredFlag: 'ncr_unlocked',
+  },
+  vault_13: {
+    id: 'vault_13',
+    name: 'Krypta 13',
+    description: 'Mityczny, zapieczętowany schron Vault-Tec kryjący zapasowy Hydroprocesor.',
+    entrySceneId: 'vault_13_gate',
+    requiredFlag: 'vault_13_unlocked',
+  },
 };
 
 const baseScenes: Record<string, SceneDefinition> = {
@@ -80,6 +101,17 @@ const baseScenes: Record<string, SceneDefinition> = {
     description:
       'Stoisz przed monumentalnymi, zębatymi wrotami Krypty 73. Przy pulpicie sterującym stoi uszkodzony Strażnik RobCo — w jego zacisku widnieje Karta Dostępu Strażnika otwierająca zbrojownię oraz śluzę.',
     choices: [
+      {
+        id: 'return_hero_chapter_3',
+        text: '[FINAŁ ROZDZIAŁU 3] Zamontuj Hydroprocesor z Krypty 13 w reaktorze Krypty 73 i ocal mieszkańców przed suszą',
+        requiredItem: 'water_chip',
+        nextSceneId: 'ending_water_chip_saved',
+        effect: {
+          removeItems: { water_chip: 1 },
+          setQuestState: { questId: 'ch3_water_chip', status: 'completed', stage: 'completed' },
+          xpDelta: 600,
+        },
+      },
       {
         id: 'return_hero_chapter_2',
         text: '[FINAŁ ROZDZIAŁU 2] Przedstaw Nadzorcy Pieczęć Oczyszczalni New Reno i odbierz nominację',
@@ -1025,11 +1057,485 @@ const baseScenes: Record<string, SceneDefinition> = {
   },
   ending_deputy_overseer: {
     id: 'ending_deputy_overseer',
-    title: 'WIELKI FINAŁ: Zastępca Nadzorcy Krypty 73',
+    title: 'KONIEC ROZDZIAŁU 2: Zastępca Nadzorcy — Rok Później: Kryzys Wodny',
+    locationId: 'vault_73',
+    description:
+      'Minął dokładnie rok, odkąd jako Zastępca Nadzorcy zaprowadziłeś pokój i dobrobyt w Krypcie 73. Niestety, w samym sercu schronu dochodzi do katastrofy — główny Water Chip (Hydroprocesor) stopił się pod wpływem przeciążenia obwodów. Zapasów zdatnej do picia wody wystarczy na zaledwie 2 miesiące!\n\nNadzorca zwołuje naradę kryzysową:\n„Wędrowcze, jesteś naszą jedyną nadzieją. Przedwojenne rejestry mówią o mitycznej Krypcie 13 — bliźniaczym schronie, który posiadał zapasowe moduły oczyszczania wody. Nikt nie zna jej dokładnej lokalizacji, ale starszyzna z plemiennej wioski Arroyo na północy może pamiętać pradawne legendy o Krypcie 13. Wyrusz do Arroyo, odnajdź drogę do Krypty 13 i ocal nas!”',
+    choices: [
+      {
+        id: 'start_chapter_3_crisis',
+        text: 'Odbierz ekwipunek wyprawy ratunkowej (+150 kapsli, +3 Stimpaki) i ruszaj do Wioski Arroyo [Rozdział 3]',
+        nextSceneId: 'vault_atrium',
+        effect: {
+          capsDelta: 150,
+          addItems: { stimpak: 3, radaway: 2 },
+          setFlags: { arroyo_unlocked: true },
+          setQuestState: { questId: 'ch3_water_chip', status: 'active', stage: 'travel_arroyo' },
+        },
+      },
+    ],
+  },
+  arroyo_village: {
+    id: 'arroyo_village',
+    title: 'Wioska Arroyo — Namiot Starszej Hakunin',
+    locationId: 'arroyo',
+    onEnterEffect: {
+      setQuestState: { questId: 'ch3_water_chip', status: 'active', stage: 'help_arroyo' },
+    },
+    description:
+      'Docierasz do skalistego kanionu, w którym mieści się plemienna wioska Arroyo. Przy świętym ognisku modli się Starsza Hakunin:\n\n„Witaj, wędrowcze w błękitnym stroju Pradawnych. Słyszę szept wiatru — szukasz Krypty 13, kolebki naszych przodków. Nasz lud przekaże Ci wiedzę i skieruje Cię do Nowej Republiki Kalifornii (NCR), gdzie mają przedwojenne mapy. Ale najpierw musisz nam pomóc — horda krwiożerczych bestii pustkowi napadła na nasze święte pastwiska Brahminów. Jeśli bydło padnie, plemię wymrze z głodu!”',
+    choices: [
+      {
+        id: 'go_arroyo_pasture',
+        text: 'Chwyć za broń i ruszaj na pastwisko bronić Brahminów',
+        nextSceneId: 'arroyo_pasture',
+        effect: {
+          setQuestState: { questId: 'side_arroyo_pasture', status: 'active', stage: 'hunt_beasts' },
+        },
+      },
+      {
+        id: 'claim_arroyo_reward',
+        text: 'Odbierz od Starszej Hakunin Talizman Wybrańca i namiary na NCR (+150 XP)',
+        requiredFlag: 'arroyo_pasture_cleared',
+        forbiddenFlag: 'arroyo_reward_taken',
+        nextSceneId: 'arroyo_village',
+        effect: {
+          addItems: { arroyo_talisman: 1, stimpak: 2 },
+          setFlags: { arroyo_reward_taken: true, ncr_unlocked: true },
+          setQuestState: { questId: 'ch3_water_chip', status: 'active', stage: 'travel_ncr' },
+          xpDelta: 150,
+        },
+      },
+      {
+        id: 'arroyo_heal',
+        text: '[END] Poproś szamana o tradycyjny wywar z ziół leczniczych (+70 HP, -30 RAD)',
+        nextSceneId: 'arroyo_village',
+        effect: {
+          hpDelta: 70,
+          radDelta: -30,
+        },
+      },
+      {
+        id: 'leave_arroyo_map',
+        text: 'Otwórz Mapę Świata (Wyrusz w dalszą podróż)',
+        nextSceneId: 'arroyo_village',
+        effect: { openWorldMap: true },
+      },
+    ],
+  },
+  arroyo_pasture: {
+    id: 'arroyo_pasture',
+    title: 'Wioska Arroyo — Skaliste Pastwiska',
+    locationId: 'arroyo',
+    description:
+      'W kanionie słychać ryk przerażonych dwugłowych krów. Wokół stada krążą wataha Zdziczałych Wilków Pustynnych oraz olbrzymi Alfa Radskorpion z kleszczami twardymi jak stal!',
+    choices: [
+      {
+        id: 'fight_arroyo_wolves',
+        text: 'Zlikwiduj Zdziczałego Wilka Pustynnego atakującego młodego brahmina',
+        forbiddenFlag: 'arroyo_wolf_cleared',
+        nextSceneId: 'arroyo_pasture',
+        effect: {
+          setFlags: { arroyo_wolf_cleared: true },
+          startCombat: {
+            enemyId: 'desert_stalker',
+            victorySceneId: 'arroyo_pasture',
+            fleeSceneId: 'arroyo_village',
+          },
+        },
+      },
+      {
+        id: 'fight_arroyo_scorpion',
+        text: 'Stań do walki z potężnym Alfa Radskorpionem!',
+        requiredFlag: 'arroyo_wolf_cleared',
+        forbiddenFlag: 'arroyo_scorpion_cleared',
+        nextSceneId: 'arroyo_pasture',
+        effect: {
+          setFlags: { arroyo_scorpion_cleared: true },
+          startCombat: {
+            enemyId: 'alpha_radscorpion',
+            victorySceneId: 'arroyo_pasture',
+            fleeSceneId: 'arroyo_village',
+          },
+        },
+      },
+      {
+        id: 'tame_brahmins',
+        text: '[CHA] Uspokój stado Brahminów i zabezpiecz przejście do kanionu',
+        requiredFlag: 'arroyo_scorpion_cleared',
+        forbiddenFlag: 'arroyo_pasture_cleared',
+        skillCheck: { attribute: 'CHA', difficulty: 6 },
+        nextSceneId: 'arroyo_village',
+        failSceneId: 'arroyo_village',
+        effect: {
+          setFlags: { arroyo_pasture_cleared: true },
+          setQuestState: { questId: 'side_arroyo_pasture', status: 'completed', stage: 'completed' },
+          xpDelta: 100,
+        },
+        failEffect: {
+          setFlags: { arroyo_pasture_cleared: true },
+          setQuestState: { questId: 'side_arroyo_pasture', status: 'completed', stage: 'completed' },
+        },
+      },
+      {
+        id: 'back_arroyo_village',
+        text: 'Wróć do centrum wioski Arroyo',
+        nextSceneId: 'arroyo_village',
+      },
+    ],
+  },
+  ncr_downtown: {
+    id: 'ncr_downtown',
+    title: 'Nowa Republika Kalifornii (NCR) — Plac Wolności',
+    locationId: 'ncr',
+    onEnterEffect: {
+      setQuestState: { questId: 'ch3_water_chip', status: 'active', stage: 'gain_ncr_map' },
+    },
+    description:
+      'NCR to prawdziwe państwo z asfaltowymi alejami, betonowymi budynkami i patrolami Strażników NCR w prochowcach. W centrum miasta wznosi się Ratusz, po lewej Baza Zaopatrzeniowa Kwatermistrza Bustera, po prawej Szpital Wojskowy Dr Henry’ego, a w bocznej alei neon Klubu „Kocia Łapka”. Na rogu wisi obwieszczenie o dezerterach nękających konwoje na przedmieściach.',
+    choices: [
+      {
+        id: 'go_ncr_hall',
+        text: 'Wejdź do Ratusza i spotkaj się z Burmistrzem Tibbettem',
+        nextSceneId: 'ncr_hall',
+      },
+      {
+        id: 'trade_buster',
+        text: 'Odwiedź Kwatermistrza Bustera [Karabiny Snajperskie, Miniguny, Pancerze NCR]',
+        nextSceneId: 'ncr_downtown',
+        effect: { openMerchant: 'buster_ncr' },
+      },
+      {
+        id: 'go_ncr_hospital',
+        text: 'Odwiedź Szpital Polowy NCR (Dr Henry)',
+        nextSceneId: 'ncr_hospital',
+      },
+      {
+        id: 'go_ncr_catspaw',
+        text: 'Wejdź do Klubu „Kocia Łapka” (Madame Dupree)',
+        nextSceneId: 'ncr_catspaw',
+      },
+      {
+        id: 'go_ncr_outskirts',
+        text: 'Wyrusz na przedmieścia NCR (Kryjówka Buntowników)',
+        nextSceneId: 'ncr_outskirts',
+      },
+      {
+        id: 'leave_ncr_map',
+        text: 'Otwórz Mapę Świata',
+        nextSceneId: 'ncr_downtown',
+        effect: { openWorldMap: true },
+      },
+    ],
+  },
+  ncr_hall: {
+    id: 'ncr_hall',
+    title: 'NCR — Ratusz Republiki (Gabinet Burmistrza Tibbetta)',
+    locationId: 'ncr',
+    description:
+      'Burmistrz Tibbett spogląda na Ciebie zza dębowego biurka: „Słyszałem o Tobie od Starszej z Arroyo. Szukasz Krypty 13? Nasze archiwa posiadają oryginalną, przedwojenną Holomapę z dokładnymi współrzędnymi jej śluzy. Republika nie rozdaje jednak skarbów za darmo. Na przedmieściach operuje zorganizowana banda dezerterów nękająca nasze szlaki, a Dr Henry ze szpitala stracił przez nich prototypowy skaner. Zlikwiduj buntowników, a Holomapa Krypty 13 będzie Twoja!”',
+    choices: [
+      {
+        id: 'claim_vault13_map',
+        text: 'Zamelduj o rozbiciu buntowników i odbierz Przedwojenną Holomapę Krypty 13 (+200 XP)',
+        requiredFlag: 'ncr_convoy_cleared',
+        forbiddenFlag: 'vault13_map_taken',
+        nextSceneId: 'ncr_hall',
+        effect: {
+          addItems: { vault_13_map: 1 },
+          setFlags: { vault13_map_taken: true, vault_13_unlocked: true },
+          setQuestState: { questId: 'ch3_water_chip', status: 'active', stage: 'infiltrate_vault_13' },
+          xpDelta: 200,
+        },
+      },
+      {
+        id: 'persuade_mayor_bonus',
+        text: '[CHA] Wynegocjuj dodatkową dotację rządową 150 kapsli na amunicję',
+        forbiddenFlag: 'ncr_stipend_taken',
+        skillCheck: { attribute: 'CHA', difficulty: 7 },
+        nextSceneId: 'ncr_hall',
+        failSceneId: 'ncr_hall',
+        effect: {
+          capsDelta: 150,
+          xpDelta: 75,
+          setFlags: { ncr_stipend_taken: true },
+        },
+        failEffect: {
+          setFlags: { ncr_stipend_taken: true },
+        },
+      },
+      {
+        id: 'back_ncr_from_hall',
+        text: 'Wróć na Plac Wolności',
+        nextSceneId: 'ncr_downtown',
+      },
+    ],
+  },
+  ncr_hospital: {
+    id: 'ncr_hospital',
+    title: 'NCR — Szpital Wojskowy Dr Henry’ego',
+    locationId: 'ncr',
+    description:
+      'Dr Henry, dawny naukowiec Enklawy pracujący dla Republiki, krząta się wśród aparatury: „Buntownicy z przedmieść napadli na mój transport medyczny i ukradli Zautomatyzowany Skaner Polowy! Bez niego nie mogę przeprowadzać precyzyjnych operacji usuwania skażenia. Odzyskaj go, a sowicie Cię wynagrodzę.”',
+    choices: [
+      {
+        id: 'accept_scanner_quest',
+        text: 'Zadeklaruj odzyskanie skanera medycznego od buntowników',
+        forbiddenFlag: 'scanner_quest_started',
+        nextSceneId: 'ncr_hospital',
+        effect: {
+          setFlags: { scanner_quest_started: true },
+          setQuestState: { questId: 'side_ncr_crimes', status: 'active', stage: 'attack_convoy' },
+        },
+      },
+      {
+        id: 'turn_in_scanner',
+        text: 'Zwróć odzyskany Skaner Medyczny (+150 kapsli, +3 Stimpaki, +120 XP)',
+        requiredItem: 'stolen_medical_scanner',
+        forbiddenFlag: 'scanner_returned',
+        nextSceneId: 'ncr_hospital',
+        effect: {
+          removeItems: { stolen_medical_scanner: 1 },
+          capsDelta: 150,
+          addItems: { stimpak: 3, radaway: 2 },
+          xpDelta: 120,
+          setFlags: { scanner_returned: true },
+          setQuestState: { questId: 'side_ncr_crimes', status: 'completed', stage: 'completed' },
+        },
+      },
+      {
+        id: 'ncr_hospital_heal',
+        text: 'Zapłać 30 kapsli za wojskową procedurę odtruwania (-100 RAD, +200 HP)',
+        requiredCaps: 30,
+        nextSceneId: 'ncr_hospital',
+        effect: {
+          capsDelta: -30,
+          radDelta: -100,
+          hpDelta: 200,
+        },
+      },
+      {
+        id: 'back_ncr_from_hospital',
+        text: 'Wróć na Plac Wolności',
+        nextSceneId: 'ncr_downtown',
+      },
+    ],
+  },
+  ncr_catspaw: {
+    id: 'ncr_catspaw',
+    title: 'NCR — Klub i Lupanar „Kocia Łapka”',
+    locationId: 'ncr',
+    description:
+      'Aksamitne zasłony, dźwięki jazzu i zapach drogich cygar. Właścicielka, Madame Dupree, wita Cię tajemniczym uśmiechem:\n„Szukasz wytchnienia od kurzu pustkowi, czy może szukasz informacji? Moi bywalcy wiedzą wszystko o NCR — na przykład to, że dowódca buntowników na przedmieściach ma słabość do materiałów wybuchowych, a ich generator można przeciążyć jednym strzałem.”',
+    choices: [
+      {
+        id: 'bribe_madame_intel',
+        text: '[CHA lub 50 kapsli] Zdobądź dokładne kody sabotażu obozu buntowników (+80 XP)',
+        forbiddenFlag: 'catspaw_intel_known',
+        skillCheck: { attribute: 'CHA', difficulty: 6 },
+        nextSceneId: 'ncr_catspaw',
+        failSceneId: 'ncr_catspaw',
+        effect: {
+          setFlags: { catspaw_intel_known: true },
+          xpDelta: 80,
+        },
+        failEffect: {
+          setFlags: { catspaw_intel_known: true },
+          capsDelta: -50,
+        },
+      },
+      {
+        id: 'catspaw_relax',
+        text: 'Spędź wieczór w salonie VIP (Kapsle: 40 | Pełna regeneracja HP i usunięcie zmęczenia)',
+        requiredCaps: 40,
+        nextSceneId: 'ncr_catspaw',
+        effect: {
+          capsDelta: -40,
+          hpDelta: 100,
+        },
+      },
+      {
+        id: 'back_ncr_from_catspaw',
+        text: 'Wyjdź na Plac Wolności',
+        nextSceneId: 'ncr_downtown',
+      },
+    ],
+  },
+  ncr_outskirts: {
+    id: 'ncr_outskirts',
+    title: 'Przedmieścia NCR — Obóz Buntowników',
+    locationId: 'ncr',
+    description:
+      'Wokół opuszczonego magazynu kolejowego stoi barykada z wraków wagonów. W środku stacjonuje uzbrojony oddział dezerterów pod wodzą Najemnika Bandy Buntowników, rabujący karawany zmierzające do stolicy.',
+    choices: [
+      {
+        id: 'sabotage_camp_generator',
+        text: '[Informacje z Kociej Łapki] Wysadź generator polowy buntowników i zdezorganizuj ich obronę (+100 XP)',
+        requiredFlag: 'catspaw_intel_known',
+        forbiddenFlag: 'ncr_convoy_cleared',
+        nextSceneId: 'ncr_outskirts',
+        effect: {
+          setFlags: { ncr_convoy_cleared: true },
+          addItems: { stolen_medical_scanner: 1 },
+          xpDelta: 100,
+        },
+      },
+      {
+        id: 'fight_ncr_raiders',
+        text: 'Zaatakuj Najemnika Bandy Buntowników i odbierz skradziony sprzęt w walce!',
+        forbiddenFlag: 'ncr_convoy_cleared',
+        nextSceneId: 'ncr_outskirts',
+        effect: {
+          setFlags: { ncr_convoy_cleared: true },
+          startCombat: {
+            enemyId: 'ncr_convoy_raider',
+            victorySceneId: 'ncr_outskirts',
+            fleeSceneId: 'ncr_downtown',
+          },
+        },
+      },
+      {
+        id: 'back_ncr_from_outskirts',
+        text: 'Wróć do centrum NCR',
+        nextSceneId: 'ncr_downtown',
+      },
+    ],
+  },
+  vault_13_gate: {
+    id: 'vault_13_gate',
+    title: 'Krypta 13 — Monumentalna Śluza Zewnętrzna',
+    locationId: 'vault_13',
+    description:
+      'Wypalone w skale potężne wrota ze złotą liczbą „13” stoją uchylone w ponurym milczeniu. Na ziemi leżą przedwojenne szkielety, a z sufitu zwisają aktywne Wieżyczki Laserowe RobCo podłączone do głównego terminala kontrolnego.',
+    choices: [
+      {
+        id: 'hack_vault13_turrets',
+        text: '[INT] Zhakuj terminal kontrolny śluzy i dezaktywuj wieżyczki obronne (+120 XP)',
+        forbiddenFlag: 'vault13_turrets_hacked',
+        skillCheck: { attribute: 'INT', difficulty: 7 },
+        nextSceneId: 'vault_13_gate',
+        failSceneId: 'vault_13_gate',
+        effect: {
+          setFlags: { vault13_turrets_hacked: true },
+          xpDelta: 120,
+        },
+        failEffect: {
+          setFlags: { vault13_turrets_hacked: true },
+          hpDelta: -25,
+        },
+      },
+      {
+        id: 'enter_vault13_corridors',
+        text: 'Przejdź przez śluzę w głąb Korytarzy Technicznych Krypty 13',
+        nextSceneId: 'vault_13_corridors',
+      },
+      {
+        id: 'exit_vault13_map',
+        text: 'Wyjdź przed wejście do jaskini [Mapa Świata]',
+        nextSceneId: 'vault_13_gate',
+        effect: { openWorldMap: true },
+      },
+    ],
+  },
+  vault_13_corridors: {
+    id: 'vault_13_corridors',
+    title: 'Krypta 13 — Korytarze Techniczne i Sekcja Reaktorowa',
+    locationId: 'vault_13',
+    description:
+      'Cienie rzucane przez awaryjne lampy migoczą na stalowych ścianach. Korytarza do Głównego Laboratorium Hydroprocesorów pilnuje patrolujący Dron Obronny Krypty 13, emitujący pole siłowe.',
+    choices: [
+      {
+        id: 'fight_vault13_drone',
+        text: 'Zniszcz Drona Obronnego Krypty 13',
+        forbiddenFlag: 'vault13_drone_cleared',
+        nextSceneId: 'vault_13_corridors',
+        effect: {
+          setFlags: { vault13_drone_cleared: true },
+          startCombat: {
+            enemyId: 'robco_repair_drone',
+            victorySceneId: 'vault_13_corridors',
+            fleeSceneId: 'vault_13_gate',
+          },
+        },
+      },
+      {
+        id: 'enter_vault13_lab',
+        text: 'Wyłam zabezpieczenia grodzi i wejdź do Głównego Laboratorium (BOSS)',
+        requiredFlag: 'vault13_drone_cleared',
+        nextSceneId: 'vault_13_lab',
+      },
+      {
+        id: 'back_vault13_gate',
+        text: 'Cofnij się w stronę Śluzy',
+        nextSceneId: 'vault_13_gate',
+      },
+    ],
+  },
+  vault_13_lab: {
+    id: 'vault_13_lab',
+    title: 'Krypta 13 — Laboratorium Hydroprocesorów (Sektor Centralny)',
+    locationId: 'vault_13',
+    description:
+      'W sterylnej komorze w szklanej gablocie lśni nienaruszony Hydroprocesor (Water Chip z Krypty 13)! Drogę do modułu blokuje jednak potężny, trójkołowy Prototypowy Sentry Bot Zagłady — robot obronny najwyższej klasy militarnej z podwójnym minigunem i wyrzutnią rakiet!',
+    choices: [
+      {
+        id: 'hack_sentry_overload',
+        text: '[INT 8] Przeciąż zasilanie reaktora Sentry Bota przez konsolę serwisową przed walką',
+        skillCheck: { attribute: 'INT', difficulty: 8 },
+        nextSceneId: 'vault_13_victory',
+        failSceneId: 'vault_13_victory',
+        effect: {
+          xpDelta: 150,
+          startCombat: {
+            enemyId: 'annihilator_sentry_weakened',
+            victorySceneId: 'vault_13_victory',
+          },
+        },
+        failEffect: {
+          startCombat: {
+            enemyId: 'annihilator_sentry',
+            victorySceneId: 'vault_13_victory',
+          },
+        },
+      },
+      {
+        id: 'fight_sentry_direct',
+        text: 'Zaatakuj Prototypowego Sentry Bota Zagłady bez przygotowania!',
+        nextSceneId: 'vault_13_victory',
+        effect: {
+          startCombat: {
+            enemyId: 'annihilator_sentry',
+            victorySceneId: 'vault_13_victory',
+          },
+        },
+      },
+    ],
+  },
+  vault_13_victory: {
+    id: 'vault_13_victory',
+    title: 'Krypta 13 — Zwycięstwo i Zdobycie Hydroprocesora',
+    locationId: 'vault_13',
+    onEnterEffect: {
+      setQuestState: { questId: 'ch3_water_chip', status: 'active', stage: 'return_vault_73' },
+    },
+    description:
+      'Z rozbitego pancerza Sentry Bota ulatuje dym. Podchodzisz do hermetycznej gabloty i wyjmujesz fabrycznie nowy, sprawny Hydroprocesor (Water Chip z Krypty 13)! Zegar tyka — Krypta 73 ma wodę jeszcze na krótki czas. Pora wracać do domu i ocalić swój schron!',
+    choices: [
+      {
+        id: 'leave_vault13_with_chip',
+        text: 'Zabierz Water Chip, wyjdź na Pustkowia i ruszaj do Krypty 73 [Mapa Świata]',
+        nextSceneId: 'vault_13_gate',
+        effect: { openWorldMap: true },
+      },
+    ],
+  },
+  ending_water_chip_saved: {
+    id: 'ending_water_chip_saved',
+    title: 'WIELKI FINAŁ ROZDZIAŁU 3: Zbawca Krypty 73 i Legendarny Wędrowiec',
     locationId: 'vault_73',
     isEnding: true,
     description:
-      'Wracasz do Krypty 73 witany jak żywa legenda Pustkowi. Karawany z ocalonego New Reno już rozładowują w śluzie medykamenty, czyste ogniwa energetyczne i zapasy żywności.\n\nPodczas uroczystego zgromadzenia w Atrium Nadzorca przypina do Twojego kombinezonu złote insygnia Vault-Tec:\n\n„Ocaliłeś nasz reaktor przed zagładą, a potem uratowałeś całe New Reno przed śmiercią. Od dziś mianuję Cię moim pierwszym Zastępcą Nadzorcy Krypty 73!”\n\nGRATULACJE — UKOŃCZYŁEŚ PEŁNĄ KAMPANIĘ (ROZDZIAŁ 1 i 2)!',
+      'Wkładasz lśniący moduł Water Chip z Krypty 13 w gniazdo głównego systemu uzdatniania wody Krypty 73. Ciche buczenie pomp zmienia się w głęboki, potężny szum — krystaliczna woda zaczyna wypełniać zbiorniki rezerwowe!\n\nAlarm suszy zostaje odwołany. Wrota Atrium otwierają się, a setki mieszkańców Krypty 73 witają Cię owacją na stojąco. Z Arroyo przybywają posłańcy z darami, a z NCR karawany handlowe z ofertą stałego sojuszu.\n\nNadzorca ze łzami w oczach wznosi toast na Twoją cześć:\n„Uratowałeś naszą kryptę przed głodem, osadę przed zarazą, a teraz ocaliłeś nas wszystkich przed śmiercią z pragnienia. Twoje imię nigdy nie zostanie zapomniane na Pustkowiach!”\n\nGRATULACJE — UKOŃCZYŁEŚ ROZDZIAŁ 3 I CAŁĄ SAGĘ KRYPTY 73!',
     choices: [],
   },
   game_over_death: {

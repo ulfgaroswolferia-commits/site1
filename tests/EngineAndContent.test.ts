@@ -105,7 +105,7 @@ describe('DialogueEngine, WastelandTravel, SaveManager & Content Integrity', () 
     // Chapter 1 completion transitions to Chapter 2 instead of ending immediately
     expect(SCENES.ending_vault_saved.isEnding).toBeFalsy();
     expect(SCENES.ending_wasteland_alliance.isEnding).toBeFalsy();
-    expect(SCENES.ending_deputy_overseer.isEnding).toBe(true);
+    expect(SCENES.ending_deputy_overseer.choices.length).toBeGreaterThan(0);
 
     let state = createNewGameState('Max', { STR: 7, PER: 7, END: 7, CHA: 8, INT: 8, AGI: 7 });
     state.currentSceneId = 'ending_vault_saved';
@@ -121,5 +121,44 @@ describe('DialogueEngine, WastelandTravel, SaveManager & Content Integrity', () 
     state = travelToLocation(state, 'new_reno', () => 0.99);
     expect(state.currentLocationId).toBe('new_reno');
     expect(state.currentSceneId).toBe('reno_gates');
+  });
+
+  it('supports full Chapter 3 progression (Arroyo, NCR quests, Vault 13 water chip, and Savior of Vault 73 ending)', () => {
+    expect(LOCATIONS.arroyo).toBeDefined();
+    expect(LOCATIONS.ncr).toBeDefined();
+    expect(LOCATIONS.vault_13).toBeDefined();
+    expect(QUESTS.ch3_water_chip).toBeDefined();
+    expect(QUESTS.side_arroyo_pasture).toBeDefined();
+    expect(QUESTS.side_ncr_crimes).toBeDefined();
+
+    expect(ENEMIES.alpha_radscorpion).toBeDefined();
+    expect(ENEMIES.desert_stalker).toBeDefined();
+    expect(ENEMIES.irradiated_wanderer).toBeDefined();
+    expect(ENEMIES.annihilator_sentry).toBeDefined();
+
+    expect(ITEMS.water_chip).toBeDefined();
+    expect(ITEMS.sniper_rifle).toBeDefined();
+    expect(ITEMS.minigun).toBeDefined();
+    expect(ITEMS.ranger_armor).toBeDefined();
+    expect(ITEMS.vault_13_map).toBeDefined();
+
+    // Scene ending_deputy_overseer now has choice to start Chapter 3 crisis
+    expect(SCENES.ending_deputy_overseer.isEnding).toBeFalsy();
+    expect(SCENES.ending_water_chip_saved.isEnding).toBe(true);
+
+    let state = createNewGameState('Max', { STR: 8, PER: 8, END: 8, CHA: 8, INT: 8, AGI: 8 });
+    state.currentSceneId = 'ending_deputy_overseer';
+    const ch2EndScene = getCurrentScene(state);
+    const startCh3Choice = ch2EndScene.choices.find((c) => c.id === 'start_chapter_3_crisis');
+    expect(startCh3Choice).toBeDefined();
+
+    state = selectChoice(state, startCh3Choice!, () => 0.1);
+    expect(state.flags.arroyo_unlocked).toBe(true);
+    expect(state.quests.ch3_water_chip?.status).toBe('active');
+
+    // Travel to Arroyo
+    state = travelToLocation(state, 'arroyo', () => 0.99);
+    expect(state.currentLocationId).toBe('arroyo');
+    expect(state.currentSceneId).toBe('arroyo_village');
   });
 });

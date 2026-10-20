@@ -36,4 +36,14 @@ export const PERKS: Record<string, PerkDefinition> = {
     name: 'Implant Bojowy Vault-Tec',
     description: '+15 do maksymalnego HP oraz dodatkowe wyostrzenie zmysłów na Pustkowiach.',
   },
+  wasteland_legend: {
+    id: 'wasteland_legend',
+    name: 'Legenda Pustkowi',
+    description: '+25 do maksymalnego HP oraz +10% do szansy na unik i ucieczkę.',
+  },
+  plasma_master: {
+    id: 'plasma_master',
+    name: 'Mistrz Baterii Plazmowych',
+    description: '+10% do celności i +10 pkt do obrażeń broni energetycznych oraz ciężkich.',
+  },
 };

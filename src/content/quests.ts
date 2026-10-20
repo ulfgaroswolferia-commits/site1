@@ -56,4 +56,37 @@ export const QUESTS: Record<string, QuestDefinition> = {
       eliminated: 'Rozbito gang Żelaznych Szakali w walce.',
     },
   },
+  ch3_water_chip: {
+    id: 'ch3_water_chip',
+    title: 'Rozdział 3: Wyścig o Hydroprocesor (Zadanie Główne)',
+    description: 'W Krypcie 73 spłonął Water Chip. Zostały 2 miesiące wody. Musisz odnaleźć Kryptę 13 i ocalić schron.',
+    stages: {
+      travel_arroyo: 'Wyrusz do plemiennej wioski Arroyo, by zdobyć pierwsze wskazówki o Krypcie 13.',
+      help_arroyo: 'Ocal stada Brahminów w Arroyo przed bestiami i porozmawiaj ze Starszą Hakunin.',
+      travel_ncr: 'Udaj się do stolicy NCR (Nowej Republiki Kalifornii) i spotkaj się z Burmistrzem.',
+      gain_ncr_map: 'Zdobądź zaufanie władz NCR i odbierz Przedwojenną Holomapę Krypty 13.',
+      infiltrate_vault_13: 'Przedrzyj się przez systemy obronne Krypty 13 i zdobądź Water Chip.',
+      return_vault_73: 'Dostarcz Water Chip do reaktora Krypty 73, nim skończą się zapasy wody.',
+      completed: 'Krypta 73 ma nieograniczony zapas wody. Zostałeś legendarnym Zbawcą Pustkowi.',
+    },
+  },
+  side_arroyo_pasture: {
+    id: 'side_arroyo_pasture',
+    title: 'Czystka na Pastwiskach Arroyo (Zadanie Poboczne)',
+    description: 'Oczyść skalisty kanion z drapieżników zagrażających przetrwaniu wioski Arroyo.',
+    stages: {
+      hunt_beasts: 'Pokonaj Zdziczałego Wilka oraz Alfę Radskorpiona na pastwiskach Arroyo.',
+      completed: 'Pastwiska są bezpieczne, a plemię Arroyo otacza Cię czcią.',
+    },
+  },
+  side_ncr_crimes: {
+    id: 'side_ncr_crimes',
+    title: 'Buntownicy na Szlaku NCR (Zadanie Poboczne)',
+    description: 'Rozbij konwój dezerterów nękających szlaki handlowe NCR i odzyskaj skaner Dr Henry’ego.',
+    stages: {
+      attack_convoy: 'Zlikwiduj obóz buntowników na przedmieściach NCR.',
+      return_scanner: 'Oddaj odzyskany Skaner Medyczny Dr Henry’emu w Szpitalu NCR.',
+      completed: 'Zlikwidowano zagrożenie dla karawan i wsparto medyków NCR.',
+    },
+  },
 };

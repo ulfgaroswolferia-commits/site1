@@ -102,8 +102,10 @@ export function performPlayerAttack(
   const weapon = state.character.equippedWeaponId
     ? ITEMS[state.character.equippedWeaponId]
     : null;
+  const perkBonusDmg = state.character.perks.includes('plasma_master') ? 10 : 0;
   const baseDamage =
     (weapon?.damage ?? 8) +
+    perkBonusDmg +
     (weapon?.isMelee ? state.character.attributes.STR : Math.floor(state.character.attributes.PER / 2));
 
   const targetPart: BodyPart = mode === 'standard' ? 'torso' : part;

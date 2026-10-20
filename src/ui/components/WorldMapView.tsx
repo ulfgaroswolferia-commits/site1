@@ -62,7 +62,7 @@ export const WorldMapView: React.FC<Props> = ({ state, onSelectLocation, onClose
           );
         })}
       </Box>
-      <Text color={THEME.muted}>[Enter / 1-5] Podróżuj | [ESC] Zamknij mapę</Text>
+      <Text color={THEME.muted}>[Enter / 1-8] Podróżuj | [ESC] Zamknij mapę</Text>
     </Box>
   );
 };

@@ -117,7 +117,10 @@ export type LocationId =
   | 'rusty_crater'
   | 'robco_relay'
   | 'rust_fortress'
-  | 'new_reno';
+  | 'new_reno'
+  | 'arroyo'
+  | 'ncr'
+  | 'vault_13';
 
 export interface SceneDefinition {
   id: string;
