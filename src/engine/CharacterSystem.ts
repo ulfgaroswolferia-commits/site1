@@ -114,21 +114,37 @@ export function grantXp(state: GameState, baseXp: number): GameState {
 
 export function levelUpCharacter(
   state: GameState,
-  attributeToIncrease: AttributeKey,
-  perkId: string
+  attributeToIncrease?: AttributeKey,
+  perkId?: string
 ): GameState {
   if (state.character.pendingLevelUps <= 0) return state;
 
   const newLevel = state.character.level + 1;
+  const gainsAttribute = newLevel % 3 === 0;
+  const gainsPerk = newLevel % 2 === 0;
+
   const newAttributes: Attributes = {
     ...state.character.attributes,
-    [attributeToIncrease]: Math.min(10, state.character.attributes[attributeToIncrease] + 1),
+    ...(gainsAttribute && attributeToIncrease
+      ? { [attributeToIncrease]: Math.min(10, state.character.attributes[attributeToIncrease] + 1) }
+      : {}),
   };
-  const newPerks = state.character.perks.includes(perkId)
-    ? state.character.perks
-    : [...state.character.perks, perkId];
+
+  const newPerks =
+    gainsPerk && perkId && !state.character.perks.includes(perkId)
+      ? [...state.character.perks, perkId]
+      : state.character.perks;
+
   const newMaxHp = getBaseMaxHp(newAttributes, newLevel, newPerks);
   const effectiveMax = getEffectiveMaxHp(newMaxHp, state.character.rad);
+
+  const bonuses: string[] = ['+10 Max HP'];
+  if (gainsAttribute && attributeToIncrease) {
+    bonuses.push(`+1 ${attributeToIncrease}`);
+  }
+  if (gainsPerk && perkId) {
+    bonuses.push(`nowy Perk: ${perkId}`);
+  }
 
   return {
     ...state,
@@ -143,7 +159,7 @@ export function levelUpCharacter(
     },
     eventLog: [
       ...state.eventLog.slice(-19),
-      `Awans na poziom ${newLevel}! (+1 ${attributeToIncrease}, nowy Perk: ${perkId})`,
+      `Awans na poziom ${newLevel}! (${bonuses.join(', ')})`,
     ],
   };
 }

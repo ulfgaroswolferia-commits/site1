@@ -32,6 +32,10 @@ export const PipBoyOverlay: React.FC<Props> = ({
   );
   const safeInvSelected = Math.min(selected, Math.max(0, invEntries.length - 1));
 
+  const nextLevel = state.character.level + 1;
+  const gainsAttribute = nextLevel % 3 === 0;
+  const gainsPerk = nextLevel % 2 === 0;
+
   useInput((input, key) => {
     if (key.escape) {
       onClose();
@@ -49,20 +53,26 @@ export const PipBoyOverlay: React.FC<Props> = ({
       }
     }
 
-    if (tab === 'stats' && state.character.pendingLevelUps > 0 && availablePerks.length > 0) {
-      if (key.leftArrow) {
-        const idx = ATTRS.indexOf(selectedAttr);
-        setSelectedAttr(ATTRS[(idx - 1 + ATTRS.length) % ATTRS.length]);
-      } else if (key.rightArrow) {
-        const idx = ATTRS.indexOf(selectedAttr);
-        setSelectedAttr(ATTRS[(idx + 1) % ATTRS.length]);
-      } else if (key.upArrow) {
-        setSelected((prev) => (prev - 1 + availablePerks.length) % availablePerks.length);
-      } else if (key.downArrow) {
-        setSelected((prev) => (prev + 1) % availablePerks.length);
-      } else if (key.return) {
+    if (tab === 'stats' && state.character.pendingLevelUps > 0) {
+      if (gainsAttribute) {
+        if (key.leftArrow) {
+          const idx = ATTRS.indexOf(selectedAttr);
+          setSelectedAttr(ATTRS[(idx - 1 + ATTRS.length) % ATTRS.length]);
+        } else if (key.rightArrow) {
+          const idx = ATTRS.indexOf(selectedAttr);
+          setSelectedAttr(ATTRS[(idx + 1) % ATTRS.length]);
+        }
+      }
+      if (gainsPerk && availablePerks.length > 0) {
+        if (key.upArrow) {
+          setSelected((prev) => (prev - 1 + availablePerks.length) % availablePerks.length);
+        } else if (key.downArrow) {
+          setSelected((prev) => (prev + 1) % availablePerks.length);
+        }
+      }
+      if (key.return) {
         const perk = availablePerks[selected] ?? availablePerks[0];
-        if (perk) onLevelUp(selectedAttr, perk.id);
+        onLevelUp(selectedAttr, perk ? perk.id : '');
       }
     }
   });
@@ -103,25 +113,46 @@ export const PipBoyOverlay: React.FC<Props> = ({
               marginTop={1}
             >
               <Text color={THEME.amber} bold>
-                DOSTĘPNY AWANS NA NOWY POZIOM!
+                AWANS NA POZIOM {nextLevel}! (+10 Max HP & Pełne Uleczenie)
               </Text>
-              <Text color={THEME.primary}>
-                1. Wybierz atrybut do zwiększenia (+1) klawiszami [←/→]:{' '}
-                <Text color={THEME.amber} bold>{selectedAttr}</Text>
-              </Text>
-              <Text color={THEME.primary}>
-                2. Wybierz nowy Perk klawiszami [↑/↓] i zatwierdź [Enter]:
-              </Text>
-              {availablePerks.map((perk, idx) => (
-                <Text
-                  key={perk.id}
-                  color={idx === selected ? THEME.amber : THEME.primary}
-                  bold={idx === selected}
-                >
-                  {idx === selected ? '> ' : '  '}
-                  {perk.name} — {perk.description}
+              {gainsAttribute ? (
+                <Text color={THEME.primary}>
+                  • Wybierz atrybut S.P.E.C.I.A.L. (+1 co 3 lvl) klawiszami [←/→]:{' '}
+                  <Text color={THEME.amber} bold>{selectedAttr}</Text>
                 </Text>
-              ))}
+              ) : (
+                <Text color={THEME.muted}>
+                  • Punkty S.P.E.C.I.A.L. przysługują co 3 poziomy (najbliższy na poziomie {Math.ceil(nextLevel / 3) * 3}).
+                </Text>
+              )}
+
+              {gainsPerk ? (
+                <Box flexDirection="column" marginTop={1}>
+                  <Text color={THEME.primary}>
+                    • Wybierz nowy Perk (co 2 lvl) klawiszami [↑/↓]:
+                  </Text>
+                  {availablePerks.map((perk, idx) => (
+                    <Text
+                      key={perk.id}
+                      color={idx === selected ? THEME.amber : THEME.primary}
+                      bold={idx === selected}
+                    >
+                      {idx === selected ? '> ' : '  '}
+                      {perk.name} — {perk.description}
+                    </Text>
+                  ))}
+                </Box>
+              ) : (
+                <Text color={THEME.muted}>
+                  • Nowy Perk przysługuje co 2 poziomy (najbliższy na poziomie {Math.ceil(nextLevel / 2) * 2}).
+                </Text>
+              )}
+
+              <Box marginTop={1}>
+                <Text color={THEME.amber} bold>
+                  Wciśnij [Enter], aby zatwierdzić awans!
+                </Text>
+              </Box>
             </Box>
           )}
         </Box>

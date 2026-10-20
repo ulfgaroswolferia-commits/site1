@@ -53,16 +53,24 @@ describe('CharacterSystem', () => {
     expect(state.character.rad).toBe(56);
   });
 
-  it('grants XP with INT bonus and handles level up with attribute + perk', () => {
+  it('grants XP with INT bonus and handles level up with attribute co 3 lvl and perk co 2 lvl', () => {
     let state = createNewGameState('Max', { STR: 5, PER: 5, END: 5, CHA: 5, INT: 5, AGI: 5 });
     state = grantXp(state, 100); // 100 * (1 + 5*0.03) = 115 XP
     expect(state.character.xp).toBe(115);
     expect(state.character.pendingLevelUps).toBe(1);
 
+    // Lvl 2: Perk co 2 levele (dostaje vats_sniper), ale brak punktu SPECIAL (2 % 3 !== 0)
     state = levelUpCharacter(state, 'PER', 'vats_sniper');
     expect(state.character.level).toBe(2);
-    expect(state.character.attributes.PER).toBe(6);
+    expect(state.character.attributes.PER).toBe(5); // bez zmiany na lvl 2
     expect(state.character.perks).toContain('vats_sniper');
-    expect(state.character.pendingLevelUps).toBe(0);
+    expect(state.character.maxHp).toBe(getBaseMaxHp(state.character.attributes, 2, state.character.perks));
+
+    // Lvl 3: Punkt SPECIAL co 3 levele (dostaje +1 PER), ale brak perka (3 % 2 !== 0)
+    state.character.pendingLevelUps = 1;
+    state = levelUpCharacter(state, 'PER', 'robco_hacker');
+    expect(state.character.level).toBe(3);
+    expect(state.character.attributes.PER).toBe(6); // +1 na lvl 3
+    expect(state.character.perks).not.toContain('robco_hacker'); // nie przysługuje na lvl 3
   });
 });
