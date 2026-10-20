@@ -5,7 +5,13 @@
   "bin": {
     "krypta73": "./bin/krypta73.js"
   },
+  "files": [
+    "bin/",
+    "dist/"
+  ],
   "scripts": {
+    "build": "tsc",
+    "prepack": "npm run build",
     "start": "tsx src/index.tsx",
     "dev": "tsx watch src/index.tsx",
     "test": "vitest run",
