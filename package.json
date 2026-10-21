@@ -1,6 +1,6 @@
 {
   "name": "krypta-73-rpg",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "bin": {
     "krypta73": "./bin/krypta73.js"
@@ -29,3 +29,4 @@
     "vitest": "^2.1.8"
   }
 }
+

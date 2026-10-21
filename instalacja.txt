@@ -15,14 +15,14 @@ Jeśli polecenie nie jest rozpoznawane, pobierz i zainstaluj Node.js ze strony:
   https://nodejs.org/
 
 
-2. INSTALACJA Z PACZKI (krypta-73-rpg-1.0.0.tgz)
+2. INSTALACJA Z PACZKI (krypta-73-rpg-1.0.1.tgz)
 ------------------------------------------------------------------------
-1) Pobierz plik "krypta-73-rpg-1.0.0.tgz" do dowolnego folderu na dysku.
+1) Pobierz plik "krypta-73-rpg-1.0.1.tgz" do dowolnego folderu na dysku.
 2) Otwórz terminal (w VS Code, PhpStorm, PowerShell lub CMD) w folderze,
    w którym znajduje się plik .tgz.
 3) Zainstaluj grę globalnie poleceniem:
 
-   npm install -g ./krypta-73-rpg-1.0.0.tgz
+   npm install -g ./krypta-73-rpg-1.0.1.tgz
 
 Po zakończeniu instalacji w systemie zostanie zarejestrowana globalna
 komenda "krypta73".
@@ -64,3 +64,4 @@ Aby odinstalować grę z systemu, wpisz w terminalu:
 
    npm uninstall -g krypta-73-rpg
 ========================================================================
+
