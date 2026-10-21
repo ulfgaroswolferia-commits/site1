@@ -58,10 +58,21 @@ danej zakÅ‚adki ([S], [I], [Q], [M]), albo wyÅ‚Ä…czyÄ‡ tÄ™ opcjÄ™ w PhpStormie:
 Settings -> Tools -> Terminal -> odznacz "Move focus to editor on Escape".
 
 
-5. AKTUALIZACJA I ODINSTALOWANIE
-------------------------------------------------------------------------
-Aby odinstalowaÄ‡ grÄ™ z systemu, wpisz w terminalu:
+61: 5. AKTUALIZACJA I ODINSTALOWANIE
+62: ------------------------------------------------------------------------
+63: Jeœli masz ju¿ zainstalowan¹ wczeœniejsz¹ wersjê (np. 1.0.0):
+64: NIE musisz niczego wczeœniej odinstalowywaæ. Wystarczy pobraæ nowy plik .tgz
+65: i uruchomiæ instalacjê z flag¹ wymuszenia nadpisania:
+66: 
+67:    npm install -g --force ./krypta-73-rpg-1.0.1.tgz
+68: 
+69: Zapisy gry (plik saves/savegame.json w folderze projektu) pozostan¹
+70: w 100% bezpieczne i zachowane!
+71: 
+72: Aby ca³kowicie odinstalowaæ grê z systemu, wpisz:
+73: 
+74:    npm uninstall -g krypta-73-rpg
 
-   npm uninstall -g krypta-73-rpg
 ========================================================================
+
 
