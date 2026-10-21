@@ -3,7 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import fs from 'node:fs';
 import { createNewGameState, createInitialAttributes } from '../src/engine/CharacterSystem.js';
-import { getCurrentScene, getAvailableChoices, selectChoice } from '../src/engine/DialogueEngine.js';
+import { getCurrentScene, getAvailableChoices, selectChoice, getSceneDescription } from '../src/engine/DialogueEngine.js';
 import { travelToLocation } from '../src/engine/WastelandTravel.js';
 import { saveGame, loadGame, hasSaveGame } from '../src/engine/SaveManager.js';
 import { SCENES, LOCATIONS } from '../src/content/scenes.js';
@@ -144,7 +144,8 @@ describe('DialogueEngine, WastelandTravel, SaveManager & Content Integrity', () 
 
     // Scene ending_deputy_overseer now has choice to start Chapter 3 crisis
     expect(SCENES.ending_deputy_overseer.isEnding).toBeFalsy();
-    expect(SCENES.ending_water_chip_saved.isEnding).toBe(true);
+    expect(SCENES.ending_water_chip_saved.isEnding).toBeFalsy();
+    expect(SCENES.epilogue_slideshow.isEnding).toBe(true);
 
     let state = createNewGameState('Max', { STR: 8, PER: 8, END: 8, CHA: 8, INT: 8, AGI: 8 });
     state.currentSceneId = 'ending_deputy_overseer';
@@ -160,5 +161,95 @@ describe('DialogueEngine, WastelandTravel, SaveManager & Content Integrity', () 
     state = travelToLocation(state, 'arroyo', () => 0.99);
     expect(state.currentLocationId).toBe('arroyo');
     expect(state.currentSceneId).toBe('arroyo_village');
+  });
+
+  it('prevents infinite loops (Chapter 2 seal consumption, casino roulette limit, Salvatore persuasion) and supports Enclave conspiracy & Fallout slideshow epilogue', () => {
+    let state = createNewGameState('Max', { STR: 8, PER: 8, END: 8, CHA: 8, INT: 8, AGI: 8 });
+
+    // 1. Chapter 2 seal is consumed and cannot be repeated
+    state.character.inventory.reno_purifier_seal = 1;
+    state.currentSceneId = 'vault_atrium';
+    const ch2TurnIn = getAvailableChoices(state, SCENES.vault_atrium.choices).find(
+      (c) => c.id === 'return_hero_chapter_2'
+    );
+    expect(ch2TurnIn).toBeDefined();
+    state = selectChoice(state, ch2TurnIn!);
+    expect(state.character.inventory.reno_purifier_seal).toBeUndefined();
+    expect(state.flags.ch2_completed).toBe(true);
+    state.currentSceneId = 'vault_atrium';
+    const ch2TurnInAgain = getAvailableChoices(state, SCENES.vault_atrium.choices).find(
+      (c) => c.id === 'return_hero_chapter_2'
+    );
+    expect(ch2TurnInAgain).toBeUndefined();
+
+    // 2. Casino roulette has table limit of 3 wins, and failed Salvatore persuasion cannot be repeated
+    state.currentSceneId = 'reno_casino';
+    state.character.caps = 200;
+    for (let i = 0; i < 3; i++) {
+      const gamble = getAvailableChoices(state, SCENES.reno_casino.choices).find(
+        (c) => c.id === 'gamble_roulette'
+      );
+      expect(gamble).toBeDefined();
+      state = selectChoice(state, gamble!, () => 0.1);
+    }
+    const gambleAfterLimit = getAvailableChoices(state, SCENES.reno_casino.choices).find(
+      (c) => c.id === 'gamble_roulette'
+    );
+    expect(gambleAfterLimit).toBeUndefined();
+
+    // Failed Salvatore persuasion
+    state.character.attributes.CHA = 1;
+    const persuadeSalvatore = getAvailableChoices(state, SCENES.reno_casino.choices).find(
+      (c) => c.id === 'persuade_salvatore_note'
+    );
+    expect(persuadeSalvatore).toBeDefined();
+    state = selectChoice(state, persuadeSalvatore!, () => 0.99);
+    expect(state.flags.salvatore_insulted).toBe(true);
+    const persuadeSalvatoreAgain = getAvailableChoices(state, SCENES.reno_casino.choices).find(
+      (c) => c.id === 'persuade_salvatore_note'
+    );
+    expect(persuadeSalvatoreAgain).toBeUndefined();
+
+    // 3. Water timer decrements during Chapter 3 travel
+    state.flags.arroyo_unlocked = true;
+    const beforeWater = state.counters?.water_days_left ?? 60;
+    state = travelToLocation(state, 'arroyo', () => 0.99);
+    expect(state.counters?.water_days_left).toBe(beforeWater - 6);
+
+    // 4. Vault 13 has 4 distinct solutions + Talisman & Holomap utility
+    state.character.inventory.vault_13_map = 1;
+    state.character.inventory.arroyo_talisman = 1;
+    state.character.inventory.water_chip_replicator = 1;
+    state.currentSceneId = 'vault_13_gate';
+    const holomapChoice = getAvailableChoices(state, SCENES.vault_13_gate.choices).find(
+      (c) => c.id === 'use_holomap_secret_tunnel'
+    );
+    expect(holomapChoice).toBeDefined();
+    state = selectChoice(state, holomapChoice!);
+    expect(state.currentSceneId).toBe('vault_13_sanctuary');
+
+    const copyChipChoice = getAvailableChoices(state, SCENES.vault_13_sanctuary.choices).find(
+      (c) => c.id === 'v13_solution_copy_chip'
+    );
+    expect(copyChipChoice).toBeDefined();
+    state = selectChoice(state, copyChipChoice!);
+    expect(state.flags.v13_chip_copied).toBe(true);
+    expect(state.character.inventory.water_chip).toBe(1);
+
+    // 5. Enclave conspiracy confrontation & Fallout-style slideshow epilogue
+    state.counters!.enclave_clues = 3;
+    state.currentSceneId = 'ending_water_chip_saved';
+    const confrontChoice = getAvailableChoices(state, SCENES.ending_water_chip_saved.choices).find(
+      (c) => c.id === 'confront_traitor_with_evidence'
+    );
+    expect(confrontChoice).toBeDefined();
+
+    state.flags.traitor_exposed = true;
+    state.currentSceneId = 'epilogue_slideshow';
+    const epilogueText = getSceneDescription(state, SCENES.epilogue_slideshow);
+    expect(epilogueText).toContain('KRONIKI PUSTKOWI');
+    expect(epilogueText).toContain('KRYPTA 73');
+    expect(epilogueText).toContain('METROPOLIA NEW RENO');
+    expect(epilogueText).toContain('FINAŁ SPISKU ENKLAWY');
   });
 });

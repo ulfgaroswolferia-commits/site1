@@ -58,4 +58,19 @@ describe('CombatEngine', () => {
     expect(state.combat).toBeNull();
     expect(state.currentSceneId).toBe('crater_hub');
   });
+
+  it('consumes ammunition on ranged attacks and falls back to rifle butt strike when out of ammo', () => {
+    let state = createNewGameState('Max', createInitialAttributes());
+    state = startCombat(state, 'feral_ghoul', 'vault_gate');
+    const initialAmmo = state.character.inventory.ammo_10mm ?? 0;
+    expect(initialAmmo).toBeGreaterThan(0);
+
+    state = performPlayerAttack(state, 'standard', 'torso', () => 0.1);
+    expect(state.character.inventory.ammo_10mm).toBe(initialAmmo - 1);
+
+    // Exhaust ammo and verify fallback melee attack still works
+    delete state.character.inventory.ammo_10mm;
+    state = performPlayerAttack(state, 'standard', 'torso', () => 0.1);
+    expect(state.combat?.log.some((l) => l.includes('BRAK AMUNICJI'))).toBe(true);
+  });
 });

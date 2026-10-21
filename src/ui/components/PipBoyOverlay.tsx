@@ -4,6 +4,7 @@ import { AttributeKey, GameState } from '../../types/game.js';
 import { ITEMS } from '../../content/items.js';
 import { PERKS } from '../../content/perks.js';
 import { QUESTS } from '../../content/quests.js';
+import { formatItemStats } from '../../engine/InventorySystem.js';
 import { THEME } from '../theme.js';
 
 interface Props {
@@ -103,6 +104,20 @@ export const PipBoyOverlay: React.FC<Props> = ({
               ? 'Brak'
               : state.character.perks.map((id) => PERKS[id]?.name ?? id).join(', ')}
           </Text>
+          <Box flexDirection="column" marginTop={1}>
+            <Text color={THEME.cyan}>
+              Aktywna Broń:{' '}
+              {state.character.equippedWeaponId && ITEMS[state.character.equippedWeaponId]
+                ? `${ITEMS[state.character.equippedWeaponId].name} ${formatItemStats(ITEMS[state.character.equippedWeaponId])}`
+                : 'Brak (Pięści)'}
+            </Text>
+            <Text color={THEME.cyan}>
+              Aktywny Pancerz:{' '}
+              {state.character.equippedArmorId && ITEMS[state.character.equippedArmorId]
+                ? `${ITEMS[state.character.equippedArmorId].name} ${formatItemStats(ITEMS[state.character.equippedArmorId])}`
+                : 'Brak'}
+            </Text>
+          </Box>
 
           {state.character.pendingLevelUps > 0 && (
             <Box
@@ -178,7 +193,8 @@ export const PipBoyOverlay: React.FC<Props> = ({
                   bold={isSel}
                 >
                   {isSel ? '> ' : '  '}
-                  {item.name} x{qty} {isEquipped ? '[ZAŁOŻONO]' : ''} — {item.description}
+                  {item.name} x{qty} {isEquipped ? '[ZAŁOŻONO] ' : ''}
+                  <Text color={THEME.cyan}>{formatItemStats(item)}</Text> — {item.description}
                 </Text>
               );
             })}

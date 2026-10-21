@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { GameState } from '../../types/game.js';
 import { ITEMS, MERCHANTS } from '../../content/items.js';
-import { getBuyPrice, getSellPrice } from '../../engine/InventorySystem.js';
+import { formatItemStats, getBuyPrice, getSellPrice } from '../../engine/InventorySystem.js';
 import { THEME } from '../theme.js';
 
 interface Props {
@@ -88,7 +88,8 @@ export const MerchantView: React.FC<Props> = ({ state, onBuy, onSell, onClose })
               bold={isSel}
             >
               {isSel ? '> ' : '  '}
-              {item.name} ({price} kapsli) {qty > 0 ? `[Posiadasz: ${qty}]` : ''} — {item.description}
+              {item.name} ({price} kapsli) {qty > 0 ? `[Posiadasz: ${qty}] ` : ''}
+              <Text color={THEME.cyan}>{formatItemStats(item)}</Text> — {item.description}
             </Text>
           );
         })

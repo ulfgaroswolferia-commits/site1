@@ -11,6 +11,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     accuracyBonus: 5,
     apCost: 3,
     isMelee: false,
+    ammoType: 'ammo_10mm',
+    ammoPerShot: 1,
   },
   rusty_machete: {
     id: 'rusty_machete',
@@ -33,6 +35,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     accuracyBonus: 15,
     apCost: 3,
     isMelee: false,
+    ammoType: 'ammo_energy',
+    ammoPerShot: 1,
   },
   plasma_blade: {
     id: 'plasma_blade',
@@ -55,6 +59,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     accuracyBonus: 18,
     apCost: 3,
     isMelee: false,
+    ammoType: 'ammo_energy',
+    ammoPerShot: 2,
   },
   super_sledge: {
     id: 'super_sledge',
@@ -77,6 +83,8 @@ export const ITEMS: Record<string, ItemDefinition> = {
     accuracyBonus: 25,
     apCost: 4,
     isMelee: false,
+    ammoType: 'ammo_rifle',
+    ammoPerShot: 1,
   },
   minigun: {
     id: 'minigun',
@@ -88,6 +96,32 @@ export const ITEMS: Record<string, ItemDefinition> = {
     accuracyBonus: 15,
     apCost: 4,
     isMelee: false,
+    ammoType: 'ammo_rifle',
+    ammoPerShot: 3,
+  },
+  ammo_10mm: {
+    id: 'ammo_10mm',
+    name: 'Amunicja 10mm',
+    type: 'ammo',
+    description: 'Standardowe naboje pistoletowe 10mm (Paczka handlowa: 12 szt.).',
+    value: 12,
+    packSize: 12,
+  },
+  ammo_energy: {
+    id: 'ammo_energy',
+    name: 'Ogniwa Energetyczne (MFC)',
+    type: 'ammo',
+    description: 'Ogniwa mikrofuzyjne do karabinów laserowych i plazmowych (Paczka handlowa: 10 szt.).',
+    value: 18,
+    packSize: 10,
+  },
+  ammo_rifle: {
+    id: 'ammo_rifle',
+    name: 'Amunicja Karabinowa .308 / 5mm',
+    type: 'ammo',
+    description: 'Ciężka amunicja wojskowa do karabinów wyborowych i minigunów (Paczka handlowa: 12 szt.).',
+    value: 22,
+    packSize: 12,
   },
   vault_suit: {
     id: 'vault_suit',
@@ -252,14 +286,44 @@ export const ITEMS: Record<string, ItemDefinition> = {
     description: 'Odzyskany sprzęt diagnostyczny skradziony przez bandytów na szlaku NCR.',
     value: 0,
   },
+  water_chip_replicator: {
+    id: 'water_chip_replicator',
+    name: 'Matryca Replikacyjna Hydroprocesora',
+    type: 'quest',
+    description: 'Urządzenie Dr Henry’ego pozwalające skopiować układ sterujący Water Chipa bez jego niszczenia.',
+    value: 0,
+  },
+  enclave_dispatch_log: {
+    id: 'enclave_dispatch_log',
+    name: 'Zaszyfrowany Dziennik Transmisji Enklawy',
+    type: 'quest',
+    description: 'Dowód łączący sabotaż reaktora, mutagen Morbusa i awarię Water Chipa z kretem w Krypcie 73.',
+    value: 0,
+  },
+  smuggled_reno_meds: {
+    id: 'smuggled_reno_meds',
+    name: 'Kontrabanda Leków z Dachów New Reno',
+    type: 'quest',
+    description: 'Paczka rzadkich stymulantów przemycona ponad blokadami gangów New Reno.',
+    value: 0,
+  },
+  ncr_annexation_writ: {
+    id: 'ncr_annexation_writ',
+    name: 'Traktat Protektoratu Wodnego NCR',
+    type: 'quest',
+    description: 'Dokument Ratusza NCR gwarantujący budowę rurociągu dla Krypty 73 w zamian za jurysdykcję nad Kryptą 13.',
+    value: 0,
+  },
 };
 
 export const MERCHANTS: Record<string, MerchantDefinition> = {
   szrot_trader: {
     id: 'szrot_trader',
     name: 'Kupiec Szrot (Złomowisko)',
-    greeting: '„Kapsle na stół, Wędrowcze! Mam sprzęt prosto z przedwojennych ruin.”',
+    greeting: '„Kapsle na stół, Wędrowcze! Mam tanią amunicję i sprzęt prosto z przedwojennych ruin.”',
     stock: [
+      'ammo_10mm',
+      'ammo_energy',
       'stimpak',
       'radaway',
       'pulse_grenade',
@@ -272,14 +336,26 @@ export const MERCHANTS: Record<string, MerchantDefinition> = {
   caravan_trader: {
     id: 'caravan_trader',
     name: 'Wędrowny Karawaniarz',
-    greeting: '„Na Pustkowiach bez zapasu Stimpaków daleko nie zajedziesz. Handlujemy?”',
-    stock: ['stimpak', 'radaway', 'pulse_grenade', 'leather_armor', 'plasma_blade'],
+    greeting: '„Na Pustkowiach bez zapasu amunicji i Stimpaków daleko nie zajedziesz. Handlujemy?”',
+    stock: [
+      'ammo_10mm',
+      'ammo_energy',
+      'ammo_rifle',
+      'stimpak',
+      'radaway',
+      'pulse_grenade',
+      'leather_armor',
+      'plasma_blade',
+    ],
   },
   corso_armorer: {
     id: 'corso_armorer',
     name: 'Zbrojmistrz Corso (New Reno)',
-    greeting: '„Witaj w New Reno! Jeśli schodzisz do kanałów albo zadzierasz z gangami, potrzebujesz ciężkiego kalibru.”',
+    greeting: '„Witaj w New Reno! Jeśli schodzisz do kanałów albo zadzierasz z gangami, uzupełnij ogniwa plazmowe i naboje.”',
     stock: [
+      'ammo_10mm',
+      'ammo_energy',
+      'ammo_rifle',
       'stimpak',
       'radaway',
       'pulse_grenade',
@@ -293,8 +369,11 @@ export const MERCHANTS: Record<string, MerchantDefinition> = {
   buster_ncr: {
     id: 'buster_ncr',
     name: 'Kwatermistrz Buster (Baza NCR)',
-    greeting: '„Witaj w Nowej Republice Kalifornii, obywatelu! Mamy tu najlepszy sprzęt wojskowy na tym kontynencie.”',
+    greeting: '„Witaj w Nowej Republice Kalifornii, obywatelu! Mamy pełne skrzynie amunicji wojskowej i najlepszy sprzęt na tym kontynencie.”',
     stock: [
+      'ammo_10mm',
+      'ammo_energy',
+      'ammo_rifle',
       'stimpak',
       'radaway',
       'pulse_grenade',

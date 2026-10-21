@@ -2,6 +2,7 @@ import React from 'react';
 import { Box, Text } from 'ink';
 import { GameState } from '../../types/game.js';
 import { getEffectiveMaxHp, XP_THRESHOLDS } from '../../engine/CharacterSystem.js';
+import { ITEMS } from '../../content/items.js';
 import { LOCATIONS } from '../../content/scenes.js';
 import { renderBar, THEME } from '../theme.js';
 
@@ -15,6 +16,13 @@ export const HeaderStatus: React.FC<Props> = ({ state, modeLabel }) => {
   const effMaxHp = getEffectiveMaxHp(character.maxHp, character.rad);
   const nextXp = XP_THRESHOLDS[character.level] ?? 9999;
   const locName = LOCATIONS[state.currentLocationId]?.name ?? state.currentLocationId;
+  const waterDays = state.counters?.water_days_left ?? 60;
+  const openness = state.counters?.vault_openness ?? 0;
+  const factionLabel =
+    openness >= 2 ? 'OTWARCI' : openness <= -1 ? 'IZOLACJONIŚCI' : 'RÓWNOWAGA';
+  const equippedWeapon = character.equippedWeaponId ? ITEMS[character.equippedWeaponId] : null;
+  const ammoId = equippedWeapon && !equippedWeapon.isMelee ? equippedWeapon.ammoType : undefined;
+  const ammoQty = ammoId ? (character.inventory[ammoId] ?? 0) : null;
 
   return (
     <Box
@@ -39,6 +47,9 @@ export const HeaderStatus: React.FC<Props> = ({ state, modeLabel }) => {
           RAD: [{renderBar(character.rad, 100, 8)}] {character.rad}%
         </Text>
         <Text color={THEME.amber}>KAPSLE: {character.caps}</Text>
+        <Text color={ammoQty !== null && ammoQty <= 4 ? THEME.danger : THEME.secondary}>
+          {ammoQty !== null ? `AMMO: ${ammoQty}` : 'BROŃ: WRĘCZ'}
+        </Text>
         <Text color={THEME.cyan}>
           POZ: {character.level} ({character.xp}/{nextXp} XP)
           {character.pendingLevelUps > 0 ? ' [AWANS! Naciśnij S]' : ''}
@@ -46,6 +57,12 @@ export const HeaderStatus: React.FC<Props> = ({ state, modeLabel }) => {
       </Box>
       <Box justifyContent="space-between">
         <Text color={THEME.secondary}>LOKACJA: {locName}</Text>
+        <Text color={THEME.muted}>KRYPTA 73: {factionLabel}</Text>
+        {state.flags.arroyo_unlocked && (
+          <Text color={waterDays <= 18 ? THEME.danger : THEME.amber} bold>
+            ZAPAS WODY: {waterDays} DNI
+          </Text>
+        )}
       </Box>
     </Box>
   );

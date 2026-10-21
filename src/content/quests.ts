@@ -89,4 +89,42 @@ export const QUESTS: Record<string, QuestDefinition> = {
       completed: 'Zlikwidowano zagrożenie dla karawan i wsparto medyków NCR.',
     },
   },
+  side_crater_expansion: {
+    id: 'side_crater_expansion',
+    title: 'Rozkwit Rdzawego Miasta (Zadanie Poboczne)',
+    description: 'Po sojuszu z Kryptą 73 Rdzawy Krater rozrasta się w miasto. Pomóż utrzymać pokój na szlakach.',
+    stages: {
+      defend_town: 'Zbadaj sytuację wokół nowej osady Korga lub odeprzyj odwet Mściwej Żmii.',
+      completed: 'Bezpieczeństwo Nowego Rdzawego Miasta zostało zapewnione.',
+    },
+  },
+  side_reno_rooftops: {
+    id: 'side_reno_rooftops',
+    title: 'Kurier z Dachów New Reno (Zadanie Poboczne)',
+    description: 'Przemyć cenne leki po gzymsach i dachach ponad blokadami gangów do Szpitala Św. Atomu.',
+    stages: {
+      run_rooftops: 'Pokonaj trasę po dachach Alei Neonów i zdobądź kontrabandę medyczną.',
+      deliver_hospital: 'Dostarcz przemycone leki Ordynator Lenie w Szpitalu.',
+      completed: 'Leki dotarły do szpitala ponad głowami bandytów.',
+    },
+  },
+  side_reno_boxing: {
+    id: 'side_reno_boxing',
+    title: 'Żelazna Pięść New Reno (Zadanie Poboczne)',
+    description: 'Stań do walki na podziemnym ringu bokserskim w Kasynie „Złoty Atom”.',
+    stages: {
+      fight_champion: 'Zmierz się z mistrzem ringu „Miażdżycielem” Malone’em.',
+      completed: 'Zdobyto tytuł mistrza ringu New Reno.',
+    },
+  },
+  side_enclave_conspiracy: {
+    id: 'side_enclave_conspiracy',
+    title: 'Cień Enklawy w Krypcie 73 (Śledztwo)',
+    description: 'Trzy katastrofy nie były przypadkiem. Zbierz dowody sabotażu ze Stacji RobCo, od Morbusa i od Dr Henry’ego.',
+    stages: {
+      gather_clues: 'Szukaj śladów celowego sabotażu reaktora, formuły mutagenu i sygnałów Enklawy.',
+      confront_traitor: 'Ujawnij zdrajcę w Krypcie 73 podczas wielkiego finału.',
+      completed: 'Spisek Enklawy w Krypcie 73 został całkowicie zdemaskowany.',
+    },
+  },
 };

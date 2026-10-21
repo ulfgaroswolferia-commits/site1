@@ -1,18 +1,71 @@
 import { ITEMS } from '../content/items.js';
-import { GameState } from '../types/game.js';
+import { GameState, ItemDefinition } from '../types/game.js';
 import { getEffectiveMaxHp } from './CharacterSystem.js';
+
+const DEFAULT_AMMO_FOR_WEAPON: Record<string, { ammoId: string; qty: number }> = {
+  pipe_pistol: { ammoId: 'ammo_10mm', qty: 12 },
+  laser_rifle: { ammoId: 'ammo_energy', qty: 10 },
+  plasma_rifle: { ammoId: 'ammo_energy', qty: 10 },
+  sniper_rifle: { ammoId: 'ammo_rifle', qty: 10 },
+  minigun: { ammoId: 'ammo_rifle', qty: 15 },
+};
+
+const AMMO_SHORT_NAMES: Record<string, string> = {
+  ammo_10mm: '10mm',
+  ammo_energy: 'Ogniwa MFC',
+  ammo_rifle: '.308/5mm',
+};
+
+export function formatItemStats(item: ItemDefinition): string {
+  const parts: string[] = [];
+  if (item.type === 'weapon') {
+    if (item.damage !== undefined) parts.push(`DMG: ${item.damage}`);
+    if (item.accuracyBonus !== undefined) {
+      parts.push(`CEL: ${item.accuracyBonus >= 0 ? `+${item.accuracyBonus}` : item.accuracyBonus}%`);
+    }
+    if (item.apCost !== undefined) parts.push(`AP: ${item.apCost}`);
+    if (item.isMelee) {
+      parts.push('WRĘCZ (STR)');
+    } else {
+      const ammoName = item.ammoType ? (AMMO_SHORT_NAMES[item.ammoType] ?? item.ammoType) : '10mm';
+      const perShot = item.ammoPerShot ?? 1;
+      parts.push(`DYSTANS (PER) | AMMO: ${ammoName} (${perShot}/strzał)`);
+    }
+  } else if (item.type === 'armor') {
+    if (item.defense !== undefined) parts.push(`OBR: +${item.defense}`);
+    if (item.radResistance !== undefined) parts.push(`ODP. RAD: ${item.radResistance}%`);
+  } else if (item.type === 'consumable') {
+    if (item.healHp !== undefined) parts.push(`+HP: ${item.healHp}`);
+    if (item.healRad !== undefined) parts.push(`-RAD: ${item.healRad}`);
+    if (item.combatDamage !== undefined) parts.push(`DMG: ${item.combatDamage}`);
+    if (item.stunChance !== undefined) parts.push(`OGŁUSZENIE: ${item.stunChance}%`);
+  } else if (item.type === 'ammo') {
+    parts.push(`PACZKA: +${item.packSize ?? 10} SZT.`);
+  } else if (item.type === 'quest') {
+    parts.push('PRZEDMIOT FABULARNY');
+  }
+  return parts.length > 0 ? `[${parts.join(' | ')}]` : '';
+}
 
 export function addItem(state: GameState, itemId: string, qty = 1): GameState {
   if (qty <= 0 || !ITEMS[itemId]) return state;
   const current = state.character.inventory[itemId] ?? 0;
+  const nextInv: Record<string, number> = {
+    ...state.character.inventory,
+    [itemId]: current + qty,
+  };
+
+  // Przy zdobyciu broni palnej/energetycznej dołącz startowy magazynek amunicji
+  const starterAmmo = DEFAULT_AMMO_FOR_WEAPON[itemId];
+  if (starterAmmo && current === 0) {
+    nextInv[starterAmmo.ammoId] = (nextInv[starterAmmo.ammoId] ?? 0) + starterAmmo.qty;
+  }
+
   return {
     ...state,
     character: {
       ...state.character,
-      inventory: {
-        ...state.character.inventory,
-        [itemId]: current + qty,
-      },
+      inventory: nextInv,
     },
   };
 }
@@ -131,14 +184,16 @@ export function buyItem(state: GameState, itemId: string): GameState {
   const price = getBuyPrice(state, itemId);
   if (state.character.caps < price) return state;
 
-  const afterAdd = addItem(state, itemId, 1);
+  const qtyToAdd = item.type === 'ammo' ? (item.packSize ?? 10) : 1;
+  const afterAdd = addItem(state, itemId, qtyToAdd);
+  const label = item.type === 'ammo' ? `${item.name} (+${qtyToAdd} szt.)` : item.name;
   return {
     ...afterAdd,
     character: {
       ...afterAdd.character,
       caps: afterAdd.character.caps - price,
     },
-    eventLog: [...afterAdd.eventLog.slice(-19), `Kupiono ${item.name} za ${price} kapsli.`],
+    eventLog: [...afterAdd.eventLog.slice(-19), `Kupiono ${label} za ${price} kapsli.`],
   };
 }
 
@@ -147,14 +202,20 @@ export function sellItem(state: GameState, itemId: string): GameState {
   const qty = state.character.inventory[itemId] ?? 0;
   if (!item || item.type === 'quest' || qty <= 0) return state;
 
-  const price = getSellPrice(state, itemId);
-  const afterRemove = removeItem(state, itemId, 1);
+  const sellQty = item.type === 'ammo' ? Math.min(qty, item.packSize ?? 10) : 1;
+  const basePrice = getSellPrice(state, itemId);
+  const price =
+    item.type === 'ammo'
+      ? Math.max(1, Math.round((basePrice * sellQty) / (item.packSize ?? 10)))
+      : basePrice;
+  const afterRemove = removeItem(state, itemId, sellQty);
+  const label = item.type === 'ammo' ? `${item.name} (${sellQty} szt.)` : item.name;
   return {
     ...afterRemove,
     character: {
       ...afterRemove.character,
       caps: afterRemove.character.caps + price,
     },
-    eventLog: [...afterRemove.eventLog.slice(-19), `Sprzedano ${item.name} za ${price} kapsli.`],
+    eventLog: [...afterRemove.eventLog.slice(-19), `Sprzedano ${label} za ${price} kapsli.`],
   };
 }

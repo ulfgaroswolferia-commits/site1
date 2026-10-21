@@ -29,6 +29,24 @@ export function loadGame(filePath: string = DEFAULT_SAVE_PATH): GameState | null
     if (!parsed || !parsed.character || !parsed.currentSceneId || !parsed.character.attributes) {
       return null;
     }
+    if (!parsed.counters) {
+      parsed.counters = {
+        vault_openness: 0,
+        water_days_left: 60,
+        enclave_clues: 0,
+        roulette_wins: 0,
+      };
+    }
+    const inv = parsed.character.inventory ?? {};
+    if (
+      inv.ammo_10mm === undefined &&
+      inv.ammo_energy === undefined &&
+      inv.ammo_rifle === undefined
+    ) {
+      inv.ammo_10mm = 20;
+      if (inv.laser_rifle || inv.plasma_rifle) inv.ammo_energy = 12;
+      if (inv.sniper_rifle || inv.minigun) inv.ammo_rifle = 15;
+    }
     return parsed;
   } catch {
     return null;

@@ -73,6 +73,9 @@ function resolveCombatVictory(state: GameState): GameState {
   if (enemy?.lootItemId) {
     nextState = addItem(nextState, enemy.lootItemId, 1);
   }
+  if (enemy?.ammoDrop) {
+    nextState = addItem(nextState, enemy.ammoDrop.ammoId, enemy.ammoDrop.qty);
+  }
   if (enemy?.xpReward) {
     nextState = grantXp(nextState, enemy.xpReward);
   }
@@ -88,7 +91,16 @@ export function performPlayerAttack(
   const combat = state.combat;
   if (!combat) return state;
 
-  const apCost = mode === 'vats' ? 4 : 3;
+  const weapon = state.character.equippedWeaponId
+    ? ITEMS[state.character.equippedWeaponId]
+    : null;
+  const ammoId = weapon && !weapon.isMelee ? weapon.ammoType : undefined;
+  const ammoNeeded = weapon && !weapon.isMelee ? (weapon.ammoPerShot ?? 1) : 0;
+  const currentAmmo = ammoId ? (state.character.inventory[ammoId] ?? 0) : 0;
+  const outOfAmmo = Boolean(weapon && !weapon.isMelee && ammoId && currentAmmo < ammoNeeded);
+
+  const baseApCost = outOfAmmo ? 3 : (weapon?.apCost ?? 3);
+  const apCost = mode === 'vats' ? baseApCost + 1 : baseApCost;
   if (combat.playerAp < apCost) {
     return {
       ...state,
@@ -99,33 +111,43 @@ export function performPlayerAttack(
     };
   }
 
-  const weapon = state.character.equippedWeaponId
-    ? ITEMS[state.character.equippedWeaponId]
-    : null;
-  const perkBonusDmg = state.character.perks.includes('plasma_master') ? 10 : 0;
-  const baseDamage =
-    (weapon?.damage ?? 8) +
-    perkBonusDmg +
-    (weapon?.isMelee ? state.character.attributes.STR : Math.floor(state.character.attributes.PER / 2));
+  let workingState = state;
+  if (weapon && !weapon.isMelee && ammoId && !outOfAmmo) {
+    workingState = removeItem(state, ammoId, ammoNeeded);
+  }
+
+  const perkBonusDmg = workingState.character.perks.includes('plasma_master') ? 10 : 0;
+  const baseDamage = outOfAmmo
+    ? 8 + workingState.character.attributes.STR
+    : (weapon?.damage ?? 8) +
+      perkBonusDmg +
+      (weapon?.isMelee
+        ? workingState.character.attributes.STR
+        : Math.floor(workingState.character.attributes.PER / 2));
 
   const targetPart: BodyPart = mode === 'standard' ? 'torso' : part;
-  const hitChance =
-    mode === 'standard'
-      ? Math.max(25, Math.min(95, 70 + state.character.attributes.PER * 3 + (weapon?.accuracyBonus ?? 0)))
-      : getVatsHitChance(state, targetPart);
+  const hitChance = outOfAmmo
+    ? Math.max(25, Math.min(90, 65 + workingState.character.attributes.STR * 3))
+    : mode === 'standard'
+    ? Math.max(
+        25,
+        Math.min(95, 70 + workingState.character.attributes.PER * 3 + (weapon?.accuracyBonus ?? 0))
+      )
+    : getVatsHitChance(workingState, targetPart);
 
   const roll = Math.floor(rng() * 100) + 1;
   const remainingAp = combat.playerAp - apCost;
+  const noAmmoNotice = outOfAmmo ? ' [BRAK AMUNICJI — uderzenie kolbą!]' : '';
 
   if (roll > hitChance) {
     return {
-      ...state,
+      ...workingState,
       combat: {
         ...combat,
         playerAp: remainingAp,
         log: [
           ...combat.log.slice(-7),
-          `Chybienie! (${mode === 'vats' ? `V.A.T.S. ${targetPart}` : 'Atak'} - szansa ${hitChance}%)`,
+          `Chybienie! (${mode === 'vats' ? `V.A.T.S. ${targetPart}` : 'Atak'} - szansa ${hitChance}%)${noAmmoNotice}`,
         ],
       },
     };
@@ -157,7 +179,7 @@ export function performPlayerAttack(
   }
 
   const updatedState: GameState = {
-    ...state,
+    ...workingState,
     combat: {
       ...combat,
       enemyHp: nextEnemyHp,
@@ -166,7 +188,7 @@ export function performPlayerAttack(
       playerAp: remainingAp,
       log: [
         ...combat.log.slice(-7),
-        `Trafienie za ${finalDamage} pkt obrażeń!${extraEffects.length ? ` [${extraEffects.join(', ')}]` : ''}`,
+        `Trafienie za ${finalDamage} pkt obrażeń!${extraEffects.length ? ` [${extraEffects.join(', ')}]` : ''}${noAmmoNotice}`,
       ],
     },
   };

@@ -181,6 +181,7 @@ export function createNewGameState(name: string, attributes: Attributes): GameSt
     equippedArmorId: 'vault_suit',
     inventory: {
       pipe_pistol: 1,
+      ammo_10mm: 24,
       vault_suit: 1,
       stimpak: 2,
       radaway: 1,
@@ -192,6 +193,12 @@ export function createNewGameState(name: string, attributes: Attributes): GameSt
     currentLocationId: 'vault_73',
     currentSceneId: 'vault_intro',
     flags: {},
+    counters: {
+      vault_openness: 0,
+      water_days_left: 60,
+      enclave_clues: 0,
+      roulette_wins: 0,
+    },
     quests: {
       main_stabilizer: {
         status: 'active',

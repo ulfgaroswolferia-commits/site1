@@ -8,7 +8,7 @@ export interface PerkDefinition {
   description: string;
 }
 
-export type ItemType = 'weapon' | 'armor' | 'consumable' | 'quest';
+export type ItemType = 'weapon' | 'armor' | 'consumable' | 'ammo' | 'quest';
 
 export interface ItemDefinition {
   id: string;
@@ -20,6 +20,9 @@ export interface ItemDefinition {
   accuracyBonus?: number;
   apCost?: number;
   isMelee?: boolean;
+  ammoType?: string;
+  ammoPerShot?: number;
+  packSize?: number;
   defense?: number;
   radResistance?: number;
   healHp?: number;
@@ -58,6 +61,7 @@ export interface EnemyDefinition {
   xpReward: number;
   capsReward: number;
   lootItemId?: string;
+  ammoDrop?: { ammoId: string; qty: number };
   isBoss?: boolean;
 }
 
@@ -91,6 +95,7 @@ export interface ChoiceEffect {
   addItems?: Record<string, number>;
   removeItems?: Record<string, number>;
   setFlags?: Record<string, boolean>;
+  incrementCounters?: Record<string, number>;
   setQuestState?: { questId: string; status: 'active' | 'completed' | 'failed'; stage?: string };
   startCombat?: { enemyId: string; victorySceneId: string; fleeSceneId?: string };
   openMerchant?: string;
@@ -105,6 +110,8 @@ export interface SceneChoice {
   forbiddenFlag?: string;
   requiredItem?: string;
   requiredCaps?: number;
+  minCounter?: { key: string; value: number };
+  maxCounter?: { key: string; value: number };
   skillCheck?: SkillCheckSpec;
   nextSceneId: string;
   failSceneId?: string;
@@ -127,6 +134,7 @@ export interface SceneDefinition {
   title: string;
   locationId: LocationId;
   description: string;
+  dynamicDescription?: (state: GameState) => string;
   onEnterEffect?: ChoiceEffect;
   choices: SceneChoice[];
   isEnding?: boolean;
@@ -171,6 +179,7 @@ export interface GameState {
   currentLocationId: LocationId;
   currentSceneId: string;
   flags: Record<string, boolean>;
+  counters?: Record<string, number>;
   quests: Record<string, QuestStateEntry>;
   combat: CombatState | null;
   activeMerchantId: string | null;

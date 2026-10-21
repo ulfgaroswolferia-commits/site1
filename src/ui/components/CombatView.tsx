@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { BodyPart, GameState } from '../../types/game.js';
+import { ITEMS } from '../../content/items.js';
 import { getVatsHitChance } from '../../engine/CombatEngine.js';
+import { formatItemStats } from '../../engine/InventorySystem.js';
 import { renderBar, THEME } from '../theme.js';
 
 interface Props {
@@ -29,10 +31,30 @@ export const CombatView: React.FC<Props> = ({
   const stimpakCount = state.character.inventory.stimpak ?? 0;
   const radawayCount = state.character.inventory.radaway ?? 0;
   const grenadeCount = state.character.inventory.pulse_grenade ?? 0;
+  const equippedWeapon = state.character.equippedWeaponId
+    ? ITEMS[state.character.equippedWeaponId]
+    : null;
+  const ammoId = equippedWeapon && !equippedWeapon.isMelee ? equippedWeapon.ammoType : undefined;
+  const ammoCount = ammoId ? (state.character.inventory[ammoId] ?? 0) : 0;
+  const ammoPerShot = equippedWeapon && !equippedWeapon.isMelee ? (equippedWeapon.ammoPerShot ?? 1) : 0;
+  const outOfAmmo = Boolean(equippedWeapon && !equippedWeapon.isMelee && ammoId && ammoCount < ammoPerShot);
+  const baseAp = outOfAmmo ? 3 : (equippedWeapon?.apCost ?? 3);
+  const vatsAp = baseAp + 1;
 
   const mainOptions = [
-    { label: 'Szybki Atak w korpus (3 AP)', action: onStandardAttack },
-    { label: 'System Celowania V.A.T.S. (4 AP)', action: () => { setVatsMenu(true); setSelected(0); } },
+    {
+      label: outOfAmmo
+        ? `Uderzenie kolbą [BRAK AMUNICJI!] (${baseAp} AP)`
+        : `Szybki Atak w korpus (${baseAp} AP${ammoPerShot > 0 ? `, -${ammoPerShot} ammo` : ''})`,
+      action: onStandardAttack,
+    },
+    {
+      label: `System Celowania V.A.T.S. (${vatsAp} AP${ammoPerShot > 0 && !outOfAmmo ? `, -${ammoPerShot} ammo` : ''})`,
+      action: () => {
+        setVatsMenu(true);
+        setSelected(0);
+      },
+    },
     ...(stimpakCount > 0
       ? [{ label: `Użyj Stimpaka (${stimpakCount} szt., 2 AP)`, action: () => onUseItem('stimpak') }]
       : []),
@@ -129,6 +151,12 @@ export const CombatView: React.FC<Props> = ({
         <Text color={THEME.danger}>
           HP WROGA: [{renderBar(combat.enemyHp, combat.enemyMaxHp, 16)}] {combat.enemyHp}/{combat.enemyMaxHp}
         </Text>
+        <Text color={THEME.cyan}>
+          TWOJA BROŃ: {equippedWeapon ? `${equippedWeapon.name} ${formatItemStats(equippedWeapon)}` : 'Pięści [DMG: 8 | AP: 3]'}
+          {ammoId
+            ? ` | Zapas amunicji: ${ammoCount} szt.${outOfAmmo ? ' [BRAK AMUNICJI!]' : ''}`
+            : ''}
+        </Text>
         <Box flexDirection="column" marginTop={1}>
           {combat.log.slice(-4).map((entry, idx) => (
             <Text key={idx} color={THEME.primary}>
@@ -146,7 +174,7 @@ export const CombatView: React.FC<Props> = ({
         paddingY={1}
       >
         <Text color={THEME.amber} bold>
-          {vatsMenu ? 'SYSTEM V.A.T.S. — WYBIERZ CEL (4 AP):' : 'DOSTĘPNE AKCJE BOJOWE:'}
+          {vatsMenu ? `SYSTEM V.A.T.S. — WYBIERZ CEL (${vatsAp} AP):` : 'DOSTĘPNE AKCJE BOJOWE:'}
         </Text>
         {currentList.map((opt, idx) => (
           <Text

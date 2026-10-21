@@ -14,12 +14,22 @@ export function getCurrentScene(state: GameState): SceneDefinition {
   return SCENES[state.currentSceneId] ?? SCENES.vault_intro;
 }
 
+export function getSceneDescription(state: GameState, scene: SceneDefinition): string {
+  if (scene.dynamicDescription) {
+    return scene.dynamicDescription(state);
+  }
+  return scene.description;
+}
+
 export function getAvailableChoices(state: GameState, choices: SceneChoice[]): SceneChoice[] {
+  const counters = state.counters ?? {};
   return choices.filter((c) => {
     if (c.requiredFlag && !state.flags[c.requiredFlag]) return false;
     if (c.forbiddenFlag && state.flags[c.forbiddenFlag]) return false;
     if (c.requiredItem && (state.character.inventory[c.requiredItem] ?? 0) <= 0) return false;
     if (c.requiredCaps && state.character.caps < c.requiredCaps) return false;
+    if (c.minCounter && (counters[c.minCounter.key] ?? 0) < c.minCounter.value) return false;
+    if (c.maxCounter && (counters[c.maxCounter.key] ?? 0) > c.maxCounter.value) return false;
     return true;
   });
 }
@@ -68,6 +78,16 @@ export function applyChoiceEffect(state: GameState, effect?: ChoiceEffect): Game
         ...next.flags,
         ...effect.setFlags,
       },
+    };
+  }
+  if (effect.incrementCounters) {
+    const nextCounters = { ...(next.counters ?? {}) };
+    for (const [key, delta] of Object.entries(effect.incrementCounters)) {
+      nextCounters[key] = (nextCounters[key] ?? 0) + delta;
+    }
+    next = {
+      ...next,
+      counters: nextCounters,
     };
   }
   if (effect.setQuestState) {

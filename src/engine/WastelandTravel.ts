@@ -13,27 +13,44 @@ export function travelToLocation(
     return state;
   }
 
-  if (state.currentLocationId !== destinationId && rng() <= 0.65 && ENCOUNTERS.length > 0) {
+  let nextState = state;
+  if (state.currentLocationId !== destinationId && state.flags.arroyo_unlocked) {
+    const currentDays = state.counters?.water_days_left ?? 60;
+    const nextDays = Math.max(0, currentDays - 6);
+    const nextFlags = { ...state.flags };
+    if (nextDays <= 24) nextFlags.water_crisis_severe = true;
+    if (nextDays <= 0) nextFlags.water_crisis_casualties = true;
+    nextState = {
+      ...state,
+      flags: nextFlags,
+      counters: {
+        ...(state.counters ?? {}),
+        water_days_left: nextDays,
+      },
+    };
+  }
+
+  if (nextState.currentLocationId !== destinationId && rng() <= 0.65 && ENCOUNTERS.length > 0) {
     const idx = Math.floor(rng() * ENCOUNTERS.length);
     const encounter = ENCOUNTERS[idx] ?? ENCOUNTERS[0];
     return {
-      ...state,
+      ...nextState,
       currentLocationId: destinationId,
       currentSceneId: encounter.id,
       pendingDestinationSceneId: location.entrySceneId,
       eventLog: [
-        ...state.eventLog.slice(-19),
+        ...nextState.eventLog.slice(-19),
         `Podróż do: ${location.name} — nieoczekiwane spotkanie na Pustkowiach!`,
       ],
     };
   }
 
   return {
-    ...state,
+    ...nextState,
     currentLocationId: destinationId,
     currentSceneId: location.entrySceneId,
     pendingDestinationSceneId: null,
-    eventLog: [...state.eventLog.slice(-19), `Dotarto do lokacji: ${location.name}.`],
+    eventLog: [...nextState.eventLog.slice(-19), `Dotarto do lokacji: ${location.name}.`],
   };
 }
 

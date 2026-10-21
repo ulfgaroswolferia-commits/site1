@@ -92,6 +92,30 @@ const baseScenes: Record<string, SceneDefinition> = {
           setQuestState: { questId: 'main_stabilizer', status: 'active', stage: 'leave_vault' },
         },
       },
+      {
+        id: 'support_open_faction_intro',
+        text: '[OTWARCI] Poprzyj postulat handlu i otwarcia Krypty na współpracę z powierzchnią',
+        forbiddenFlag: 'vault_faction_intro_chosen',
+        nextSceneId: 'vault_atrium',
+        effect: {
+          setFlags: { vault_faction_intro_chosen: true },
+          incrementCounters: { vault_openness: 1 },
+          xpDelta: 25,
+          setQuestState: { questId: 'main_stabilizer', status: 'active', stage: 'leave_vault' },
+        },
+      },
+      {
+        id: 'support_iso_faction_intro',
+        text: '[IZOLACJONIŚCI] Poprzyj doktrynę szczelnego zamknięcia wrót po zdobyciu części',
+        forbiddenFlag: 'vault_faction_intro_chosen',
+        nextSceneId: 'vault_atrium',
+        effect: {
+          setFlags: { vault_faction_intro_chosen: true },
+          incrementCounters: { vault_openness: -1 },
+          xpDelta: 25,
+          setQuestState: { questId: 'main_stabilizer', status: 'active', stage: 'leave_vault' },
+        },
+      },
     ],
   },
   vault_atrium: {
@@ -100,6 +124,38 @@ const baseScenes: Record<string, SceneDefinition> = {
     locationId: 'vault_73',
     description:
       'Stoisz przed monumentalnymi, zębatymi wrotami Krypty 73. Przy pulpicie sterującym stoi uszkodzony Strażnik RobCo — w jego zacisku widnieje Karta Dostępu Strażnika otwierająca zbrojownię oraz śluzę.',
+    dynamicDescription: (state) => {
+      const openness = state.counters?.vault_openness ?? 0;
+      const factionNote =
+        openness >= 2
+          ? '\n\nW Atrium dominuje obóz Otwartych — mieszkańcy przygotowują punkty wymiany handlowej ze światem zewnętrznym.'
+          : openness <= -1
+          ? '\n\nW Atrium dominują Izolacjoniści — strażnicy spawają dodatkowe rygle i żądają odcięcia schronu od Pustkowi.'
+          : '\n\nW Atrium trwa gorący spór między frakcją Izolacjonistów (chcących zaryglować wrota na zawsze) a Otwartymi (pragnącymi handlu z powierzchnią).';
+      if (!state.flags.arroyo_unlocked) {
+        return (
+          'Stoisz przed monumentalnymi, zębatymi wrotami Krypty 73. Przy pulpicie sterującym stoi uszkodzony Strażnik RobCo — w jego zacisku widnieje Karta Dostępu Strażnika otwierająca zbrojownię oraz śluzę.' +
+          factionNote
+        );
+      }
+      const days = state.counters?.water_days_left ?? 60;
+      if (days <= 0) {
+        return (
+          'KRYZYS WODNY (0 DNI ZAPASU): W Krypcie 73 wybuchła panika! Kran z wodą wysechł zupełnie, a w skrzydle medycznym są już pierwsze ofiary śmiertelne z odwodnienia. Liczy się każda sekunda!' +
+          factionNote
+        );
+      }
+      if (days <= 24) {
+        return (
+          `ALARM WODNY (Zostało tylko ${days} dni wody!): Powietrze w Krypcie 73 jest duszne i gorące. Mieszkańcy mdleją w kolejkach po ostatnie racje brudnej wody z rezerwuaru.` +
+          factionNote
+        );
+      }
+      return (
+        `STAN REZERW WODY: Zostało ${days} dni zapasu wody. Mieszkańcy z niepokojem spoglądają na wskaźniki ciśnienia hydroprocesora.` +
+        factionNote
+      );
+    },
     choices: [
       {
         id: 'return_hero_chapter_3',
@@ -113,25 +169,63 @@ const baseScenes: Record<string, SceneDefinition> = {
         },
       },
       {
+        id: 'return_hero_chapter_3_ncr_writ',
+        text: '[FINAŁ ROZDZIAŁU 3 — SOJUSZ Z NCR] Przedstaw Traktat Protektoratu Wodnego NCR i uruchom budowę rurociągu',
+        requiredItem: 'ncr_annexation_writ',
+        nextSceneId: 'ending_water_chip_saved',
+        effect: {
+          removeItems: { ncr_annexation_writ: 1 },
+          setFlags: { v13_ncr_annexed: true },
+          incrementCounters: { vault_openness: 2 },
+          setQuestState: { questId: 'ch3_water_chip', status: 'completed', stage: 'completed' },
+          xpDelta: 600,
+        },
+      },
+      {
         id: 'return_hero_chapter_2',
         text: '[FINAŁ ROZDZIAŁU 2] Przedstaw Nadzorcy Pieczęć Oczyszczalni New Reno i odbierz nominację',
         requiredItem: 'reno_purifier_seal',
+        forbiddenFlag: 'ch2_completed',
         nextSceneId: 'ending_deputy_overseer',
         effect: {
+          removeItems: { reno_purifier_seal: 1 },
+          setFlags: { ch2_completed: true },
           setQuestState: { questId: 'ch2_new_reno', status: 'completed', stage: 'completed' },
           xpDelta: 400,
         },
       },
       {
         id: 'deliver_stabilizer',
-        text: '[FINAŁ ROZDZIAŁU 1] Zamontuj Moduł Stabilizatora G.E.C.K.-Lite w reaktorze Krypty 73',
+        text: '[FINAŁ ROZDZIAŁU 1 — IZOLACJA] Zamontuj Moduł Stabilizatora wyłącznie w reaktorze Krypty 73 i zarygluj wrota',
         requiredItem: 'geck_stabilizer',
         forbiddenFlag: 'new_reno_unlocked',
         nextSceneId: 'ending_vault_saved',
         effect: {
           removeItems: { geck_stabilizer: 1 },
+          setFlags: { vault_isolated_ch1: true },
+          incrementCounters: { vault_openness: -1 },
           setQuestState: { questId: 'main_stabilizer', status: 'completed', stage: 'completed' },
           xpDelta: 250,
+        },
+      },
+      {
+        id: 'sneak_protectron_keycard',
+        text: '[AGI] Przemknij w cieniu za plecami uszkodzonego Strażnika RobCo i wyjmij mu Kartę Dostępu',
+        forbiddenFlag: 'vault_robot_resolved',
+        skillCheck: { attribute: 'AGI', difficulty: 5 },
+        nextSceneId: 'vault_atrium',
+        failSceneId: 'vault_atrium',
+        effect: {
+          addItems: { security_keycard: 1 },
+          xpDelta: 45,
+          setFlags: { vault_robot_resolved: true },
+        },
+        failEffect: {
+          setFlags: { vault_robot_resolved: true },
+          startCombat: {
+            enemyId: 'damaged_protectron',
+            victorySceneId: 'vault_atrium',
+          },
         },
       },
       {
@@ -193,6 +287,12 @@ const baseScenes: Record<string, SceneDefinition> = {
     locationId: 'rusty_crater',
     description:
       'Gwar osady miesza się z zapachem ozonu i pieczonego mięsa kretoszczura. Po lewej Kupiec Szrot rozłożył stragan z bronią, po prawej świeci neon kliniki Doktor Igi, a w głębi widać wejście do baru „Pod Opadem”.',
+    dynamicDescription: (state) => {
+      if (state.flags.crater_alliance_formed) {
+        return 'NOWE RDZAWE MIASTO: Dzięki zasilaniu ze Stabilizatora G.E.C.K.-Lite dawne złomowisko rozrosło się w tętniące życiem miasto z pompami czystej wody i warsztatami! Mieszkańcy Krypty 73 i osadnicy handlują ramię w ramię, choć na obrzeżach pojawiły się echa dawnego konfliktu z Dziećmi Rdzy.';
+      }
+      return 'Gwar osady miesza się z zapachem ozonu i pieczonego mięsa kretoszczura. Po lewej Kupiec Szrot rozłożył stragan z bronią, po prawej świeci neon kliniki Doktor Igi, a w głębi widać wejście do baru „Pod Opadem”.';
+    },
     choices: [
       {
         id: 'trade_szrot',
@@ -211,10 +311,69 @@ const baseScenes: Record<string, SceneDefinition> = {
         nextSceneId: 'crater_bar',
       },
       {
+        id: 'visit_crater_expansion_korg',
+        text: '[NOWE MIASTO] Odwiedź Nową Kuźnię Żelaza założoną przez oszczędzonego Korga',
+        requiredFlag: 'crater_alliance_formed',
+        forbiddenFlag: 'crater_expansion_resolved',
+        nextSceneId: 'crater_town_council',
+        effect: {
+          setQuestState: { questId: 'side_crater_expansion', status: 'active', stage: 'defend_town' },
+        },
+      },
+      {
         id: 'leave_crater',
         text: 'Wyrusz w drogę przez Pustkowia [Mapa Świata]',
         nextSceneId: 'crater_hub',
         effect: { openWorldMap: true },
+      },
+    ],
+  },
+  crater_town_council: {
+    id: 'crater_town_council',
+    title: 'Nowe Rdzawe Miasto — Obrzeża i Kuźnia',
+    locationId: 'rusty_crater',
+    description:
+      'Na obrzeżach rozbudowanego Rdzawego Miasta rozstrzygają się losy dawnych Dzieci Rdzy.',
+    dynamicDescription: (state) => {
+      if (state.flags.korg_spared) {
+        return 'Oszczędzony przez Ciebie Watażka Korg porzucił fanatyzm i wraz ze swoimi ludźmi założył Nową Osadę Kuźniczą obok Rdzawego Miasta. „Dotrzymałem słowa, Wędrowcze! Przetapiamy stary złom na płyty pancerne dla miasta i Twojej Krypty. Jeśli pomożesz nam uruchomić wielki piec, oddam Ci naszą najlepszą broń!”';
+      }
+      return 'Ponieważ Watażka Korg zginął w rafinerii, władzę nad niedobitkami Dzieci Rdzy przejęła jego fanatyczna zastępczyni — Mściwa Żmija! Jej komando właśnie podkłada ładunki pod mury Nowego Rdzawego Miasta: „Zapłacicie krwią za śmierć Korga!”';
+    },
+    choices: [
+      {
+        id: 'ally_korg_settlement',
+        text: 'Przyjmij traktat z osadą Korga i odbierz dar kuźni (+150 kapsli, +Ostrze Plazmowe, +150 XP)',
+        requiredFlag: 'korg_spared',
+        forbiddenFlag: 'crater_expansion_resolved',
+        nextSceneId: 'crater_hub',
+        effect: {
+          capsDelta: 150,
+          addItems: { plasma_blade: 1, stimpak: 2 },
+          xpDelta: 150,
+          setFlags: { crater_expansion_resolved: true, korg_settlement_active: true },
+          incrementCounters: { vault_openness: 1 },
+          setQuestState: { questId: 'side_crater_expansion', status: 'completed', stage: 'completed' },
+        },
+      },
+      {
+        id: 'fight_viper_revenge',
+        text: 'Staw czoła Mściwej Żmii i obronić Nowe Rdzawe Miasto przed odwetem Dzieci Rdzy!',
+        forbiddenFlag: 'korg_spared',
+        nextSceneId: 'crater_hub',
+        effect: {
+          setFlags: { crater_expansion_resolved: true, viper_defeated_crater: true },
+          setQuestState: { questId: 'side_crater_expansion', status: 'completed', stage: 'completed' },
+          startCombat: {
+            enemyId: 'viper_rust_leader',
+            victorySceneId: 'crater_hub',
+          },
+        },
+      },
+      {
+        id: 'back_crater_from_council',
+        text: 'Wróć na Plac Centralny',
+        nextSceneId: 'crater_hub',
       },
     ],
   },
@@ -322,6 +481,26 @@ const baseScenes: Record<string, SceneDefinition> = {
         },
       },
       {
+        id: 'sneak_past_relay_ghoul',
+        text: '[AGI] Przemknij cicho po dachu ambulansu za plecami Ghula i zabezpiecz dziedziniec',
+        forbiddenFlag: 'relay_ghoul_cleared',
+        skillCheck: { attribute: 'AGI', difficulty: 5 },
+        nextSceneId: 'relay_entrance',
+        failSceneId: 'relay_entrance',
+        effect: {
+          setFlags: { relay_ghoul_cleared: true },
+          xpDelta: 65,
+        },
+        failEffect: {
+          setFlags: { relay_ghoul_cleared: true },
+          startCombat: {
+            enemyId: 'feral_ghoul',
+            victorySceneId: 'relay_entrance',
+            fleeSceneId: 'relay_entrance',
+          },
+        },
+      },
+      {
         id: 'take_med_crate',
         text: 'Zabierz Skrzynkę Medyczną z rozbitego ambulansu',
         requiredFlag: 'relay_ghoul_cleared',
@@ -414,7 +593,7 @@ const baseScenes: Record<string, SceneDefinition> = {
     title: 'Stacja Przekaźnikowa RobCo — Terminal Archiwalny',
     locationId: 'robco_relay',
     description:
-      'Na zielonym ekranie odczytujesz raport czujników: Watażka Korg zabrał Moduł Stabilizatora G.E.C.K.-Lite do Twierdzy Dzieci Rdzy w starej rafinerii. W napędzie terminala tkwi też zaszyfrowana Holotaśma Nadzorcza RobCo.',
+      'Na zielonym ekranie odczytujesz raport czujników: Watażka Korg zabrał Moduł Stabilizatora G.E.C.K.-Lite do Twierdzy Dzieci Rdzy w starej rafinerii. W napędzie terminala tkwi też zaszyfrowana Holotaśma Nadzorcza RobCo.\n\nPonadto w rejestrze dostępu zauważasz coś niepokojącego: zamek komory stabilizatora nie został wyłamany przez Korga — ktoś otworzył go wcześniej zdalnym kodem autoryzacyjnym nadanym bezpośrednio z Gabinetu Nadzorcy Krypty 73!',
     choices: [
       {
         id: 'download_holotape',
@@ -430,6 +609,22 @@ const baseScenes: Record<string, SceneDefinition> = {
             stage: 'infiltrate_fortress',
           },
           xpDelta: 75,
+        },
+      },
+      {
+        id: 'inspect_relay_sabotage_log',
+        text: '[PER/INT] Zabezpiecz logi zdalnego sabotażu komory stabilizatora (Ślad spisku Enklawy 1/3)',
+        forbiddenFlag: 'clue_relay_sabotage',
+        nextSceneId: 'relay_terminal',
+        effect: {
+          setFlags: { clue_relay_sabotage: true },
+          incrementCounters: { enclave_clues: 1 },
+          setQuestState: {
+            questId: 'side_enclave_conspiracy',
+            status: 'active',
+            stage: 'gather_clues',
+          },
+          xpDelta: 70,
         },
       },
       {
@@ -517,10 +712,14 @@ const baseScenes: Record<string, SceneDefinition> = {
     choices: [
       {
         id: 'ending_share_wasteland',
-        text: '[FINAŁ ALTERNATYWNY] Przekaż Stabilizator wspólnocie Rdzawego Krateru i otwórz Kryptę na świat',
+        text: '[FINAŁ ROZDZIAŁU 1 — SOJUSZ Z KRATEREM] Przekaż Stabilizator wspólnocie Rdzawego Krateru i otwórz Kryptę na świat',
         nextSceneId: 'ending_wasteland_alliance',
         effect: {
+          removeItems: { geck_stabilizer: 1 },
+          setFlags: { crater_alliance_formed: true },
+          incrementCounters: { vault_openness: 2 },
           setQuestState: { questId: 'main_stabilizer', status: 'completed', stage: 'completed' },
+          xpDelta: 250,
         },
       },
       {
@@ -613,10 +812,55 @@ const baseScenes: Record<string, SceneDefinition> = {
         nextSceneId: 'reno_sewers_entry',
       },
       {
+        id: 'go_reno_rooftops',
+        text: '[AGI — PRZEMYT] Wdrap się po drabinie pożarowej na dachy Alei Neonów (Szlak Przemytników Leków)',
+        forbiddenFlag: 'reno_rooftop_meds_delivered',
+        nextSceneId: 'reno_rooftops',
+        effect: {
+          setQuestState: { questId: 'side_reno_rooftops', status: 'active', stage: 'run_rooftops' },
+        },
+      },
+      {
         id: 'leave_reno_map',
         text: 'Otwórz Mapę Świata (Podróż poza New Reno)',
         nextSceneId: 'reno_gates',
         effect: { openWorldMap: true },
+      },
+    ],
+  },
+  reno_rooftops: {
+    id: 'reno_rooftops',
+    title: 'New Reno — Dachy Alei Neonów (Szlak Kurierów)',
+    locationId: 'new_reno',
+    description:
+      'Wysoko nad zatłoczonymi ulicami New Reno rozciąga się plątanina stalowych kładek, kabli wysokiego napięcia i migoczących neonów. Kurierzy przemycają tędy leki do Szpitala Św. Atomu, omijając haracze gangów. Na sąsiednim dachu leży porzucony zasobnik z kontrabandą medyczną.',
+    choices: [
+      {
+        id: 'parkour_rooftop_meds',
+        text: '[AGI] Przeskocz nad przepaścią po gzymsach neonu i przechwyć Kontrabandę Leków (+110 XP)',
+        forbiddenFlag: 'reno_rooftop_meds_taken',
+        skillCheck: { attribute: 'AGI', difficulty: 6 },
+        nextSceneId: 'reno_rooftops',
+        failSceneId: 'reno_gates',
+        effect: {
+          addItems: { smuggled_reno_meds: 1, stimpak: 1 },
+          setFlags: { reno_rooftop_meds_taken: true },
+          setQuestState: { questId: 'side_reno_rooftops', status: 'active', stage: 'deliver_hospital' },
+          xpDelta: 110,
+        },
+        failEffect: {
+          hpDelta: -20,
+        },
+      },
+      {
+        id: 'descend_rooftops_hospital',
+        text: 'Zjedź po linie wentylacyjnej prosto na dziedziniec Szpitala Św. Atomu',
+        nextSceneId: 'reno_hospital',
+      },
+      {
+        id: 'descend_rooftops_gates',
+        text: 'Zejdź po drabinie z powrotem na Aleję Neonów',
+        nextSceneId: 'reno_gates',
       },
     ],
   },
@@ -695,6 +939,33 @@ const baseScenes: Record<string, SceneDefinition> = {
         },
       },
       {
+        id: 'deliver_rooftop_smuggled_meds',
+        text: '[PRZEMYT Z DACHÓW] Przekaż Ordynator Lenie Kontrabandę Leków (+140 kapsli, +100 XP)',
+        requiredItem: 'smuggled_reno_meds',
+        forbiddenFlag: 'reno_rooftop_meds_delivered',
+        nextSceneId: 'reno_hospital',
+        effect: {
+          removeItems: { smuggled_reno_meds: 1 },
+          capsDelta: 140,
+          addItems: { radaway: 2 },
+          xpDelta: 100,
+          setFlags: { reno_rooftop_meds_delivered: true },
+          setQuestState: { questId: 'side_reno_rooftops', status: 'completed', stage: 'completed' },
+        },
+      },
+      {
+        id: 'talk_cured_morbus_hospital',
+        text: 'Przesłuchaj leczonego pod strażą Doktora Morbusa na temat dostawców mutagenu',
+        requiredFlag: 'morbus_in_hospital',
+        forbiddenFlag: 'morbus_hospital_interrogated',
+        nextSceneId: 'reno_hospital',
+        effect: {
+          addItems: { stimpak: 2 },
+          xpDelta: 80,
+          setFlags: { morbus_hospital_interrogated: true, clue_morbus_enclave: true },
+        },
+      },
+      {
         id: 'hospital_med_help',
         text: '[INT] Pomóż lekarzom skalibrować aparaturę dializującą (+80 kapsli, +60 XP)',
         forbiddenFlag: 'hospital_calibrated',
@@ -737,14 +1008,17 @@ const baseScenes: Record<string, SceneDefinition> = {
     choices: [
       {
         id: 'gamble_roulette',
-        text: '[PER] Zagraj o wysoką stawkę przy stole Ruletki Atomowej (Stawka: 30 kapsli)',
+        text: '[PER] Zagraj o wysoką stawkę przy stole Ruletki Atomowej (Stawka: 30 kapsli, limit stołu: 3 wygrane)',
         requiredCaps: 30,
+        forbiddenFlag: 'casino_banned',
+        maxCounter: { key: 'roulette_wins', value: 2 },
         skillCheck: { attribute: 'PER', difficulty: 6 },
         nextSceneId: 'reno_casino',
         failSceneId: 'reno_casino',
         effect: {
           capsDelta: 60,
           xpDelta: 30,
+          incrementCounters: { roulette_wins: 1 },
         },
         failEffect: {
           capsDelta: -30,
@@ -753,14 +1027,18 @@ const baseScenes: Record<string, SceneDefinition> = {
       {
         id: 'persuade_salvatore_note',
         text: '[CHA] Przekonaj Dona Salvatore, że oczyszczenie kanałów uratuje zyski kasyna (Odbierz Weksel za darmo)',
-        forbiddenFlag: 'debt_note_acquired',
+        forbiddenFlag: 'salvatore_persuasion_attempted',
         skillCheck: { attribute: 'CHA', difficulty: 7 },
         nextSceneId: 'reno_casino',
         failSceneId: 'reno_casino',
         effect: {
           addItems: { jackals_debt_note: 1 },
           xpDelta: 90,
-          setFlags: { debt_note_acquired: true },
+          setFlags: { debt_note_acquired: true, salvatore_persuasion_attempted: true },
+        },
+        failEffect: {
+          hpDelta: -15,
+          setFlags: { salvatore_persuasion_attempted: true, salvatore_insulted: true },
         },
       },
       {
@@ -777,9 +1055,80 @@ const baseScenes: Record<string, SceneDefinition> = {
         },
       },
       {
+        id: 'enter_casino_boxing_ring',
+        text: '[STR/END — RING BOKSERSKI] Zejdź na podziemny ring Kasyna i walcz na pięści o pas mistrzowski',
+        forbiddenFlag: 'reno_boxing_completed',
+        nextSceneId: 'reno_boxing_ring',
+        effect: {
+          setQuestState: { questId: 'side_reno_boxing', status: 'active', stage: 'fight_champion' },
+        },
+      },
+      {
         id: 'back_reno_from_casino',
         text: 'Wyjdź z Kasyna na Aleję Neonów',
         nextSceneId: 'reno_gates',
+      },
+    ],
+  },
+  reno_boxing_ring: {
+    id: 'reno_boxing_ring',
+    title: 'Kasyno „Złoty Atom” — Podziemny Ring Bokserski',
+    locationId: 'new_reno',
+    description:
+      'W zadymionej piwnicy kasyna tłum hazardzistów dopinguje zawodników walczących w stalowej klatce. Na środku ringu pręży muskuły niepokonany czempion Don Salvatore — „Miażdżyciel” Malone!\n\n„Wchodzisz do klatki, szczurze z Krypty? Albo znokautujesz mnie gołymi pięśćmi, albo wyniosą Cię stąd w worku!”',
+    choices: [
+      {
+        id: 'boxing_knockout_str',
+        text: '[STR 7] Wyprowadź druzgocący sierpowy i znokautuj Malone’a w pierwszej rundzie (+200 kapsli, +140 XP)',
+        forbiddenFlag: 'reno_boxing_completed',
+        skillCheck: { attribute: 'STR', difficulty: 7 },
+        nextSceneId: 'reno_casino',
+        failSceneId: 'reno_boxing_ring',
+        effect: {
+          capsDelta: 200,
+          xpDelta: 140,
+          setFlags: { reno_boxing_completed: true, reno_boxing_champion: true },
+          setQuestState: { questId: 'side_reno_boxing', status: 'completed', stage: 'completed' },
+        },
+        failEffect: {
+          hpDelta: -25,
+        },
+      },
+      {
+        id: 'boxing_outlast_end',
+        text: '[END 7] Przetrzymaj grad ciosów Malone’a i wykończ go, gdy opadnie z sił (+200 kapsli, +140 XP)',
+        forbiddenFlag: 'reno_boxing_completed',
+        skillCheck: { attribute: 'END', difficulty: 7 },
+        nextSceneId: 'reno_casino',
+        failSceneId: 'reno_boxing_ring',
+        effect: {
+          capsDelta: 200,
+          xpDelta: 140,
+          setFlags: { reno_boxing_completed: true, reno_boxing_champion: true },
+          setQuestState: { questId: 'side_reno_boxing', status: 'completed', stage: 'completed' },
+        },
+        failEffect: {
+          hpDelta: -25,
+        },
+      },
+      {
+        id: 'boxing_brawl_combat',
+        text: 'Stocz pełne starcie na arenie z „Miażdżycielem” Malone’em!',
+        forbiddenFlag: 'reno_boxing_completed',
+        nextSceneId: 'reno_casino',
+        effect: {
+          setFlags: { reno_boxing_completed: true, reno_boxing_champion: true },
+          setQuestState: { questId: 'side_reno_boxing', status: 'completed', stage: 'completed' },
+          startCombat: {
+            enemyId: 'reno_pit_champion',
+            victorySceneId: 'reno_casino',
+          },
+        },
+      },
+      {
+        id: 'leave_boxing_ring',
+        text: 'Wróć na salę główną Kasyna',
+        nextSceneId: 'reno_casino',
       },
     ],
   },
@@ -1034,14 +1383,119 @@ const baseScenes: Record<string, SceneDefinition> = {
   },
   reno_sewers_victory: {
     id: 'reno_sewers_victory',
-    title: 'New Reno Ocalone — Czyste Źródła',
+    title: 'New Reno Ocalone — Czyste Źródła i Zeznania Morbusa',
     locationId: 'new_reno',
     onEnterEffect: {
       setQuestState: { questId: 'ch2_new_reno', status: 'active', stage: 'return_overseer' },
     },
     description:
-      'Doktor Morbus pada obok roztrzaskanej kadzi z mutagenem! Przełączasz główną dźwignię stacji filtracyjnej — krystalicznie czysta woda pod ciśnieniem wypłukuje toksyny z wodociągów New Reno.\n\nGdy wychodzisz na powierzchnię, mieszkańcy Alei Neonów, lekarze ze Szpitala i Szeryf Vance wiwatują na Twoją cześć. W dłoni trzymasz Pieczęć Oczyszczalni New Reno gwarantującą dozgonny sojusz i dostawy dla Krypty 73. Czas wrócić do domu jako bohater!',
+      'Doktor Morbus pada na kolana obok roztrzaskanej kadzi z mutagenem! Przełączasz główną dźwignię stacji filtracyjnej — krystalicznie czysta woda pod ciśnieniem wypłukuje toksyny z wodociągów New Reno.\n\nZanim zadasz ostateczny cios, krwawiący Morbus zdziera maskę tlenową i charczy:\n„Głupcze... myślisz, że sam wymyśliłem tę formułę?! Ampułki z mutagenem FEV-II i schematy wodociągów przysłał mi kurier z szyfrem Enklawy — prosto z Waszej Krypty 73! Oszczędź mnie, a powiem Ci wszystko!”',
+    dynamicDescription: (state) => {
+      const rulerText = state.flags.reno_ruled_by_vinnie
+        ? '\n\nWładzę nad ulicami New Reno przejął Twój sojusznik Wściekły Vinnie i Żelazne Szakale, zaprowadzając żelazny porządek w dzielnicach.'
+        : state.flags.reno_ruled_by_salvatore
+        ? '\n\nWładzę nad New Reno przejął syndykat Dona Salvatore, zamieniając miasto w imperium hazardu i handlu wodą.'
+        : state.flags.reno_ruled_by_sheriff
+        ? '\n\nWładzę w New Reno umocnił Szeryf Vance wraz z radą obywatelską i lekarzami ze Szpitala.'
+        : '';
+      return (
+        'Doktor Morbus pada na kolana obok roztrzaskanej kadzi z mutagenem! Przełączasz główną dźwignię stacji filtracyjnej — krystalicznie czysta woda pod ciśnieniem wypłukuje toksyny z wodociągów New Reno.\n\nKrwawiący Morbus zdziera maskę tlenową i charczy: „Głupcze... myślisz, że sam wymyśliłem tę formułę?! Ampułki z mutagenem FEV-II i schematy wodociągów przysłał mi kurier z szyfrem Enklawy — prosto z Waszej Krypty 73! Oszczędź mnie, a powiem Ci wszystko!”' +
+        rulerText
+      );
+    },
     choices: [
+      {
+        id: 'spare_morbus_testify',
+        text: '[OSZCZĘDŹ MORBUSA — ZEZNANIA] Oszczędź Morbusa i zmuś go do złożenia zeznań o Enklawie oraz oddania szyfrów (Ślad spisku 2/3)',
+        forbiddenFlag: 'morbus_fate_decided',
+        nextSceneId: 'reno_sewers_victory',
+        effect: {
+          setFlags: {
+            morbus_fate_decided: true,
+            morbus_spared: true,
+            clue_morbus_enclave: true,
+          },
+          incrementCounters: { enclave_clues: 1, vault_openness: 1 },
+          setQuestState: {
+            questId: 'side_enclave_conspiracy',
+            status: 'active',
+            stage: 'gather_clues',
+          },
+          xpDelta: 120,
+        },
+      },
+      {
+        id: 'spare_morbus_hospital',
+        text: '[OSZCZĘDŹ MORBUSA — SZPITAL] Odeślij rannego Morbusa pod strażą na leczenie i obserwację do Szpitala Św. Atomu',
+        forbiddenFlag: 'morbus_fate_decided',
+        nextSceneId: 'reno_sewers_victory',
+        effect: {
+          setFlags: {
+            morbus_fate_decided: true,
+            morbus_spared: true,
+            morbus_in_hospital: true,
+            clue_morbus_enclave: true,
+          },
+          incrementCounters: { enclave_clues: 1 },
+          setQuestState: {
+            questId: 'side_enclave_conspiracy',
+            status: 'active',
+            stage: 'gather_clues',
+          },
+          xpDelta: 120,
+        },
+      },
+      {
+        id: 'execute_morbus',
+        text: '[EGZEKUCJA] Wymierz Morbusowi sprawiedliwość na miejscu i przeszukaj jego dziennik laboratoryjny',
+        forbiddenFlag: 'morbus_fate_decided',
+        nextSceneId: 'reno_sewers_victory',
+        effect: {
+          setFlags: {
+            morbus_fate_decided: true,
+            morbus_killed: true,
+          },
+          capsDelta: 80,
+          xpDelta: 80,
+        },
+      },
+      {
+        id: 'reno_power_sheriff',
+        text: '[WŁADZA W NEW RENO] Przekaż kontrolę nad oczyszczalnią Szeryfowi Vance’owi i Straży Obywatelskiej',
+        requiredFlag: 'morbus_fate_decided',
+        forbiddenFlag: 'reno_power_decided',
+        nextSceneId: 'reno_sewers_victory',
+        effect: {
+          setFlags: { reno_power_decided: true, reno_ruled_by_sheriff: true },
+          incrementCounters: { vault_openness: 1 },
+          xpDelta: 75,
+        },
+      },
+      {
+        id: 'reno_power_vinnie',
+        text: '[WŁADZA W NEW RENO] Powierz rządy nad miastem swoim sojusznikom — Wściekłemu Vinnie’mu i Żelaznym Szakalom',
+        requiredFlag: 'jackals_allied',
+        forbiddenFlag: 'reno_power_decided',
+        nextSceneId: 'reno_sewers_victory',
+        effect: {
+          setFlags: { reno_power_decided: true, reno_ruled_by_vinnie: true },
+          capsDelta: 120,
+          xpDelta: 75,
+        },
+      },
+      {
+        id: 'reno_power_salvatore',
+        text: '[WŁADZA W NEW RENO] Sprzedaj koncesję wodną syndykatowi Dona Salvatore z Kasyna „Złoty Atom” (+200 kapsli)',
+        requiredFlag: 'morbus_fate_decided',
+        forbiddenFlag: 'reno_power_decided',
+        nextSceneId: 'reno_sewers_victory',
+        effect: {
+          setFlags: { reno_power_decided: true, reno_ruled_by_salvatore: true },
+          capsDelta: 200,
+          incrementCounters: { vault_openness: -1 },
+          xpDelta: 75,
+        },
+      },
       {
         id: 'open_map_after_reno_victory',
         text: 'Otwórz Mapę Świata i wróć w chwale do Krypty 73',
@@ -1276,7 +1730,7 @@ const baseScenes: Record<string, SceneDefinition> = {
     title: 'NCR — Szpital Wojskowy Dr Henry’ego',
     locationId: 'ncr',
     description:
-      'Dr Henry, dawny naukowiec Enklawy pracujący dla Republiki, krząta się wśród aparatury: „Buntownicy z przedmieść napadli na mój transport medyczny i ukradli Zautomatyzowany Skaner Polowy! Bez niego nie mogę przeprowadzać precyzyjnych operacji usuwania skażenia. Odzyskaj go, a sowicie Cię wynagrodzę.”',
+      'Dr Henry, dawny naukowiec Enklawy pracujący dla Republiki, krząta się wśród aparatury: „Buntownicy z przedmieść napadli na mój transport medyczny i ukradli Zautomatyzowany Skaner Polowy! Bez niego nie mogę przeprowadzać precyzyjnych operacji usuwania skażenia. Odzyskaj go, a sowicie Cię wynagrodzę. Ponadto mam w laboratorium prototypową Matrycę Replikacyjną zdolną skopiować układ sterujący Water Chipa bez jego wyjmowania!”',
     choices: [
       {
         id: 'accept_scanner_quest',
@@ -1290,17 +1744,34 @@ const baseScenes: Record<string, SceneDefinition> = {
       },
       {
         id: 'turn_in_scanner',
-        text: 'Zwróć odzyskany Skaner Medyczny (+150 kapsli, +3 Stimpaki, +120 XP)',
+        text: 'Zwróć odzyskany Skaner Medyczny (+150 kapsli, +Matryca Replikacyjna Water Chipa, +120 XP)',
         requiredItem: 'stolen_medical_scanner',
         forbiddenFlag: 'scanner_returned',
         nextSceneId: 'ncr_hospital',
         effect: {
           removeItems: { stolen_medical_scanner: 1 },
           capsDelta: 150,
-          addItems: { stimpak: 3, radaway: 2 },
+          addItems: { water_chip_replicator: 1, stimpak: 3, radaway: 2 },
           xpDelta: 120,
-          setFlags: { scanner_returned: true },
+          setFlags: { scanner_returned: true, henry_replicator_ready: true },
           setQuestState: { questId: 'side_ncr_crimes', status: 'completed', stage: 'completed' },
+        },
+      },
+      {
+        id: 'analyze_enclave_signature_henry',
+        text: '[ŚLEDZTWO ENKLAWY] Poproś Dr Henry’ego o analizę sygnatur sabotażu reaktora i mutagenu Morbusa (Ślad spisku 3/3)',
+        forbiddenFlag: 'clue_henry_enclave',
+        nextSceneId: 'ncr_hospital',
+        effect: {
+          addItems: { enclave_dispatch_log: 1, water_chip_replicator: 1 },
+          setFlags: { clue_henry_enclave: true, henry_replicator_ready: true },
+          incrementCounters: { enclave_clues: 1 },
+          setQuestState: {
+            questId: 'side_enclave_conspiracy',
+            status: 'active',
+            stage: 'confront_traitor',
+          },
+          xpDelta: 140,
         },
       },
       {
@@ -1407,7 +1878,55 @@ const baseScenes: Record<string, SceneDefinition> = {
     locationId: 'vault_13',
     description:
       'Wypalone w skale potężne wrota ze złotą liczbą „13” stoją uchylone w ponurym milczeniu. Na ziemi leżą przedwojenne szkielety, a z sufitu zwisają aktywne Wieżyczki Laserowe RobCo podłączone do głównego terminala kontrolnego.',
+    dynamicDescription: (state) => {
+      const korgOrViper = state.flags.korg_spared
+        ? '\n\nPrzed jaskinią czekają zwiadowcy Watażki Korga z Nowej Osady Kuźniczej — przybyli spłacić dług honorowy i osłaniać Twoje wejście!'
+        : '\n\nW cieniu skał czai się oddział pościgowy Mściwej Żmii z Dzieci Rdzy, pragnący pomścić klęskę swojego klanu!';
+      const jackalsNote = state.flags.jackals_allied
+        ? '\nObok wrót obozują też Żelazne Szakale Wściekłego Vinniego — zwęszyli fortunę i również polują na legendarny Water Chip!'
+        : '';
+      return (
+        'Wypalone w skale potężne wrota ze złotą liczbą „13” stoją uchylone. Z sufitu zwisają aktywne Wieżyczki Laserowe RobCo podłączone do terminala kontrolnego.' +
+        korgOrViper +
+        jackalsNote
+      );
+    },
     choices: [
+      {
+        id: 'use_holomap_secret_tunnel',
+        text: '[PRZEDWOJENNA HOLOMAPA] Użyj szyfru z Holomapy NCR, by otworzyć ukryty tunel serwisowy z pominięciem wieżyczek i strażników (+150 XP)',
+        requiredItem: 'vault_13_map',
+        nextSceneId: 'vault_13_sanctuary',
+        effect: {
+          setFlags: { vault13_turrets_hacked: true, vault13_holomap_used: true },
+          xpDelta: 150,
+        },
+      },
+      {
+        id: 'korg_allies_clear_gate',
+        text: '[SOJUSZNIK: KORG] Przyjmij wsparcie ogniowe gwardii Watażki Korga i zniszcz wieżyczki bez strat (+100 XP)',
+        requiredFlag: 'korg_spared',
+        forbiddenFlag: 'vault13_turrets_hacked',
+        nextSceneId: 'vault_13_gate',
+        effect: {
+          setFlags: { vault13_turrets_hacked: true, korg_helped_v13: true },
+          addItems: { pulse_grenade: 1 },
+          xpDelta: 100,
+        },
+      },
+      {
+        id: 'fight_viper_ambush_v13',
+        text: '[ZEMSTA ŻMII]Odeprzyj zasadzkę Mściwej Żmii przed wrotami Krypty 13!',
+        forbiddenFlag: 'korg_spared',
+        nextSceneId: 'vault_13_gate',
+        effect: {
+          setFlags: { korg_spared: false, viper_v13_defeated: true },
+          startCombat: {
+            enemyId: 'viper_rust_leader',
+            victorySceneId: 'vault_13_gate',
+          },
+        },
+      },
       {
         id: 'hack_vault13_turrets',
         text: '[INT] Zhakuj terminal kontrolny śluzy i dezaktywuj wieżyczki obronne (+120 XP)',
@@ -1442,7 +1961,7 @@ const baseScenes: Record<string, SceneDefinition> = {
     title: 'Krypta 13 — Korytarze Techniczne i Sekcja Reaktorowa',
     locationId: 'vault_13',
     description:
-      'Cienie rzucane przez awaryjne lampy migoczą na stalowych ścianach. Korytarza do Głównego Laboratorium Hydroprocesorów pilnuje patrolujący Dron Obronny Krypty 13, emitujący pole siłowe.',
+      'Cienie rzucane przez awaryjne lampy migoczą na stalowych ścianach. Korytarza do zamieszkałego sektora oraz Głównego Laboratorium Hydroprocesorów pilnuje patrolujący Dron Obronny Krypty 13. W bocznym korytarzu widać też sylwetki Żelaznych Szakali Vinniego próbujących wyważyć zamek!',
     choices: [
       {
         id: 'fight_vault13_drone',
@@ -1459,8 +1978,54 @@ const baseScenes: Record<string, SceneDefinition> = {
         },
       },
       {
+        id: 'sneak_vault13_drone',
+        text: '[AGI] Przemknij tunelem kablowym pod czujnikami Drona Obronnego (+120 XP)',
+        forbiddenFlag: 'vault13_drone_cleared',
+        skillCheck: { attribute: 'AGI', difficulty: 7 },
+        nextSceneId: 'vault_13_corridors',
+        failSceneId: 'vault_13_corridors',
+        effect: {
+          setFlags: { vault13_drone_cleared: true },
+          xpDelta: 120,
+        },
+        failEffect: {
+          setFlags: { vault13_drone_cleared: true },
+          startCombat: {
+            enemyId: 'robco_repair_drone',
+            victorySceneId: 'vault_13_corridors',
+            fleeSceneId: 'vault_13_gate',
+          },
+        },
+      },
+      {
+        id: 'confront_vinnie_rival_v13',
+        text: '[RYWALIZACJA SZAKALI] Przekonaj lub zastrasz Wściekłego Vinniego, by wycofał Szakali z polowania na Water Chip (+120 XP)',
+        requiredFlag: 'jackals_allied',
+        forbiddenFlag: 'vinnie_v13_resolved',
+        skillCheck: { attribute: 'CHA', difficulty: 6 },
+        nextSceneId: 'vault_13_corridors',
+        failSceneId: 'vault_13_corridors',
+        effect: {
+          setFlags: { vinnie_v13_resolved: true },
+          xpDelta: 120,
+        },
+        failEffect: {
+          setFlags: { vinnie_v13_resolved: true, jackals_defeated: true },
+          startCombat: {
+            enemyId: 'vinnie_jackal',
+            victorySceneId: 'vault_13_corridors',
+          },
+        },
+      },
+      {
+        id: 'enter_vault13_sanctuary',
+        text: 'Wejdź do Sanktuarium Ocalałych Mieszkańców Krypty 13',
+        requiredFlag: 'vault13_drone_cleared',
+        nextSceneId: 'vault_13_sanctuary',
+      },
+      {
         id: 'enter_vault13_lab',
-        text: 'Wyłam zabezpieczenia grodzi i wejdź do Głównego Laboratorium (BOSS)',
+        text: 'Idź bezpośrednio do Głównego Laboratorium Hydroprocesorów (BOSS)',
         requiredFlag: 'vault13_drone_cleared',
         nextSceneId: 'vault_13_lab',
       },
@@ -1471,6 +2036,81 @@ const baseScenes: Record<string, SceneDefinition> = {
       },
     ],
   },
+  vault_13_sanctuary: {
+    id: 'vault_13_sanctuary',
+    title: 'Krypta 13 — Sanktuarium Ocalałych i Nadzorca Lazarus',
+    locationId: 'vault_13',
+    description:
+      'Krypta 13 nie jest martwa! W oświetlonym świetlówkami atrium żyje społeczność ocalałych mieszkańców oraz świadomych, łagodnych ghuli-inżynierów pod przywództwem sędziwego Nadzorcy Lazarusa.\n\nLazarus staje przed grodzią prowadzącą do Hydroprocesora:\n„Zatrzymaj się, Wędrowcze z Krypty 73! Ten Water Chip w naszym laboratorium to ostatni działający układ w całym kompleksie. Jeśli wyrwiesz go siłą, nasza aparatura podtrzymująca życie stanie, a wszyscy mieszkańcy Krypty 13 zginą w ciągu tygodnia! Musi istnieć inne wyjście!”',
+    choices: [
+      {
+        id: 'show_arroyo_talisman_lazarus',
+        text: '[TALIZMAN Z ARROYO] Pokaż Nadzorcy Lazarusowi Święty Talizman Wybrańca — „Znak Pradawnych” (+200 XP)',
+        requiredItem: 'arroyo_talisman',
+        forbiddenFlag: 'v13_talisman_shown',
+        nextSceneId: 'vault_13_sanctuary',
+        effect: {
+          setFlags: { v13_talisman_shown: true },
+          incrementCounters: { vault_openness: 1 },
+          xpDelta: 200,
+        },
+      },
+      {
+        id: 'v13_solution_copy_chip',
+        text: '[WYJŚCIE 2: KOPIA Z DR HENRYM] Użyj Matrycy Replikacyjnej Dr Henry’ego, by skopiować układ Water Chipa i ocalić obie Krypty!',
+        requiredItem: 'water_chip_replicator',
+        forbiddenFlag: 'v13_resolution_done',
+        nextSceneId: 'vault_13_victory',
+        effect: {
+          removeItems: { water_chip_replicator: 1 },
+          addItems: { water_chip: 1 },
+          setFlags: { v13_resolution_done: true, v13_chip_copied: true },
+          incrementCounters: { vault_openness: 1 },
+          xpDelta: 350,
+        },
+      },
+      {
+        id: 'v13_solution_evacuate_to_73',
+        text: '[WYJŚCIE 3: EWAKUACJA DO KRYPTY 73] Zabierz Water Chip, ale przeprowadź wszystkich mieszkańców Krypty 13 do swojego schronu!',
+        forbiddenFlag: 'v13_resolution_done',
+        nextSceneId: 'vault_13_victory',
+        effect: {
+          addItems: { water_chip: 1 },
+          setFlags: { v13_resolution_done: true, v13_residents_migrated: true },
+          incrementCounters: { vault_openness: 2 },
+          xpDelta: 300,
+        },
+      },
+      {
+        id: 'v13_solution_hand_over_ncr',
+        text: '[WYJŚCIE 4: PROTEKTORAT NCR] Przekaż Kryptę 13 pod opiekę inżynierów NCR w zamian za rurociąg dla obu schronów',
+        requiredFlag: 'vault13_map_taken',
+        forbiddenFlag: 'v13_resolution_done',
+        nextSceneId: 'vault_13_victory',
+        effect: {
+          addItems: { ncr_annexation_writ: 1, water_chip: 1 },
+          setFlags: { v13_resolution_done: true, v13_ncr_annexed: true },
+          incrementCounters: { vault_openness: 1 },
+          xpDelta: 300,
+        },
+      },
+      {
+        id: 'v13_solution_take_by_force',
+        text: '[WYJŚCIE 1: SIŁA] Odepchnij mieszkańców i wejdź do Laboratorium, by zabrać Water Chip siłą (Skazujesz Kryptę 13 na zagładę)',
+        forbiddenFlag: 'v13_resolution_done',
+        nextSceneId: 'vault_13_lab',
+        effect: {
+          setFlags: { v13_resolution_done: true, v13_doomed_by_force: true },
+          incrementCounters: { vault_openness: -2 },
+        },
+      },
+      {
+        id: 'back_v13_corridors_from_sanctuary',
+        text: 'Cofnij się do Korytarzy Technicznych',
+        nextSceneId: 'vault_13_corridors',
+      },
+    ],
+  },
   vault_13_lab: {
     id: 'vault_13_lab',
     title: 'Krypta 13 — Laboratorium Hydroprocesorów (Sektor Centralny)',
@@ -1478,6 +2118,17 @@ const baseScenes: Record<string, SceneDefinition> = {
     description:
       'W sterylnej komorze w szklanej gablocie lśni nienaruszony Hydroprocesor (Water Chip z Krypty 13)! Drogę do modułu blokuje jednak potężny, trójkołowy Prototypowy Sentry Bot Zagłady — robot obronny najwyższej klasy militarnej z podwójnym minigunem i wyrzutnią rakiet!',
     choices: [
+      {
+        id: 'peaceful_sentry_talisman',
+        text: '[TALIZMAN Z ARROYO] Unieś Talizman Wybrańca — Nadzorca Lazarus zdalnie wyłącza Sentry Bota dla „Potomka Pradawnych”!',
+        requiredItem: 'arroyo_talisman',
+        nextSceneId: 'vault_13_victory',
+        effect: {
+          addItems: { water_chip: 1 },
+          setFlags: { v13_talisman_bypass: true },
+          xpDelta: 300,
+        },
+      },
       {
         id: 'hack_sentry_overload',
         text: '[INT 8] Przeciąż zasilanie reaktora Sentry Bota przez konsolę serwisową przed walką',
@@ -1519,11 +2170,23 @@ const baseScenes: Record<string, SceneDefinition> = {
       setQuestState: { questId: 'ch3_water_chip', status: 'active', stage: 'return_vault_73' },
     },
     description:
-      'Z rozbitego pancerza Sentry Bota ulatuje dym. Podchodzisz do hermetycznej gabloty i wyjmujesz fabrycznie nowy, sprawny Hydroprocesor (Water Chip z Krypty 13)! Zegar tyka — Krypta 73 ma wodę jeszcze na krótki czas. Pora wracać do domu i ocalić swój schron!',
+      'Los Krypty 13 został rozstrzygnięty, a w Twoich rękach znajduje się ratunek dla Krypty 73! Zegar tyka — pora wracać do domu i stawić czoła prawdzie o tym, kto stał za trzema katastrofami!',
+    dynamicDescription: (state) => {
+      if (state.flags.v13_chip_copied) {
+        return 'Dzięki Matrycy Replikacyjnej Dr Henry’ego w Twoim plecaku spoczywa pełnoprawny duplikat Hydroprocesora, a oryginalny układ nadal tłoczy wodę dla wdzięcznych mieszkańców Krypty 13! Pora wracać do Krypty 73.';
+      }
+      if (state.flags.v13_residents_migrated) {
+        return 'Hydroprocesor został wymontowany, a kolumna mieszkańców i ghuli Nadzorcy Lazarusa wyrusza wraz z Tobą do nowego domu w Krypcie 73!';
+      }
+      if (state.flags.v13_ncr_annexed) {
+        return 'Inżynierowie NCR przejmują opiekę nad Kryptą 13, wręczając Ci układ hydroprocesora i gwarancje budowy wodociągu dla Krypty 73!';
+      }
+      return 'Wyjmujesz z gabloty jedyny Hydroprocesor (Water Chip z Krypty 13). W tle słychać wycie gasnących systemów podtrzymywania życia Krypty 13... Pora wracać do Krypty 73!';
+    },
     choices: [
       {
         id: 'leave_vault13_with_chip',
-        text: 'Zabierz Water Chip, wyjdź na Pustkowia i ruszaj do Krypty 73 [Mapa Świata]',
+        text: 'Wyrusz na Pustkowia i wracaj do Krypty 73 [Mapa Świata]',
         nextSceneId: 'vault_13_gate',
         effect: { openWorldMap: true },
       },
@@ -1531,11 +2194,151 @@ const baseScenes: Record<string, SceneDefinition> = {
   },
   ending_water_chip_saved: {
     id: 'ending_water_chip_saved',
-    title: 'WIELKI FINAŁ ROZDZIAŁU 3: Zbawca Krypty 73 i Legendarny Wędrowiec',
+    title: 'POWRÓT DO KRYPTY 73: Cień Zdrady przy Reaktorze',
+    locationId: 'vault_73',
+    description:
+      'Wkładasz moduł Water Chip w gniazdo głównego systemu uzdatniania wody Krypty 73. Ciche buczenie pomp zmienia się w potężny szum — czysta woda znów wypełnia zbiorniki!\n\nGdy jednak odwracasz się od konsoli, w drzwiach sekcji reaktora staje Nadzorca Krypty 73 z odbezpieczonym karabinem plazmowym. Na jego naramienniku połyskuje ukryty emblemat Enklawy!\n\n„Miałeś zginąć na Pustkowiach, Wędrowcze” — mówi chłodno Nadzorca. — „To ja otworzyłem komorę stabilizatora dla Korga, ja przekazałem Doktorowi Morbusowi mutagen Enklawy i ja przepaliłem stary Water Chip, by zmusić Kryptę 73 do ewakuacji w ręce naszych oddziałów badawczych!”',
+    dynamicDescription: (state) => {
+      const clues = state.counters?.enclave_clues ?? 0;
+      const waterNote = state.flags.water_crisis_casualties
+        ? '\n\n[OPÓŹNIENIE WYPRAWY]: Zbyt długie podróże sprawiły, że zapasy wody wyczerpały się przed Twoim powrotem — kilkunastu mieszkańców przypłaciło suszę życiem, zanim uruchomiłeś nowy Hydroprocesor.'
+        : '\n\n[CZAS URATOWANY]: Zdążyłeś przed wyczerpaniem rezerw wody (pozostało ' +
+          (state.counters?.water_days_left ?? 0) +
+          ' dni zapasu) — nikt w Krypcie nie zginął z pragnienia!';
+      if (clues >= 2 || state.flags.clue_henry_enclave) {
+        return (
+          'Wkładasz moduł Water Chip w gniazdo głównego systemu uzdatniania wody Krypty 73. Czysta woda znów wypełnia zbiorniki!' +
+          waterNote +
+          '\n\nZanim Nadzorca zdąży sięgnąć po broń, rzucasz na konsolę zebrane dowody: logi sabotażu ze Stacji RobCo, zeznania Morbusa o mutagenie FEV-II oraz Dziennik Transmisji Enklawy od Dr Henry’ego! Strażnicy Krypty mierzą do zdemaskowanego Nadzorcy:\n„Więc odkryłeś prawdę o Projekcie Czystość Enklawy... Skoro tak, sam pogrzebię Cię w tym reaktorze!”'
+        );
+      }
+      return (
+        'Wkładasz moduł Water Chip w gniazdo systemu uzdatniania wody Krypty 73. Czysta woda znów wypełnia zbiorniki!' +
+        waterNote +
+        '\n\nNagle na ekranie głównego terminala mruga szyfrowany komunikat nadany z wewnątrz Krypty do bazy Enklawy: „Eksperyment 73 zakończony niepowodzeniem — obiekt przeżył wszystkie trzy sabotaże”. Kiedy wbiegasz do gabinetu Nadzorcy, pomieszczenie jest puste, a tajny właz ewakuacyjny właśnie się zatrzaskuje! Zdrajca uciekł w cień Pustkowi...'
+      );
+    },
+    choices: [
+      {
+        id: 'confront_traitor_with_evidence',
+        text: '[KONFRONTACJA ZE ZDRAJCĄ — DOWODY ENKLAWY] Przedstaw strażnikom zebrane dowody spisku i stocz finałowy pojedynek z Nadzorcą-Agentem!',
+        minCounter: { key: 'enclave_clues', value: 2 },
+        nextSceneId: 'epilogue_slideshow',
+        effect: {
+          setFlags: { traitor_exposed: true, traitor_defeated: true },
+          setQuestState: { questId: 'side_enclave_conspiracy', status: 'completed', stage: 'completed' },
+          startCombat: {
+            enemyId: 'overseer_traitor',
+            victorySceneId: 'epilogue_slideshow',
+          },
+        },
+      },
+      {
+        id: 'persuade_traitor_surrender',
+        text: '[CHA 8 + DOWODY ENKLAWY] Złam morale zdemaskowanego Nadzorcy i zmuś go do poddania się bez rozlewu krwi (+300 XP)',
+        minCounter: { key: 'enclave_clues', value: 2 },
+        skillCheck: { attribute: 'CHA', difficulty: 8 },
+        nextSceneId: 'epilogue_slideshow',
+        failSceneId: 'ending_water_chip_saved',
+        effect: {
+          setFlags: { traitor_exposed: true, traitor_arrested: true },
+          setQuestState: { questId: 'side_enclave_conspiracy', status: 'completed', stage: 'completed' },
+          xpDelta: 300,
+        },
+        failEffect: {
+          setFlags: { traitor_exposed: true, traitor_defeated: true },
+          startCombat: {
+            enemyId: 'overseer_traitor',
+            victorySceneId: 'epilogue_slideshow',
+          },
+        },
+      },
+      {
+        id: 'proceed_epilogue_cliffhanger',
+        text: '[PRZEJDŹ DO KRONIKI EPILOGU] Spojrzyj w przyszłość odmienionych Pustkowi...',
+        nextSceneId: 'epilogue_slideshow',
+      },
+    ],
+  },
+  epilogue_slideshow: {
+    id: 'epilogue_slideshow',
+    title: 'KRONIKI PUSTKOWI — WIELOWARIANTOWY EPILOG SAGI KRYPTY 73',
     locationId: 'vault_73',
     isEnding: true,
-    description:
-      'Wkładasz lśniący moduł Water Chip z Krypty 13 w gniazdo głównego systemu uzdatniania wody Krypty 73. Ciche buczenie pomp zmienia się w głęboki, potężny szum — krystaliczna woda zaczyna wypełniać zbiorniki rezerwowe!\n\nAlarm suszy zostaje odwołany. Wrota Atrium otwierają się, a setki mieszkańców Krypty 73 witają Cię owacją na stojąco. Z Arroyo przybywają posłańcy z darami, a z NCR karawany handlowe z ofertą stałego sojuszu.\n\nNadzorca ze łzami w oczach wznosi toast na Twoją cześć:\n„Uratowałeś naszą kryptę przed głodem, osadę przed zarazą, a teraz ocaliłeś nas wszystkich przed śmiercią z pragnienia. Twoje imię nigdy nie zostanie zapomniane na Pustkowiach!”\n\nGRATULACJE — UKOŃCZYŁEŚ ROZDZIAŁ 3 I CAŁĄ SAGĘ KRYPTY 73!',
+    description: 'Wojna. Wojna nigdy się nie zmienia... ale Twoje czyny na zawsze odmieniły oblicze Pustkowi.',
+    dynamicDescription: (state) => {
+      const slides: string[] = [
+        '=== KRONIKI PUSTKOWI: EPILOG TWOJEJ SAGI ===',
+      ];
+
+      // 1. Los Krypty 73 (Otwarci vs Izolacjoniści + Woda)
+      const openness = state.counters?.vault_openness ?? 0;
+      const waterSuffix = state.flags.water_crisis_casualties
+        ? ' Choć spóźniona dostawa wody pochłonęła bolesne ofiary podczas wielkiej suszy, pozostali przy życiu mieszkańcy odbudowali społeczność.'
+        : ' Dzięki Twojemu pośpiechowi zapasy wody nie wyczerpały się na czas i żaden mieszkaniec nie zginął z pragnienia.';
+      if (openness >= 2) {
+        slides.push(
+          '• KRYPTA 73 (ZWYCIĘSTWO OBOZU OTWARTYCH): Wrota Krypty 73 stanęły otworem. Schron przekształcił się w tętniącą życiem stolicę technologiczną dzielącą się czystą wodą i medycyną z całym regionem.' +
+            waterSuffix
+        );
+      } else if (openness <= -1) {
+        slides.push(
+          '• KRYPTA 73 (TRIUMF IZOLACJONISTÓW): Zgodnie z wolą Izolacjonistów pancerne wrota Krypty 73 zostały zaspawane. Mieszkańcy przetrwali w bezpiecznej samowystarczalności, odcinając się na zawsze od chaosu powierzchni.' +
+            waterSuffix
+        );
+      } else {
+        slides.push(
+          '• KRYPTA 73 (ZŁOTY ŚRODEK): Krypta 73 zachowała ostrożną autonomię, wysyłając uzbrojone karawany handlowe na Pustkowia, lecz strzegąc tajemnic swojego reaktora.' +
+            waterSuffix
+        );
+      }
+
+      // 2. Rdzawy Krater i Dzieci Rdzy (Korg vs Żmija)
+      const craterPart = state.flags.crater_alliance_formed
+        ? 'Dzięki sojuszowi energetycznemu Rdzawy Krater rozrósł się w ufortyfikowane Nowe Rdzawe Miasto. '
+        : 'Osada Rdzawy Krater pozostała niewielkim, niezależnym posterunkiem złomiarzy. ';
+      const korgPart = state.flags.korg_spared
+        ? 'Oszczędzony Watażka Korg dotrzymał przysięgi — jego Nowa Osada Kuźnicza stała się kuźnią pancerzy i wiernym sojusznikiem wędrowców.'
+        : 'Po śmierci Korga władzę nad niedobitkami Dzieci Rdzy przejęła Mściwa Żmija, prowadząc fanatyków do krwawych rajdów odwetowych, które musiałeś tłumić ogniem.';
+      slides.push(`• RDZAWY KRATER I DZIECI RDZY: ${craterPart}${korgPart}`);
+
+      // 3. New Reno i Doktor Morbus
+      let renoRuler = 'Szeryf Vance oraz lekarze ze Szpitala Św. Atomu zaprowadzili w New Reno rządy prawa i bezpieczny handel.';
+      if (state.flags.reno_ruled_by_vinnie || (state.flags.jackals_allied && !state.flags.reno_ruled_by_sheriff && !state.flags.reno_ruled_by_salvatore)) {
+        renoRuler = 'Wściekły Vinnie i Żelazne Szakale przejęli kontrolę nad Aleją Neonów, rządząc miastem twardą ręką najemników.';
+      } else if (state.flags.reno_ruled_by_salvatore) {
+        renoRuler = 'Syntykat Dona Salvatore z Kasyna „Złoty Atom” zmonopolizował handel oczyszczoną wodą, zamieniając New Reno w oligarchię kasyn.';
+      }
+      const morbusPart = state.flags.morbus_spared
+        ? 'Oszczędzony Doktor Morbus pod nadzorem medyków pomógł stworzyć odtrutki na mutacje i ujawnił siatkę dostawców Enklawy.'
+        : 'Po egzekucji Doktora Morbusa jego podziemne laboratorium zostało zalane betonem.';
+      slides.push(`• METROPOLIA NEW RENO: ${renoRuler} ${morbusPart}`);
+
+      // 4. Arroyo, NCR i Krypta 13
+      let v13Text = 'W Krypcie 13 zabranie jedynego Hydroprocesora siłą skazało społeczność Nadzorcy Lazarusa na powolną śmierć w ciemnościach.';
+      if (state.flags.v13_chip_copied) {
+        v13Text = 'Dzięki Matrycy Replikacyjnej Dr Henry’ego skopiowałeś Water Chip — mieszkańcy i ghule z Krypty 13 ocaleli, zawierając braterski pakt z Kryptą 73!';
+      } else if (state.flags.v13_residents_migrated) {
+        v13Text = 'Ewakuowani mieszkańcy i ghule z Krypty 13 znaleźli nowy, bezpieczny dom w murach Krypty 73, łącząc wiedzę obu schronów.';
+      } else if (state.flags.v13_ncr_annexed) {
+        v13Text = 'Pod protektoratem Nowej Republiki Kalifornii (NCR) zbudowano wielki rurociąg łączący Kryptę 13, NCR i Kryptę 73.';
+      }
+      slides.push(`• KRYPTA 13, ARROYO I NCR: Plemię Arroyo rozkwitło na oczyszczonych pastwiskach. ${v13Text}`);
+
+      // 5. Spisek Enklawy i Zdrajca w Krypcie 73
+      if (state.flags.traitor_exposed) {
+        slides.push(
+          '• FINAŁ SPISKU ENKLAWY (PEŁNE ZWYCIĘSTWO): Dzięki zebranym dowodom zdemaskowałeś i powstrzymałeś Nadzorcę-Zdrajcę działającego na rzecz Enklawy. Krypta 73 wybrała Cię na nowego, prawowitego Nadzorcę!'
+        );
+      } else {
+        slides.push(
+          '• CIEŃ NA HORYZONCIE (CLIFFHANGER): Choć ocaliłeś Kryptę 73, tajemniczy mocodawca z Enklawy, który sabotował reaktor, dostarczył mutagen Morbusowi i uszkodził Water Chip, zdołał zatrzeć ślady i zniknąć na Pustkowiach. Pewnego dnia wróci...'
+        );
+      }
+
+      slides.push('\nGRATULACJE — UKOŃCZYŁEŚ CAŁĄ SAGĘ KRYPTY 73!');
+      return slides.join('\n\n');
+    },
     choices: [],
   },
   game_over_death: {

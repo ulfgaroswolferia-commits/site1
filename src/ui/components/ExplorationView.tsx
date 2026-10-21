@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { GameState, SceneChoice } from '../../types/game.js';
-import { getAvailableChoices, getCurrentScene } from '../../engine/DialogueEngine.js';
+import { getAvailableChoices, getCurrentScene, getSceneDescription } from '../../engine/DialogueEngine.js';
 import { calculateSkillCheckChance } from '../../engine/CharacterSystem.js';
 import { THEME } from '../theme.js';
 
@@ -62,7 +62,7 @@ export const ExplorationView: React.FC<Props> = ({
           {scene.title}
         </Text>
         <Box marginY={1}>
-          <Text color={THEME.primary}>{scene.description}</Text>
+          <Text color={THEME.primary}>{getSceneDescription(state, scene)}</Text>
         </Box>
         {lastLog && (
           <Box borderStyle="round" borderColor={THEME.secondary} paddingX={1}>

@@ -8,7 +8,9 @@ import {
   getSellPrice,
   buyItem,
   sellItem,
+  formatItemStats,
 } from '../src/engine/InventorySystem.js';
+import { ITEMS } from '../src/content/items.js';
 
 describe('InventorySystem', () => {
   it('equips weapons and armor from inventory', () => {
@@ -45,5 +47,27 @@ describe('InventorySystem', () => {
 
     state = sellItem(state, 'stimpak');
     expect(state.character.inventory.stimpak).toBe(2);
+  });
+
+  it('formats weapon, armor, and consumable statistics for UI display', () => {
+    expect(formatItemStats(ITEMS.laser_rifle)).toBe(
+      '[DMG: 26 | CEL: +15% | AP: 3 | DYSTANS (PER) | AMMO: Ogniwa MFC (1/strzał)]'
+    );
+    expect(formatItemStats(ITEMS.super_sledge)).toBe('[DMG: 40 | CEL: +12% | AP: 3 | WRĘCZ (STR)]');
+    expect(formatItemStats(ITEMS.power_armor_t51)).toBe('[OBR: +22 | ODP. RAD: 65%]');
+    expect(formatItemStats(ITEMS.pulse_grenade)).toBe('[DMG: 35 | OGŁUSZENIE: 80%]');
+    expect(formatItemStats(ITEMS.ammo_10mm)).toBe('[PACZKA: +12 SZT.]');
+  });
+
+  it('buys ammo in packs and includes starter magazine when acquiring a ranged weapon', () => {
+    let state = createNewGameState('Max', createInitialAttributes());
+    state.character.caps = 200;
+    const before10mm = state.character.inventory.ammo_10mm ?? 0;
+    state = buyItem(state, 'ammo_10mm');
+    expect(state.character.inventory.ammo_10mm).toBe(before10mm + 12);
+
+    // Acquiring laser_rifle for the first time grants 10 starter energy cells
+    state = addItem(state, 'laser_rifle', 1);
+    expect(state.character.inventory.ammo_energy).toBe(10);
   });
 });
