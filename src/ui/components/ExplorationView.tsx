@@ -56,16 +56,16 @@ export const ExplorationView: React.FC<Props> = ({
         borderStyle="single"
         borderColor={THEME.primary}
         paddingX={2}
-        paddingY={1}
+        paddingY={0}
       >
         <Text color={THEME.amber} bold>
           {scene.title}
         </Text>
-        <Box marginY={1}>
+        <Box marginY={0}>
           <Text color={THEME.primary}>{getSceneDescription(state, scene)}</Text>
         </Box>
         {lastLog && (
-          <Box borderStyle="round" borderColor={THEME.secondary} paddingX={1}>
+          <Box borderStyle="round" borderColor={THEME.secondary} paddingX={1} marginY={0}>
             <Text color={THEME.cyan}>LOG: {lastLog}</Text>
           </Box>
         )}
@@ -76,7 +76,7 @@ export const ExplorationView: React.FC<Props> = ({
         borderStyle="single"
         borderColor={THEME.primary}
         paddingX={2}
-        paddingY={1}
+        paddingY={0}
       >
         {scene.isEnding ? (
           <Text color={THEME.amber} bold>

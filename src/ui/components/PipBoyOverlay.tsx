@@ -16,6 +16,8 @@ interface Props {
 }
 
 const ATTRS: AttributeKey[] = ['STR', 'PER', 'END', 'CHA', 'INT', 'AGI'];
+const PERKS_PAGE_SIZE = 3;
+const INV_PAGE_SIZE = 5;
 
 export const PipBoyOverlay: React.FC<Props> = ({
   state,
@@ -84,14 +86,14 @@ export const PipBoyOverlay: React.FC<Props> = ({
       borderStyle="single"
       borderColor={THEME.cyan}
       paddingX={2}
-      paddingY={1}
+      paddingY={0}
     >
       {tab === 'stats' && (
         <Box flexDirection="column">
           <Text color={THEME.amber} bold>
             KARTA POSTACI S.P.E.C.I.A.L. & PROFITY (PERKI)
           </Text>
-          <Box marginY={1} justifyContent="space-between">
+          <Box marginY={0} justifyContent="space-between">
             {ATTRS.map((k) => (
               <Text key={k} color={THEME.primary} bold>
                 {k}: {state.character.attributes[k]}
@@ -104,7 +106,7 @@ export const PipBoyOverlay: React.FC<Props> = ({
               ? 'Brak'
               : state.character.perks.map((id) => PERKS[id]?.name ?? id).join(', ')}
           </Text>
-          <Box flexDirection="column" marginTop={1}>
+          <Box flexDirection="column" marginTop={0}>
             <Text color={THEME.cyan}>
               Aktywna Broń:{' '}
               {state.character.equippedWeaponId && ITEMS[state.character.equippedWeaponId]
@@ -125,7 +127,7 @@ export const PipBoyOverlay: React.FC<Props> = ({
               borderStyle="round"
               borderColor={THEME.amber}
               paddingX={1}
-              marginTop={1}
+              marginTop={0}
             >
               <Text color={THEME.amber} bold>
                 AWANS NA POZIOM {nextLevel}! (+10 Max HP & Pełne Uleczenie)
@@ -142,20 +144,43 @@ export const PipBoyOverlay: React.FC<Props> = ({
               )}
 
               {gainsPerk ? (
-                <Box flexDirection="column" marginTop={1}>
+                <Box flexDirection="column" marginTop={0}>
                   <Text color={THEME.primary}>
-                    • Wybierz nowy Perk (co 2 lvl) klawiszami [↑/↓]:
+                    • Wybierz nowy Perk (co 2 lvl) klawiszami [↑/↓] ({selected + 1}/{availablePerks.length}):
                   </Text>
-                  {availablePerks.map((perk, idx) => (
-                    <Text
-                      key={perk.id}
-                      color={idx === selected ? THEME.amber : THEME.primary}
-                      bold={idx === selected}
-                    >
-                      {idx === selected ? '> ' : '  '}
-                      {perk.name} — {perk.description}
-                    </Text>
-                  ))}
+                  {(() => {
+                    const perkStartIndex = Math.max(
+                      0,
+                      Math.min(selected - 1, Math.max(0, availablePerks.length - PERKS_PAGE_SIZE))
+                    );
+                    const visiblePerks = availablePerks.slice(
+                      perkStartIndex,
+                      perkStartIndex + PERKS_PAGE_SIZE
+                    );
+                    return (
+                      <>
+                        {visiblePerks.map((perk, offset) => {
+                          const actualIdx = perkStartIndex + offset;
+                          const isSel = actualIdx === selected;
+                          return (
+                            <Text
+                              key={perk.id}
+                              color={isSel ? THEME.amber : THEME.primary}
+                              bold={isSel}
+                            >
+                              {isSel ? '> ' : '  '}
+                              {actualIdx + 1}. {perk.name}
+                            </Text>
+                          );
+                        })}
+                        {availablePerks[selected] && (
+                          <Text color={THEME.cyan}>
+                            {'   '}Opis: {availablePerks[selected].description}
+                          </Text>
+                        )}
+                      </>
+                    );
+                  })()}
                 </Box>
               ) : (
                 <Text color={THEME.muted}>
@@ -163,7 +188,7 @@ export const PipBoyOverlay: React.FC<Props> = ({
                 </Text>
               )}
 
-              <Box marginTop={1}>
+              <Box marginTop={0}>
                 <Text color={THEME.amber} bold>
                   Wciśnij [Enter], aby zatwierdzić awans!
                 </Text>
@@ -176,28 +201,38 @@ export const PipBoyOverlay: React.FC<Props> = ({
       {tab === 'inventory' && (
         <Box flexDirection="column">
           <Text color={THEME.amber} bold>
-            EKWIPUNEK POSTACI (Enter = Załóż / Użyj)
+            EKWIPUNEK POSTACI (Enter = Załóż / Użyj) {invEntries.length > 0 ? `(${safeInvSelected + 1}/${invEntries.length})` : ''}
           </Text>
-          <Box marginY={1} flexDirection="column">
-            {invEntries.map(([id, qty], idx) => {
-              const item = ITEMS[id];
-              if (!item) return null;
-              const isEquipped =
-                state.character.equippedWeaponId === id ||
-                state.character.equippedArmorId === id;
-              const isSel = idx === safeInvSelected;
-              return (
-                <Text
-                  key={id}
-                  color={isSel ? THEME.amber : THEME.primary}
-                  bold={isSel}
-                >
-                  {isSel ? '> ' : '  '}
-                  {item.name} x{qty} {isEquipped ? '[ZAŁOŻONO] ' : ''}
-                  <Text color={THEME.cyan}>{formatItemStats(item)}</Text> — {item.description}
-                </Text>
+          <Box marginY={0} flexDirection="column">
+            {invEntries.length === 0 ? (
+              <Text color={THEME.muted}>Brak przedmiotów w ekwipunku.</Text>
+            ) : (() => {
+              const invStartIndex = Math.max(
+                0,
+                Math.min(safeInvSelected - 2, Math.max(0, invEntries.length - INV_PAGE_SIZE))
               );
-            })}
+              const visibleInv = invEntries.slice(invStartIndex, invStartIndex + INV_PAGE_SIZE);
+              return visibleInv.map(([id, qty], offset) => {
+                const actualIdx = invStartIndex + offset;
+                const item = ITEMS[id];
+                if (!item) return null;
+                const isEquipped =
+                  state.character.equippedWeaponId === id ||
+                  state.character.equippedArmorId === id;
+                const isSel = actualIdx === safeInvSelected;
+                return (
+                  <Text
+                    key={id}
+                    color={isSel ? THEME.amber : THEME.primary}
+                    bold={isSel}
+                  >
+                    {isSel ? '> ' : '  '}
+                    {item.name} x{qty} {isEquipped ? '[ZAŁOŻONO] ' : ''}
+                    <Text color={THEME.cyan}>{formatItemStats(item)}</Text> — {item.description}
+                  </Text>
+                );
+              });
+            })()}
           </Box>
         </Box>
       )}
@@ -207,13 +242,13 @@ export const PipBoyOverlay: React.FC<Props> = ({
           <Text color={THEME.amber} bold>
             DZIENNIK ZADAŃ PIP-BOY
           </Text>
-          <Box marginY={1} flexDirection="column">
+          <Box marginY={0} flexDirection="column">
             {Object.entries(state.quests).map(([questId, qState]) => {
               const def = QUESTS[questId];
               if (!def) return null;
               const stageDesc = def.stages[qState.stage] ?? '';
               return (
-                <Box key={questId} flexDirection="column" marginBottom={1}>
+                <Box key={questId} flexDirection="column" marginBottom={0}>
                   <Text
                     color={qState.status === 'completed' ? THEME.secondary : THEME.amber}
                     bold

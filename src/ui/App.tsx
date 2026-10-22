@@ -61,11 +61,11 @@ export const App: React.FC = () => {
     }
   });
 
-  if (cols < 72 || rows < 18) {
+  if (cols < 72 || rows < 24) {
     return (
       <Box borderStyle="double" borderColor={THEME.amber} padding={1}>
         <Text color={THEME.amber}>
-          TERMINAL ROBCO: Rozmiar okna terminala ({cols}x{rows}) jest zbyt mały. Powiększ panel terminala VS Code do min. 72x18.
+          TERMINAL ROBCO: Rozmiar okna terminala ({cols}x{rows}) jest zbyt mały. Powiększ panel terminala do min. 72x24.
         </Text>
       </Box>
     );
@@ -184,6 +184,7 @@ export const App: React.FC = () => {
         borderStyle="single"
         borderColor={THEME.secondary}
         paddingX={1}
+        paddingY={0}
         justifyContent="space-between"
       >
         <Text color={THEME.muted}>
