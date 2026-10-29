@@ -15,14 +15,18 @@ Jeśli polecenie nie jest rozpoznawane, pobierz i zainstaluj Node.js ze strony:
   https://nodejs.org/
 
 
-2. INSTALACJA Z PACZKI (krypta-73-rpg-1.0.2.tgz)
+2. INSTALACJA GRY
 ------------------------------------------------------------------------
-1) Pobierz plik "krypta-73-rpg-1.0.2.tgz" do dowolnego folderu na dysku.
+Opcja A — bezpośrednio z rejestru npm (zalecana):
+  npm install -g krypta-73-rpg
+
+Opcja B — z pliku paczki (krypta-73-rpg-1.0.3.tgz):
+1) Pobierz plik "krypta-73-rpg-1.0.3.tgz" do dowolnego folderu na dysku.
 2) Otwórz terminal (w VS Code, PhpStorm, PowerShell lub CMD) w folderze,
    w którym znajduje się plik .tgz.
 3) Zainstaluj grę globalnie poleceniem:
 
-   npm install -g ./krypta-73-rpg-1.0.2.tgz
+   npm install -g ./krypta-73-rpg-1.0.3.tgz
 
 Po zakończeniu instalacji w systemie zostanie zarejestrowana globalna
 komenda "krypta73".
@@ -58,21 +62,22 @@ danej zakładki ([S], [I], [Q], [M]), albo wyłączyć tę opcję w PhpStormie:
 Settings -> Tools -> Terminal -> odznacz "Move focus to editor on Escape".
 
 
-61: 5. AKTUALIZACJA I ODINSTALOWANIE
-62: ------------------------------------------------------------------------
-63: Je�li masz ju� zainstalowan� wcze�niejsz� wersj� (np. 1.0.0):
-64: NIE musisz niczego wcze�niej odinstalowywa�. Wystarczy pobra� nowy plik .tgz
-65: i uruchomi� instalacj� z flag� wymuszenia nadpisania:
-66: 
-67:    npm install -g --force ./krypta-73-rpg-1.0.2.tgz
-68: 
-69: Zapisy gry (plik saves/savegame.json w folderze projektu) pozostan�
-70: w 100% bezpieczne i zachowane!
-71: 
-72: Aby ca�kowicie odinstalowa� gr� z systemu, wpisz:
-73: 
-74:    npm uninstall -g krypta-73-rpg
+5. AKTUALIZACJA I ODINSTALOWANIE
+------------------------------------------------------------------------
+Jeśli masz już zainstalowaną wcześniejszą wersję (np. 1.0.0 - 1.0.2):
+NIE musisz niczego wcześniej odinstalowywać. Wystarczy zaktualizować z npm:
+
+   npm install -g krypta-73-rpg@latest
+
+lub z pliku .tgz z flagą wymuszenia nadpisania:
+
+   npm install -g --force ./krypta-73-rpg-1.0.3.tgz
+
+Zapisy gry (plik saves/savegame.json w folderze projektu) pozostaną
+w 100% bezpieczne i zachowane!
+
+Aby całkowicie odinstalować grę z systemu, wpisz:
+
+   npm uninstall -g krypta-73-rpg
 
 ========================================================================
-
-
