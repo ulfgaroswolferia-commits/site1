@@ -647,6 +647,18 @@ const baseScenes: Record<string, SceneDefinition> = {
     locationId: 'rust_fortress',
     description:
       'W sercu płonącej rafinerii Watażka Korg podłączył Moduł Stabilizatora G.E.C.K.-Lite do niestabilnego generatora plazmowego. Iskry sypią się z przegrzanych cewek!\n\nKorg ryczy przez głośnik pancerza: „Ten święty rdzeń da Dzieciom Rdzy moc panowania nad całym sektorem! Zbliż się o krok, a spopielę Cię na miejscu!”',
+    dynamicDescription: (state) => {
+      if (state.flags.korg_resolved) {
+        if (state.flags.viper_defeated_crater || state.flags.viper_v13_defeated) {
+          return 'Sala tronowa w dawnej rafinerii pogrążona jest w martwej ciszy. Po upadku Korga i rozbiciu niedobitków Mściwej Żmii dawna Twierdza Dzieci Rdzy opustoszała — z wygaszonych rurociągów ulatniają się resztki pary, a na posadzce zalega popiół i bezużyteczny złom.';
+        }
+        if (state.flags.korg_spared) {
+          return 'Sala tronowa dawnej rafinerii stoi pusta. Po zawarciu porozumienia Watażka Korg i jego ludzie przenieśli się do nowej osady kuźniczej przy Rdzawym Kraterze, pozostawiając za sobą jedynie wygaszone palniki i puste kadzie.';
+        }
+        return 'Płonąca niegdyś sala tronowa rafinerii opustoszała po pokonaniu Watażki Korga. Wypalone cewki generatora plazmowego ostygły, a po klanie Dzieci Rdzy pozostały jedynie zgliszcza i wypalony żużel.';
+      }
+      return 'W sercu płonącej rafinerii Watażka Korg podłączył Moduł Stabilizatora G.E.C.K.-Lite do niestabilnego generatora plazmowego. Iskry sypią się z przegrzanych cewek!\n\nKorg ryczy przez głośnik pancerza: „Ten święty rdzeń da Dzieciom Rdzy moc panowania nad całym sektorem! Zbliż się o krok, a spopielę Cię na miejscu!”';
+    },
     choices: [
       {
         id: 'diplomacy_korg',
@@ -704,6 +716,12 @@ const baseScenes: Record<string, SceneDefinition> = {
           },
         },
       },
+      {
+        id: 'leave_fortress',
+        text: 'Opuść Twierdzę Dzieci Rdzy [Mapa Świata]',
+        nextSceneId: 'fortress_gate',
+        effect: { openWorldMap: true },
+      },
     ],
   },
   fortress_victory: {
@@ -719,6 +737,7 @@ const baseScenes: Record<string, SceneDefinition> = {
       {
         id: 'ending_share_wasteland',
         text: '[FINAŁ ROZDZIAŁU 1 — SOJUSZ Z KRATEREM] Przekaż Stabilizator wspólnocie Rdzawego Krateru i otwórz Kryptę na świat',
+        forbiddenFlag: 'crater_alliance_formed',
         nextSceneId: 'ending_wasteland_alliance',
         effect: {
           removeItems: { geck_stabilizer: 1 },

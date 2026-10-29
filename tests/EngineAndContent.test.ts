@@ -252,4 +252,35 @@ describe('DialogueEngine, WastelandTravel, SaveManager & Content Integrity', () 
     expect(epilogueText).toContain('METROPOLIA NEW RENO');
     expect(epilogueText).toContain('FINAŁ SPISKU ENKLAWY');
   });
+
+  it('provides an exit choice and dynamic description in fortress_gate when returning after defeating Korg/Zmija', () => {
+    let state = createNewGameState('Max', createInitialAttributes());
+
+    // Initially fortress_gate has Korg combat/diplomacy choices AND leave_fortress
+    state.currentLocationId = 'rust_fortress';
+    state.currentSceneId = 'fortress_gate';
+    let available = getAvailableChoices(state, SCENES.fortress_gate.choices);
+    expect(available.some((c) => c.id === 'leave_fortress')).toBe(true);
+    expect(available.some((c) => c.id === 'fight_korg')).toBe(true);
+
+    // After resolving Korg and defeating Zmija (viper_defeated_crater)
+    state.flags.korg_resolved = true;
+    state.flags.viper_defeated_crater = true;
+
+    available = getAvailableChoices(state, SCENES.fortress_gate.choices);
+    // Korg confrontation choices should no longer be available
+    expect(available.some((c) => c.id === 'fight_korg')).toBe(false);
+    expect(available.some((c) => c.id === 'diplomacy_korg')).toBe(false);
+    expect(available.some((c) => c.id === 'hack_fortress_turrets')).toBe(false);
+
+    // leave_fortress must be available and open the world map
+    const exitChoice = available.find((c) => c.id === 'leave_fortress');
+    expect(exitChoice).toBeDefined();
+    expect(exitChoice?.effect?.openWorldMap).toBe(true);
+
+    // Description must reflect post-viper/post-korg ruins
+    const description = getSceneDescription(state, SCENES.fortress_gate);
+    expect(description).toContain('Mściwej Żmii');
+    expect(description).not.toContain('Korg ryczy');
+  });
 });
