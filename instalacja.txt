@@ -20,13 +20,13 @@ Jeśli polecenie nie jest rozpoznawane, pobierz i zainstaluj Node.js ze strony:
 Opcja A — bezpośrednio z rejestru npm (zalecana):
   npm install -g krypta-73-rpg
 
-Opcja B — z pliku paczki (krypta-73-rpg-1.0.5.tgz):
-1) Pobierz plik "krypta-73-rpg-1.0.5.tgz" do dowolnego folderu na dysku.
+Opcja B — z pliku paczki (krypta-73-rpg-1.0.6.tgz):
+1) Pobierz plik "krypta-73-rpg-1.0.6.tgz" do dowolnego folderu na dysku.
 2) Otwórz terminal (w VS Code, PhpStorm, PowerShell lub CMD) w folderze,
    w którym znajduje się plik .tgz.
 3) Zainstaluj grę globalnie poleceniem:
 
-   npm install -g ./krypta-73-rpg-1.0.5.tgz
+   npm install -g ./krypta-73-rpg-1.0.6.tgz
 
 Po zakończeniu instalacji w systemie zostanie zarejestrowana globalna
 komenda "krypta73".
@@ -71,7 +71,7 @@ NIE musisz niczego wcześniej odinstalowywać. Wystarczy zaktualizować z npm:
 
 lub z pliku .tgz z flagą wymuszenia nadpisania:
 
-   npm install -g --force ./krypta-73-rpg-1.0.5.tgz
+   npm install -g --force ./krypta-73-rpg-1.0.6.tgz
 
 Zapisy gry (plik saves/savegame.json w folderze projektu) pozostaną
 w 100% bezpieczne i zachowane!
