@@ -1328,10 +1328,17 @@ const baseScenes: Record<string, SceneDefinition> = {
         id: 'enter_morbus_lair',
         text: 'Wyważ gródź i wejdź do Podziemnego Laboratorium Doktora Morbusa (Sektor 3 — BOSS)',
         requiredFlag: 'sewer_mid_devourer_cleared',
+        forbiddenFlag: 'morbus_defeated',
         nextSceneId: 'reno_sewers_boss',
         effect: {
           setQuestState: { questId: 'ch2_new_reno', status: 'active', stage: 'defeat_morbus' },
         },
+      },
+      {
+        id: 'enter_cleared_morbus_lair',
+        text: 'Wejdź do zabezpieczonego Laboratorium Doktora Morbusa (Sektor 3)',
+        requiredFlag: 'morbus_defeated',
+        nextSceneId: 'reno_sewers_boss',
       },
       {
         id: 'back_sewers_entry',
@@ -1346,11 +1353,37 @@ const baseScenes: Record<string, SceneDefinition> = {
     locationId: 'new_reno',
     description:
       'W centrum zalanej komory wodociągowej wznosi się aparatura pompująca zielony mutagen prosto do rur New Reno. Na pomoście stoi Doktor Morbus w egzoszkielecie połączonym kablami z gigantycznym Królem Kanałów!\n\n„New Reno zgniło od środka!” — skrzeczy Morbus przez maskę tlenową. — „Mój mutagen oczyści to miasto i stworzy nową rasę dzieci podziemi! Nikt mnie nie powstrzyma!”',
+    dynamicDescription: (state) => {
+      const morbusDefeated = Boolean(
+        state.flags.morbus_defeated ||
+        state.flags.morbus_fate_decided ||
+        state.flags.morbus_spared ||
+        state.flags.morbus_killed ||
+        state.flags.morbus_in_hospital
+      );
+      if (morbusDefeated) {
+        if (state.flags.morbus_killed) {
+          return 'Wkraczasz do zdemolowanego Laboratorium w Sektorze 3. Zniszczony egzoszkielet Króla Kanałów dymi w kałuży mutagenu obok martwego Doktora Morbusa. Pompy tłoczące truciznę zostały wyłączone, a woda płynąca przez komorę jest krystalicznie czysta.';
+        }
+        if (state.flags.morbus_in_hospital) {
+          return 'Laboratorium w Sektorze 3 opustoszało. Aparatura pompująca została odcięta i zabezpieczona, a ranny Doktor Morbus trafił pod klucz do Szpitala Św. Atomu. W rurociągach New Reno znów płynie nieskażona woda.';
+        }
+        if (state.flags.morbus_spared) {
+          return 'Wchodzisz do cichej komory pomp w Sektorze 3. Po tym, jak Doktor Morbus został zmuszony do kapitulacji i złożenia zeznań obciążających Enklawę, jego instalacja została zabezpieczona. Zagrożenie dla New Reno minęło.';
+        }
+        return 'Komora laboratoryjna w Sektorze 3 została oczyszczona. Aparatura tłocząca mutagen została trwale wyłączona, a egzoszkielet Króla Kanałów leży roztrzaskany na pomoście. Doktor Morbus został już definitywnie pokonany.';
+      }
+      return (
+        'W centrum zalanej komory wodociągowej wznosi się aparatura pompująca zielony mutagen prosto do rur New Reno. Na pomoście stoi Doktor Morbus w egzoszkielecie połączonym kablami z gigantycznym Królem Kanałów!\n\n' +
+        '„New Reno zgniło od środka!” — skrzeczy Morbus przez maskę tlenową. — „Mój mutagen oczyści to miasto i stworzy nową rasę dzieci podziemi! Nikt mnie nie powstrzyma!”'
+      );
+    },
     choices: [
       {
         id: 'boss_attack_with_jackals',
         text: '[SOJUSZ Z BANDYTAMI] Daj sygnał Wściekłemu Vinnie’mu — Żelazne Szakale uderzają z flanki i osłabiają Morbusa!',
         requiredFlag: 'jackals_allied',
+        forbiddenFlag: 'morbus_defeated',
         nextSceneId: 'reno_sewers_victory',
         effect: {
           startCombat: {
@@ -1363,6 +1396,7 @@ const baseScenes: Record<string, SceneDefinition> = {
         id: 'boss_use_hospital_serum',
         text: '[SUROWICA SZPITALNA] Wlej Surowicę Neutralizującą Dr Leny do głównej pompy, paraliżując mutacje Morbusa!',
         requiredItem: 'neutralizing_serum',
+        forbiddenFlag: 'morbus_defeated',
         nextSceneId: 'reno_sewers_victory',
         effect: {
           removeItems: { neutralizing_serum: 1 },
@@ -1376,6 +1410,7 @@ const baseScenes: Record<string, SceneDefinition> = {
       {
         id: 'boss_hack_pumps',
         text: '[INT] Przeciąż zawory bezpieczeństwa aparatury Morbusa przed walką',
+        forbiddenFlag: 'morbus_defeated',
         skillCheck: { attribute: 'INT', difficulty: 8 },
         nextSceneId: 'reno_sewers_victory',
         failSceneId: 'reno_sewers_victory',
@@ -1396,6 +1431,7 @@ const baseScenes: Record<string, SceneDefinition> = {
       {
         id: 'boss_solo_full_fight',
         text: 'Staw czoła Doktorowi Morbusowi i Królowi Kanałów w pojedynkę (Pełna Siła Bossa)!',
+        forbiddenFlag: 'morbus_defeated',
         nextSceneId: 'reno_sewers_victory',
         effect: {
           startCombat: {
@@ -1403,6 +1439,30 @@ const baseScenes: Record<string, SceneDefinition> = {
             victorySceneId: 'reno_sewers_victory',
           },
         },
+      },
+      {
+        id: 'retreat_from_boss_to_mid',
+        text: 'Wycofaj się po cichu do Zbiornika Filtracyjnego (Sektor 2)',
+        forbiddenFlag: 'morbus_defeated',
+        nextSceneId: 'reno_sewers_mid',
+      },
+      {
+        id: 'go_to_purifier_station',
+        text: 'Przejdź do Stacji Kontroli Wodociągów New Reno',
+        requiredFlag: 'morbus_defeated',
+        nextSceneId: 'reno_sewers_victory',
+      },
+      {
+        id: 'leave_boss_lair_to_mid',
+        text: 'Wróć korytarzem do Zbiornika Filtracyjnego (Sektor 2)',
+        requiredFlag: 'morbus_defeated',
+        nextSceneId: 'reno_sewers_mid',
+      },
+      {
+        id: 'leave_boss_lair_to_city',
+        text: 'Wyjdź szybem wentylacyjnym bezpośrednio na Aleję Neonów',
+        requiredFlag: 'morbus_defeated',
+        nextSceneId: 'reno_gates',
       },
     ],
   },
@@ -1412,6 +1472,7 @@ const baseScenes: Record<string, SceneDefinition> = {
     locationId: 'new_reno',
     onEnterEffect: {
       setQuestState: { questId: 'ch2_new_reno', status: 'active', stage: 'return_overseer' },
+      setFlags: { morbus_defeated: true },
     },
     description:
       'Doktor Morbus pada na kolana obok roztrzaskanej kadzi z mutagenem! Przełączasz główną dźwignię stacji filtracyjnej — krystalicznie czysta woda pod ciśnieniem wypłukuje toksyny z wodociągów New Reno.\n\nZanim zadasz ostateczny cios, krwawiący Morbus zdziera maskę tlenową i charczy:\n„Głupcze... myślisz, że sam wymyśliłem tę formułę?! Ampułki z mutagenem FEV-II i schematy wodociągów przysłał mi kurier z szyfrem Enklawy — prosto z Waszej Krypty 73! Oszczędź mnie, a powiem Ci wszystko!”',
@@ -1423,6 +1484,19 @@ const baseScenes: Record<string, SceneDefinition> = {
         : state.flags.reno_ruled_by_sheriff
         ? '\n\nWładzę w New Reno umocnił Szeryf Vance wraz z radą obywatelską i lekarzami ze Szpitala.'
         : '';
+
+      if (state.flags.morbus_fate_decided) {
+        let morbusFateText = '';
+        if (state.flags.morbus_killed) {
+          morbusFateText = 'Stacja filtracyjna New Reno pracuje bez zakłóceń, tłocząc czystą wodę do miejskiej sieci wodociągowej. Ciało pokonanego Doktora Morbusa leży obok rozbitej kadzi z mutagenem — jego szaleńczy eksperyment dobiegł końca.';
+        } else if (state.flags.morbus_in_hospital) {
+          morbusFateText = 'Stacja filtracyjna New Reno tłoczy czystą wodę do kranów całego miasta. Ranny Doktor Morbus został przekazany pod strażą na leczenie do Szpitala Św. Atomu, gdzie oczekuje na dalsze śledztwo.';
+        } else {
+          morbusFateText = 'Stacja filtracyjna New Reno pracuje pełną mocą, oczyszczając podziemne rezerwuary. Oszczędzony Doktor Morbus złożył zeznania obciążające agentów Enklawy i został odstawiony pod nadzorem straży.';
+        }
+        return morbusFateText + rulerText;
+      }
+
       return (
         'Doktor Morbus pada na kolana obok roztrzaskanej kadzi z mutagenem! Przełączasz główną dźwignię stacji filtracyjnej — krystalicznie czysta woda pod ciśnieniem wypłukuje toksyny z wodociągów New Reno.\n\nKrwawiący Morbus zdziera maskę tlenową i charczy: „Głupcze... myślisz, że sam wymyśliłem tę formułę?! Ampułki z mutagenem FEV-II i schematy wodociągów przysłał mi kurier z szyfrem Enklawy — prosto z Waszej Krypty 73! Oszczędź mnie, a powiem Ci wszystko!”' +
         rulerText
@@ -1436,6 +1510,7 @@ const baseScenes: Record<string, SceneDefinition> = {
         nextSceneId: 'reno_sewers_victory',
         effect: {
           setFlags: {
+            morbus_defeated: true,
             morbus_fate_decided: true,
             morbus_spared: true,
             clue_morbus_enclave: true,
@@ -1456,6 +1531,7 @@ const baseScenes: Record<string, SceneDefinition> = {
         nextSceneId: 'reno_sewers_victory',
         effect: {
           setFlags: {
+            morbus_defeated: true,
             morbus_fate_decided: true,
             morbus_spared: true,
             morbus_in_hospital: true,
@@ -1477,6 +1553,7 @@ const baseScenes: Record<string, SceneDefinition> = {
         nextSceneId: 'reno_sewers_victory',
         effect: {
           setFlags: {
+            morbus_defeated: true,
             morbus_fate_decided: true,
             morbus_killed: true,
           },
@@ -1520,6 +1597,11 @@ const baseScenes: Record<string, SceneDefinition> = {
           incrementCounters: { vault_openness: -1 },
           xpDelta: 75,
         },
+      },
+      {
+        id: 'return_to_mid_from_victory',
+        text: 'Wróć w głąb kanałów (Sektor 2: Zbiornik Filtracyjny)',
+        nextSceneId: 'reno_sewers_mid',
       },
       {
         id: 'open_map_after_reno_victory',

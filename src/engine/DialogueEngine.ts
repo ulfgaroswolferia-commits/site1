@@ -21,11 +21,35 @@ export function getSceneDescription(state: GameState, scene: SceneDefinition): s
   return scene.description;
 }
 
+export function isMorbusDefeated(state: GameState): boolean {
+  return Boolean(
+    state.flags.morbus_defeated ||
+    state.flags.morbus_fate_decided ||
+    state.flags.morbus_spared ||
+    state.flags.morbus_killed ||
+    state.flags.morbus_in_hospital
+  );
+}
+
 export function getAvailableChoices(state: GameState, choices: SceneChoice[]): SceneChoice[] {
   const counters = state.counters ?? {};
+  const morbusDefeated = isMorbusDefeated(state);
+
   return choices.filter((c) => {
-    if (c.requiredFlag && !state.flags[c.requiredFlag]) return false;
-    if (c.forbiddenFlag && state.flags[c.forbiddenFlag]) return false;
+    if (c.requiredFlag) {
+      if (c.requiredFlag === 'morbus_defeated') {
+        if (!morbusDefeated) return false;
+      } else if (!state.flags[c.requiredFlag]) {
+        return false;
+      }
+    }
+    if (c.forbiddenFlag) {
+      if (c.forbiddenFlag === 'morbus_defeated') {
+        if (morbusDefeated) return false;
+      } else if (state.flags[c.forbiddenFlag]) {
+        return false;
+      }
+    }
     if (c.requiredItem && (state.character.inventory[c.requiredItem] ?? 0) <= 0) return false;
     if (c.requiredCaps && state.character.caps < c.requiredCaps) return false;
     if (c.minCounter && (counters[c.minCounter.key] ?? 0) < c.minCounter.value) return false;
@@ -92,17 +116,36 @@ export function applyChoiceEffect(state: GameState, effect?: ChoiceEffect): Game
   }
   if (effect.setQuestState) {
     const { questId, status, stage } = effect.setQuestState;
-    const prevStage = next.quests[questId]?.stage ?? '';
-    next = {
-      ...next,
-      quests: {
-        ...next.quests,
-        [questId]: {
-          status,
-          stage: stage ?? prevStage,
+    const currentQuest = next.quests[questId];
+    const prevStatus = currentQuest?.status;
+    const prevStage = currentQuest?.stage ?? '';
+
+    if (prevStatus === 'completed' && status !== 'completed') {
+      // Keep completed status
+    } else if (
+      questId === 'ch2_new_reno' &&
+      stage === 'investigate_city' &&
+      (prevStage === 'defeat_morbus' || prevStage === 'return_overseer' || prevStatus === 'completed')
+    ) {
+      // Do not demote ch2_new_reno if player has progressed past investigate_city
+    } else if (
+      questId === 'ch2_new_reno' &&
+      stage === 'defeat_morbus' &&
+      (prevStage === 'return_overseer' || prevStatus === 'completed' || isMorbusDefeated(next))
+    ) {
+      // Do not demote ch2_new_reno if Morbus has already been defeated
+    } else {
+      next = {
+        ...next,
+        quests: {
+          ...next.quests,
+          [questId]: {
+            status,
+            stage: stage ?? prevStage,
+          },
         },
-      },
-    };
+      };
+    }
   }
   if (effect.xpDelta) {
     next = grantXp(next, effect.xpDelta);

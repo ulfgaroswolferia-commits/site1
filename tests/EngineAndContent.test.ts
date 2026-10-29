@@ -283,4 +283,123 @@ describe('DialogueEngine, WastelandTravel, SaveManager & Content Integrity', () 
     expect(description).toContain('Mściwej Żmii');
     expect(description).not.toContain('Korg ryczy');
   });
+
+  it('prevents fighting Doctor Morbus repeatedly after defeat, sparing, or execution', async () => {
+    let state = createNewGameState('Max', { STR: 8, PER: 8, END: 8, CHA: 8, INT: 8, AGI: 8 });
+    state.flags.sewer_rats_cleared = true;
+    state.flags.sewer_mid_ghoul_cleared = true;
+    state.flags.sewer_mid_devourer_cleared = true;
+
+    // 1. Before confronting Morbus: combat choices are available in reno_sewers_boss
+    state.currentSceneId = 'reno_sewers_boss';
+    let bossChoices = getAvailableChoices(state, SCENES.reno_sewers_boss.choices);
+    expect(bossChoices.some((c) => c.id === 'boss_solo_full_fight')).toBe(true);
+    expect(bossChoices.some((c) => c.id === 'boss_hack_pumps')).toBe(true);
+    expect(bossChoices.some((c) => c.id === 'retreat_from_boss_to_mid')).toBe(true);
+    expect(bossChoices.some((c) => c.id === 'go_to_purifier_station')).toBe(false);
+
+    // Initial description shows Morbus shouting
+    let desc = getSceneDescription(state, SCENES.reno_sewers_boss);
+    expect(desc).toContain('Nikt mnie nie powstrzyma');
+
+    // 2. In reno_sewers_mid, enter_morbus_lair is available before defeat
+    state.currentSceneId = 'reno_sewers_mid';
+    let midChoices = getAvailableChoices(state, SCENES.reno_sewers_mid.choices);
+    expect(midChoices.some((c) => c.id === 'enter_morbus_lair')).toBe(true);
+    expect(midChoices.some((c) => c.id === 'enter_cleared_morbus_lair')).toBe(false);
+
+    // 3. Fight and defeat Morbus in combat
+    const fightChoice = bossChoices.find((c) => c.id === 'boss_solo_full_fight')!;
+    state = selectChoice(state, fightChoice);
+    expect(state.combat).not.toBeNull();
+    expect(state.combat?.enemyId).toBe('doctor_morbus_full');
+
+    // Reduce enemy HP to 0 and perform finishing blow
+    state.combat!.enemyHp = 1;
+    const { performPlayerAttack } = await import('../src/engine/CombatEngine.js');
+    state = performPlayerAttack(state, 'standard', 'torso', () => 0.1);
+
+    expect(state.combat).toBeNull();
+    expect(state.currentSceneId).toBe('reno_sewers_victory');
+    expect(state.flags.morbus_defeated).toBe(true);
+    expect(state.character.inventory.reno_purifier_seal).toBe(1);
+    expect(state.quests.ch2_new_reno?.stage).toBe('return_overseer');
+
+    // 4. Now Morbus is defeated. Re-checking reno_sewers_boss:
+    state.currentSceneId = 'reno_sewers_boss';
+    bossChoices = getAvailableChoices(state, SCENES.reno_sewers_boss.choices);
+    expect(bossChoices.some((c) => c.id === 'boss_solo_full_fight')).toBe(false);
+    expect(bossChoices.some((c) => c.id === 'boss_attack_with_jackals')).toBe(false);
+    expect(bossChoices.some((c) => c.id === 'boss_use_hospital_serum')).toBe(false);
+    expect(bossChoices.some((c) => c.id === 'boss_hack_pumps')).toBe(false);
+    expect(bossChoices.some((c) => c.id === 'retreat_from_boss_to_mid')).toBe(false);
+
+    // Navigation choices are now available instead
+    expect(bossChoices.some((c) => c.id === 'go_to_purifier_station')).toBe(true);
+    expect(bossChoices.some((c) => c.id === 'leave_boss_lair_to_mid')).toBe(true);
+    expect(bossChoices.some((c) => c.id === 'leave_boss_lair_to_city')).toBe(true);
+
+    desc = getSceneDescription(state, SCENES.reno_sewers_boss);
+    expect(desc).toContain('definitywnie pokonany');
+    expect(desc).not.toContain('Nikt mnie nie powstrzyma');
+
+    // 5. In reno_sewers_mid, enter_morbus_lair is forbidden, enter_cleared_morbus_lair is available
+    state.currentSceneId = 'reno_sewers_mid';
+    midChoices = getAvailableChoices(state, SCENES.reno_sewers_mid.choices);
+    expect(midChoices.some((c) => c.id === 'enter_morbus_lair')).toBe(false);
+    expect(midChoices.some((c) => c.id === 'enter_cleared_morbus_lair')).toBe(true);
+
+    // Using enter_cleared_morbus_lair does NOT demote quest back to defeat_morbus
+    const clearedChoice = midChoices.find((c) => c.id === 'enter_cleared_morbus_lair')!;
+    state = selectChoice(state, clearedChoice);
+    expect(state.currentSceneId).toBe('reno_sewers_boss');
+    expect(state.quests.ch2_new_reno?.stage).toBe('return_overseer');
+
+    // 6. Leaving sewers to reno_gates does NOT demote quest stage to investigate_city
+    state.currentSceneId = 'reno_gates';
+    const gatesScene = getCurrentScene(state);
+    if (gatesScene.onEnterEffect) {
+      state = selectChoice(state, {
+        id: 'dummy',
+        text: 'enter gates',
+        nextSceneId: 'reno_gates',
+        effect: gatesScene.onEnterEffect,
+      });
+    }
+    expect(state.quests.ch2_new_reno?.stage).toBe('return_overseer');
+
+    // 7. Test sparing or execution: choices cannot be repeated
+    state.currentSceneId = 'reno_sewers_victory';
+    const victoryChoices = getAvailableChoices(state, SCENES.reno_sewers_victory.choices);
+    const executeChoice = victoryChoices.find((c) => c.id === 'execute_morbus')!;
+    expect(executeChoice).toBeDefined();
+    state = selectChoice(state, executeChoice);
+    expect(state.flags.morbus_killed).toBe(true);
+    expect(state.flags.morbus_fate_decided).toBe(true);
+
+    // Now fate decision choices must be hidden in victory scene
+    const postFateChoices = getAvailableChoices(state, SCENES.reno_sewers_victory.choices);
+    expect(postFateChoices.some((c) => c.id === 'execute_morbus')).toBe(false);
+    expect(postFateChoices.some((c) => c.id === 'spare_morbus_testify')).toBe(false);
+    expect(postFateChoices.some((c) => c.id === 'spare_morbus_hospital')).toBe(false);
+
+    // Description reflects execution
+    const victoryDesc = getSceneDescription(state, SCENES.reno_sewers_victory);
+    expect(victoryDesc).toContain('Ciało pokonanego Doktora Morbusa');
+
+    // Boss room description also reflects execution
+    state.currentSceneId = 'reno_sewers_boss';
+    desc = getSceneDescription(state, SCENES.reno_sewers_boss);
+    expect(desc).toContain('martwego Doktora Morbusa');
+
+    // 8. Legacy state check: even if only morbus_fate_decided/morbus_spared is present without morbus_defeated flag
+    delete state.flags.morbus_defeated;
+    state.flags.morbus_spared = true;
+    delete state.flags.morbus_killed;
+    bossChoices = getAvailableChoices(state, SCENES.reno_sewers_boss.choices);
+    expect(bossChoices.some((c) => c.id === 'boss_solo_full_fight')).toBe(false);
+    expect(bossChoices.some((c) => c.id === 'go_to_purifier_station')).toBe(true);
+    desc = getSceneDescription(state, SCENES.reno_sewers_boss);
+    expect(desc).toContain('kapitulacji i złożenia zeznań');
+  });
 });

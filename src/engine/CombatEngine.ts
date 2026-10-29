@@ -81,6 +81,24 @@ function resolveCombatVictory(state: GameState): GameState {
   if (enemy?.xpReward) {
     nextState = grantXp(nextState, enemy.xpReward);
   }
+
+  if (combat.enemyId === 'doctor_morbus_full' || combat.enemyId === 'doctor_morbus_weakened') {
+    nextState = {
+      ...nextState,
+      flags: {
+        ...nextState.flags,
+        morbus_defeated: true,
+      },
+      quests: {
+        ...nextState.quests,
+        ch2_new_reno: {
+          status: 'active',
+          stage: 'return_overseer',
+        },
+      },
+    };
+  }
+
   return nextState;
 }
 

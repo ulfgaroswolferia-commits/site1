@@ -1,6 +1,6 @@
 {
   "name": "krypta-73-rpg",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Krypta 73: Popioły Nowego Świtu — postapokaliptyczna tekstowa gra RPG w terminalu (VS Code / PhpStorm) z interfejsem Pip-Boy 3000.",
   "keywords": [
     "rpg",
