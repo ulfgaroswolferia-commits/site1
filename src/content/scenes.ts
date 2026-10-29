@@ -164,6 +164,9 @@ const baseScenes: Record<string, SceneDefinition> = {
         nextSceneId: 'ending_water_chip_saved',
         effect: {
           removeItems: { water_chip: 1 },
+          addItems: { stimpak: 2, ammo_energy: 8, ammo_rifle: 8 },
+          hpDelta: 200,
+          radDelta: -100,
           setQuestState: { questId: 'ch3_water_chip', status: 'completed', stage: 'completed' },
           xpDelta: 600,
         },
@@ -175,6 +178,9 @@ const baseScenes: Record<string, SceneDefinition> = {
         nextSceneId: 'ending_water_chip_saved',
         effect: {
           removeItems: { ncr_annexation_writ: 1 },
+          addItems: { stimpak: 2, ammo_energy: 8, ammo_rifle: 8 },
+          hpDelta: 200,
+          radDelta: -100,
           setFlags: { v13_ncr_annexed: true },
           incrementCounters: { vault_openness: 2 },
           setQuestState: { questId: 'ch3_water_chip', status: 'completed', stage: 'completed' },

@@ -5,9 +5,9 @@ import { getEffectiveMaxHp } from './CharacterSystem.js';
 const DEFAULT_AMMO_FOR_WEAPON: Record<string, { ammoId: string; qty: number }> = {
   pipe_pistol: { ammoId: 'ammo_10mm', qty: 12 },
   laser_rifle: { ammoId: 'ammo_energy', qty: 10 },
-  plasma_rifle: { ammoId: 'ammo_energy', qty: 10 },
-  sniper_rifle: { ammoId: 'ammo_rifle', qty: 10 },
-  minigun: { ammoId: 'ammo_rifle', qty: 15 },
+  plasma_rifle: { ammoId: 'ammo_energy', qty: 15 },
+  sniper_rifle: { ammoId: 'ammo_rifle', qty: 12 },
+  minigun: { ammoId: 'ammo_rifle', qty: 20 },
 };
 
 const AMMO_SHORT_NAMES: Record<string, string> = {

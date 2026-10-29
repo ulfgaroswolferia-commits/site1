@@ -72,5 +72,9 @@ describe('CharacterSystem', () => {
     expect(state.character.level).toBe(3);
     expect(state.character.attributes.PER).toBe(6); // +1 na lvl 3
     expect(state.character.perks).not.toContain('robco_hacker'); // nie przysługuje na lvl 3
+
+    // Verify XP progression supports reaching Level 12-13 in late game
+    state = grantXp(state, 5000);
+    expect(state.character.level + state.character.pendingLevelUps).toBe(13);
   });
 });

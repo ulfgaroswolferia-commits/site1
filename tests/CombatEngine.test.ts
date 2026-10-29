@@ -73,4 +73,19 @@ describe('CombatEngine', () => {
     state = performPlayerAttack(state, 'standard', 'torso', () => 0.1);
     expect(state.combat?.log.some((l) => l.includes('BRAK AMUNICJI'))).toBe(true);
   });
+
+  it('applies plasma_master accuracy bonus and wasteland_legend dodge/flee bonuses', () => {
+    let state = createNewGameState('Max', createInitialAttributes());
+    state = startCombat(state, 'wasteland_raider', 'crater_hub', 'crater_hub');
+    const baseVatsTorso = getVatsHitChance(state, 'torso');
+
+    state.character.perks.push('plasma_master');
+    expect(getVatsHitChance(state, 'torso')).toBe(baseVatsTorso + 10);
+
+    // wasteland_legend gives +10% flee chance (40 + 5*5 = 65% -> 75% with perk)
+    state.character.perks.push('wasteland_legend');
+    // Roll 0.70 (71) fails at 65% but succeeds at 75%
+    const fled = attemptFlee(state, () => 0.7);
+    expect(fled.combat).toBeNull();
+  });
 });

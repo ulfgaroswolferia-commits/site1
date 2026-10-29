@@ -42,7 +42,9 @@ export function getVatsHitChance(state: GameState, part: BodyPart): number {
   const weaponAcc = weapon?.accuracyBonus ?? 0;
   const base = 65 + state.character.attributes.PER * 3 + weaponAcc;
 
-  let modifier = state.character.perks.includes('reno_gunslinger') ? 10 : 0;
+  let modifier =
+    (state.character.perks.includes('reno_gunslinger') ? 10 : 0) +
+    (state.character.perks.includes('plasma_master') ? 10 : 0);
   if (part === 'head') {
     modifier += -25 + (state.character.perks.includes('vats_sniper') ? 15 : 0);
   } else if (part === 'limbs') {
@@ -118,7 +120,7 @@ export function performPlayerAttack(
 
   const perkBonusDmg = workingState.character.perks.includes('plasma_master') ? 10 : 0;
   const baseDamage = outOfAmmo
-    ? 8 + workingState.character.attributes.STR
+    ? 10 + workingState.character.attributes.STR + workingState.character.level
     : (weapon?.damage ?? 8) +
       perkBonusDmg +
       (weapon?.isMelee
@@ -131,7 +133,13 @@ export function performPlayerAttack(
     : mode === 'standard'
     ? Math.max(
         25,
-        Math.min(95, 70 + workingState.character.attributes.PER * 3 + (weapon?.accuracyBonus ?? 0))
+        Math.min(
+          95,
+          70 +
+            workingState.character.attributes.PER * 3 +
+            (weapon?.accuracyBonus ?? 0) +
+            (workingState.character.perks.includes('plasma_master') ? 10 : 0)
+        )
       )
     : getVatsHitChance(workingState, targetPart);
 
@@ -275,7 +283,8 @@ export function endPlayerTurn(state: GameState, rng: () => number = Math.random)
     };
   }
 
-  const playerDodge = state.character.attributes.AGI * 2 + dodgeBonus;
+  const legendDodgeBonus = state.character.perks.includes('wasteland_legend') ? 10 : 0;
+  const playerDodge = state.character.attributes.AGI * 2 + dodgeBonus + legendDodgeBonus;
   const enemyHitChance = Math.max(15, Math.min(90, (enemy?.accuracy ?? 65) - playerDodge));
   const roll = Math.floor(rng() * 100) + 1;
 
@@ -334,7 +343,8 @@ export function attemptFlee(state: GameState, rng: () => number = Math.random): 
   const combat = state.combat;
   if (!combat || combat.isBoss || combat.playerAp < 3) return state;
 
-  const chance = Math.min(90, 40 + state.character.attributes.AGI * 5);
+  const legendFleeBonus = state.character.perks.includes('wasteland_legend') ? 10 : 0;
+  const chance = Math.min(90, 40 + state.character.attributes.AGI * 5 + legendFleeBonus);
   const roll = Math.floor(rng() * 100) + 1;
 
   if (roll <= chance) {

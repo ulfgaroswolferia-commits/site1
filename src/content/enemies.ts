@@ -239,6 +239,7 @@ export const ENEMIES: Record<string, EnemyDefinition> = {
     xpReward: 500,
     capsReward: 300,
     lootItemId: 'water_chip',
+    ammoDrop: { ammoId: 'ammo_energy', qty: 10 },
     isBoss: true,
   },
   annihilator_sentry_weakened: {
@@ -253,6 +254,7 @@ export const ENEMIES: Record<string, EnemyDefinition> = {
     xpReward: 500,
     capsReward: 300,
     lootItemId: 'water_chip',
+    ammoDrop: { ammoId: 'ammo_energy', qty: 10 },
     isBoss: true,
   },
   viper_rust_leader: {
@@ -267,6 +269,7 @@ export const ENEMIES: Record<string, EnemyDefinition> = {
     xpReward: 220,
     capsReward: 130,
     lootItemId: 'pulse_grenade',
+    ammoDrop: { ammoId: 'ammo_10mm', qty: 8 },
     isBoss: true,
   },
   reno_pit_champion: {
