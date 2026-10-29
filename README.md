@@ -47,12 +47,12 @@ npx krypta-73-rpg
 
 ### Opcja B: Instalacja z pliku paczki (`.tgz`)
 
-1. Pobierz plik `krypta-73-rpg-1.0.3.tgz` do dowolnego folderu na dysku.
+1. Pobierz plik `krypta-73-rpg-1.0.4.tgz` do dowolnego folderu na dysku.
 2. Otwórz terminal (w VS Code, PhpStorm, PowerShell lub CMD) w folderze z plikiem `.tgz`.
 3. Zainstaluj grę globalnie poleceniem:
 
 ```bash
-npm install -g ./krypta-73-rpg-1.0.3.tgz
+npm install -g ./krypta-73-rpg-1.0.4.tgz
 ```
 
 ---
@@ -98,7 +98,7 @@ npm install -g krypta-73-rpg@latest
 Lub przy instalacji z nowego pliku `.tgz`:
 
 ```bash
-npm install -g --force ./krypta-73-rpg-1.0.3.tgz
+npm install -g --force ./krypta-73-rpg-1.0.4.tgz
 ```
 
 Zapisy gry (plik `saves/savegame.json`) pozostają w 100% bezpieczne i zachowane.
