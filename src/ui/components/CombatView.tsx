@@ -136,7 +136,7 @@ export const CombatView: React.FC<Props> = ({
         borderStyle="single"
         borderColor={THEME.danger}
         paddingX={2}
-        paddingY={1}
+        paddingY={0}
       >
         <Box justifyContent="space-between">
           <Text color={THEME.danger} bold>
@@ -145,11 +145,11 @@ export const CombatView: React.FC<Props> = ({
             {combat.enemyWeakenedTurns > 0 ? ' [OSŁABIONY]' : ''}
           </Text>
           <Text color={THEME.amber} bold>
-            TURA: {combat.turn} | PUNKTY AKCJI (AP): {combat.playerAp}/{combat.playerMaxAp}
+            TURA: {combat.turn} | AP: {combat.playerAp}/{combat.playerMaxAp}
           </Text>
         </Box>
         <Text color={THEME.danger}>
-          HP WROGA: [{renderBar(combat.enemyHp, combat.enemyMaxHp, 16)}] {combat.enemyHp}/{combat.enemyMaxHp}
+          HP WROGA: [{renderBar(combat.enemyHp, combat.enemyMaxHp, 12)}] {combat.enemyHp}/{combat.enemyMaxHp}
         </Text>
         <Text color={THEME.cyan}>
           TWOJA BROŃ: {equippedWeapon ? `${equippedWeapon.name} ${formatItemStats(equippedWeapon)}` : 'Pięści [DMG: 8 | AP: 3]'}
@@ -157,8 +157,8 @@ export const CombatView: React.FC<Props> = ({
             ? ` | Zapas amunicji: ${ammoCount} szt.${outOfAmmo ? ' [BRAK AMUNICJI!]' : ''}`
             : ''}
         </Text>
-        <Box flexDirection="column" marginTop={1}>
-          {combat.log.slice(-4).map((entry, idx) => (
+        <Box flexDirection="column" marginTop={0}>
+          {combat.log.slice(-3).map((entry, idx) => (
             <Text key={idx} color={THEME.primary}>
               • {entry}
             </Text>
@@ -171,7 +171,7 @@ export const CombatView: React.FC<Props> = ({
         borderStyle="single"
         borderColor={THEME.primary}
         paddingX={2}
-        paddingY={1}
+        paddingY={0}
       >
         <Text color={THEME.amber} bold>
           {vatsMenu ? `SYSTEM V.A.T.S. — WYBIERZ CEL (${vatsAp} AP):` : 'DOSTĘPNE AKCJE BOJOWE:'}

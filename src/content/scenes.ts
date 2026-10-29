@@ -1621,7 +1621,7 @@ const baseScenes: Record<string, SceneDefinition> = {
     title: 'KONIEC ROZDZIAŁU 2: Zastępca Nadzorcy — Rok Później: Kryzys Wodny',
     locationId: 'vault_73',
     description:
-      'Minął dokładnie rok, odkąd jako Zastępca Nadzorcy zaprowadziłeś pokój i dobrobyt w Krypcie 73. Niestety, w samym sercu schronu dochodzi do katastrofy — główny Water Chip (Hydroprocesor) stopił się pod wpływem przeciążenia obwodów. Zapasów zdatnej do picia wody wystarczy na zaledwie 2 miesiące!\n\nNadzorca zwołuje naradę kryzysową:\n„Wędrowcze, jesteś naszą jedyną nadzieją. Przedwojenne rejestry mówią o mitycznej Krypcie 13 — bliźniaczym schronie, który posiadał zapasowe moduły oczyszczania wody. Nikt nie zna jej dokładnej lokalizacji, ale starszyzna z plemiennej wioski Arroyo na północy może pamiętać pradawne legendy o Krypcie 13. Wyrusz do Arroyo, odnajdź drogę do Krypty 13 i ocal nas!”',
+      'Minął rok, odkąd jako Zastępca Nadzorcy ocaliłeś Kryptę 73. W schronie dochodzi jednak do katastrofy — główny Water Chip stopił się od przeciążenia! Zapasów wody wystarczy na 2 miesiące.\nNadzorca zwołuje naradę kryzysową:\n„Wędrowcze, jesteś naszą jedyną nadzieją. Rejestry mówią o Krypcie 13 z zapasowymi układami. Wyrusz do wioski Arroyo na północy — ich starszyzna pamięta legendy o Krypcie 13!”',
     choices: [
       {
         id: 'start_chapter_3_crisis',
@@ -1644,7 +1644,7 @@ const baseScenes: Record<string, SceneDefinition> = {
       setQuestState: { questId: 'ch3_water_chip', status: 'active', stage: 'help_arroyo' },
     },
     description:
-      'Docierasz do skalistego kanionu, w którym mieści się plemienna wioska Arroyo. Przy świętym ognisku modli się Starsza Hakunin:\n\n„Witaj, wędrowcze w błękitnym stroju Pradawnych. Słyszę szept wiatru — szukasz Krypty 13, kolebki naszych przodków. Nasz lud przekaże Ci wiedzę i skieruje Cię do Nowej Republiki Kalifornii (NCR), gdzie mają przedwojenne mapy. Ale najpierw musisz nam pomóc — horda krwiożerczych bestii pustkowi napadła na nasze święte pastwiska Brahminów. Jeśli bydło padnie, plemię wymrze z głodu!”',
+      'Docierasz do skalistego kanionu z plemienną wioską Arroyo. Przy świętym ognisku modli się Starsza Hakunin:\n„Witaj, wędrowcze w stroju Pradawnych. Szukasz Krypty 13? Nasz lud wskaże Ci drogę do NCR, ale najpierw ocal nasze pastwiska przed krwiożerczymi bestiami pustkowi — bez Brahminów plemię wymrze z głodu!”',
     choices: [
       {
         id: 'go_arroyo_pasture',
@@ -2148,7 +2148,7 @@ const baseScenes: Record<string, SceneDefinition> = {
     title: 'Krypta 13 — Sanktuarium Ocalałych i Nadzorca Lazarus',
     locationId: 'vault_13',
     description:
-      'Krypta 13 nie jest martwa! W oświetlonym świetlówkami atrium żyje społeczność ocalałych mieszkańców oraz świadomych, łagodnych ghuli-inżynierów pod przywództwem sędziwego Nadzorcy Lazarusa.\n\nLazarus staje przed grodzią prowadzącą do Hydroprocesora:\n„Zatrzymaj się, Wędrowcze z Krypty 73! Ten Water Chip w naszym laboratorium to ostatni działający układ w całym kompleksie. Jeśli wyrwiesz go siłą, nasza aparatura podtrzymująca życie stanie, a wszyscy mieszkańcy Krypty 13 zginą w ciągu tygodnia! Musi istnieć inne wyjście!”',
+      'Krypta 13 nie jest martwa! W atrium żyje społeczność ocalałych oraz świadomych ghuli-inżynierów pod wodzą Nadzorcy Lazarusa.\nLazarus staje przed grodzią reaktora:\n„Zatrzymaj się! Ten Water Chip to ostatni działający układ w całym kompleksie. Jeśli wyrwiesz go siłą, nasza aparatura stanie i zginiemy w tydzień! Musi istnieć inne wyjście!”',
     choices: [
       {
         id: 'show_arroyo_talisman_lazarus',

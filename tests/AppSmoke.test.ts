@@ -3,6 +3,10 @@ import React from 'react';
 import { App } from '../src/ui/App.js';
 import { PipBoyOverlay } from '../src/ui/components/PipBoyOverlay.js';
 import { ExplorationView } from '../src/ui/components/ExplorationView.js';
+import { WorldMapView } from '../src/ui/components/WorldMapView.js';
+import { MerchantView } from '../src/ui/components/MerchantView.js';
+import { HeaderStatus } from '../src/ui/components/HeaderStatus.js';
+import { CombatView } from '../src/ui/components/CombatView.js';
 import { createInitialAttributes, createNewGameState } from '../src/engine/CharacterSystem.js';
 import { renderBar, THEME } from '../src/ui/theme.js';
 
@@ -61,13 +65,86 @@ describe('UI Smoke Test', () => {
     expect(questsOverlay).toBeDefined();
   });
 
-  it('renders ExplorationView cleanly with compact spacing', () => {
+  it('renders ExplorationView cleanly with compact spacing for Arroyo scene', () => {
     const state = createNewGameState('Wędrowiec', createInitialAttributes());
+    state.flags.arroyo_unlocked = true;
+    state.currentLocationId = 'arroyo';
+    state.currentSceneId = 'arroyo_village';
+    state.eventLog.push('Dotarto do lokacji: Wioska Arroyo.');
+
     const exploration = React.createElement(ExplorationView, {
       state,
       onSelectChoice: () => {},
       onReturnToTitle: () => {},
     });
     expect(exploration).toBeDefined();
+  });
+
+  it('renders WorldMapView cleanly with Chapter 3 locations unlocked', () => {
+    const state = createNewGameState('Wędrowiec', createInitialAttributes());
+    state.flags.arroyo_unlocked = true;
+    state.flags.ncr_unlocked = true;
+    state.flags.v13_coords_known = true;
+    state.flags.vault_13_unlocked = true;
+
+    const mapView = React.createElement(WorldMapView, {
+      state,
+      onSelectLocation: () => {},
+      onClose: () => {},
+    });
+    expect(mapView).toBeDefined();
+  });
+
+  it('renders HeaderStatus cleanly with water crisis active in Chapter 3', () => {
+    const state = createNewGameState('Wędrowiec', createInitialAttributes());
+    state.flags.arroyo_unlocked = true;
+    state.currentLocationId = 'arroyo';
+    state.counters = { water_days_left: 54, vault_openness: 1 };
+
+    const header = React.createElement(HeaderStatus, {
+      state,
+      modeLabel: 'EKSPLORACJA',
+    });
+    expect(header).toBeDefined();
+  });
+
+  it('renders MerchantView with pagination support cleanly', () => {
+    const state = createNewGameState('Wędrowiec', createInitialAttributes());
+    state.activeMerchantId = 'doc_mitchell';
+
+    const merchantView = React.createElement(MerchantView, {
+      state,
+      onBuy: () => {},
+      onSell: () => {},
+      onClose: () => {},
+    });
+    expect(merchantView).toBeDefined();
+  });
+
+  it('renders CombatView cleanly with compact layouts', () => {
+    const state = createNewGameState('Wędrowiec', createInitialAttributes());
+    state.combat = {
+      enemyId: 'radscorpion_alpha',
+      enemyName: 'Alfa Radskorpion ze Skał Arroyo',
+      enemyHp: 65,
+      enemyMaxHp: 65,
+      enemyAttack: 14,
+      enemyXp: 180,
+      turn: 1,
+      playerAp: 7,
+      playerMaxAp: 7,
+      log: ['Początek starcia z Alfa Radskorpion ze Skał Arroyo!'],
+      isBoss: false,
+    };
+
+    const combatView = React.createElement(CombatView, {
+      state,
+      onStandardAttack: () => {},
+      onVatsAttack: () => {},
+      onUseItem: () => {},
+      onEndTurn: () => {},
+      onFlee: () => {},
+    });
+    expect(combatView).toBeDefined();
   });
 });

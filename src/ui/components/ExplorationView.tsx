@@ -11,6 +11,8 @@ interface Props {
   onReturnToTitle: () => void;
 }
 
+const CHOICES_PAGE_SIZE = 4;
+
 export const ExplorationView: React.FC<Props> = ({
   state,
   onSelectChoice,
@@ -49,6 +51,12 @@ export const ExplorationView: React.FC<Props> = ({
 
   const lastLog = state.eventLog[state.eventLog.length - 1];
 
+  const startIndex = Math.max(
+    0,
+    Math.min(selected - 2, Math.max(0, choices.length - CHOICES_PAGE_SIZE))
+  );
+  const visibleChoices = choices.slice(startIndex, startIndex + CHOICES_PAGE_SIZE);
+
   return (
     <Box flexDirection="column">
       <Box
@@ -65,9 +73,7 @@ export const ExplorationView: React.FC<Props> = ({
           <Text color={THEME.primary}>{getSceneDescription(state, scene)}</Text>
         </Box>
         {lastLog && (
-          <Box borderStyle="round" borderColor={THEME.secondary} paddingX={1} marginY={0}>
-            <Text color={THEME.cyan}>LOG: {lastLog}</Text>
-          </Box>
+          <Text color={THEME.cyan}>LOG: {lastLog}</Text>
         )}
       </Box>
 
@@ -83,9 +89,10 @@ export const ExplorationView: React.FC<Props> = ({
             {'> 1. Powrót do Menu Głównego (Enter)'}
           </Text>
         ) : (
-          choices.map((c, idx) => {
+          visibleChoices.map((c, offset) => {
+            const idx = startIndex + offset;
             const chanceText = c.skillCheck
-              ? ` (Szansa: ${calculateSkillCheckChance(state, c.skillCheck)}%)`
+              ? ` (${calculateSkillCheckChance(state, c.skillCheck)}%)`
               : '';
             const isSel = idx === selected;
             return (

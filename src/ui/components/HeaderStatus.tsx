@@ -41,26 +41,26 @@ export const HeaderStatus: React.FC<Props> = ({ state, modeLabel }) => {
       </Box>
       <Box justifyContent="space-between">
         <Text color={character.hp <= effMaxHp * 0.3 ? THEME.danger : THEME.primary}>
-          HP: [{renderBar(character.hp, effMaxHp, 10)}] {character.hp}/{effMaxHp}
+          HP: [{renderBar(character.hp, effMaxHp, 5)}] {character.hp}/{effMaxHp}
         </Text>
         <Text color={character.rad >= 30 ? THEME.amber : THEME.secondary}>
-          RAD: [{renderBar(character.rad, 100, 8)}] {character.rad}%
+          RAD: {character.rad}%
         </Text>
         <Text color={THEME.amber}>KAPSLE: {character.caps}</Text>
         <Text color={ammoQty !== null && ammoQty <= 4 ? THEME.danger : THEME.secondary}>
           {ammoQty !== null ? `AMMO: ${ammoQty}` : 'BROŃ: WRĘCZ'}
         </Text>
         <Text color={THEME.cyan}>
-          POZ: {character.level} ({character.xp}/{nextXp} XP)
-          {character.pendingLevelUps > 0 ? ' [AWANS! Naciśnij S]' : ''}
+          POZ: {character.level} ({character.xp}/{nextXp})
+          {character.pendingLevelUps > 0 ? ' [AWANS: S]' : ''}
         </Text>
       </Box>
       <Box justifyContent="space-between">
         <Text color={THEME.secondary}>LOKACJA: {locName}</Text>
-        <Text color={THEME.muted}>KRYPTA 73: {factionLabel}</Text>
+        <Text color={THEME.muted}>K73: {factionLabel}</Text>
         {state.flags.arroyo_unlocked && (
           <Text color={waterDays <= 18 ? THEME.danger : THEME.amber} bold>
-            ZAPAS WODY: {waterDays} DNI
+            WODA: {waterDays} DNI
           </Text>
         )}
       </Box>

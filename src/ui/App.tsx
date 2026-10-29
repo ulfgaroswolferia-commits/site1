@@ -188,7 +188,7 @@ export const App: React.FC = () => {
         justifyContent="space-between"
       >
         <Text color={THEME.muted}>
-          [↑/↓ + Enter lub 1-9] Wybór | [S] Statystyki | [I] Ekwipunek | [Q] Zadania | [M] Mapa | [Z] Zapisz
+          [↑/↓/Enter] Wybór | [S] Karta | [I] Plecak | [Q] Misje | [M] Mapa | [Z] Zapis
         </Text>
       </Box>
     </Box>

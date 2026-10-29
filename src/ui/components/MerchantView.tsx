@@ -12,6 +12,8 @@ interface Props {
   onClose: () => void;
 }
 
+const MERCHANT_PAGE_SIZE = 5;
+
 export const MerchantView: React.FC<Props> = ({ state, onBuy, onSell, onClose }) => {
   const [tab, setTab] = useState<'buy' | 'sell'>('buy');
   const [selected, setSelected] = useState(0);
@@ -50,19 +52,25 @@ export const MerchantView: React.FC<Props> = ({ state, onBuy, onSell, onClose })
     }
   });
 
+  const startIndex = Math.max(
+    0,
+    Math.min(safeSelected - 2, Math.max(0, activeItems.length - MERCHANT_PAGE_SIZE))
+  );
+  const visibleItems = activeItems.slice(startIndex, startIndex + MERCHANT_PAGE_SIZE);
+
   return (
     <Box
       flexDirection="column"
       borderStyle="single"
       borderColor={THEME.amber}
       paddingX={2}
-      paddingY={1}
+      paddingY={0}
     >
       <Text color={THEME.amber} bold>
         HANDEL: {merchant.name} | Twoje Kapsle: {state.character.caps}
       </Text>
       <Text color={THEME.secondary}>{merchant.greeting}</Text>
-      <Box marginY={1}>
+      <Box marginY={0}>
         <Text color={tab === 'buy' ? THEME.amber : THEME.muted} bold={tab === 'buy'}>
           [ KUPNO ]
         </Text>
@@ -70,13 +78,14 @@ export const MerchantView: React.FC<Props> = ({ state, onBuy, onSell, onClose })
         <Text color={tab === 'sell' ? THEME.amber : THEME.muted} bold={tab === 'sell'}>
           [ SPRZEDAŻ ]
         </Text>
-        <Text color={THEME.muted}>  (Przełącz: ←/→ lub TAB, Wyjdź: ESC)</Text>
+        <Text color={THEME.muted}>  (Przełącz: ←/→/TAB, Wyjdź: ESC)</Text>
       </Box>
 
       {activeItems.length === 0 ? (
         <Text color={THEME.muted}>Brak przedmiotów na tej liście.</Text>
       ) : (
-        activeItems.map((id, idx) => {
+        visibleItems.map((id, offset) => {
+          const idx = startIndex + offset;
           const item = ITEMS[id];
           const price = tab === 'buy' ? getBuyPrice(state, id) : getSellPrice(state, id);
           const qty = state.character.inventory[id] ?? 0;

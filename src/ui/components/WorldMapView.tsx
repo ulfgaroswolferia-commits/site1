@@ -10,6 +10,8 @@ interface Props {
   onClose: () => void;
 }
 
+const MAP_PAGE_SIZE = 5;
+
 export const WorldMapView: React.FC<Props> = ({ state, onSelectLocation, onClose }) => {
   const available = Object.values(LOCATIONS).filter(
     (loc) => !loc.requiredFlag || state.flags[loc.requiredFlag]
@@ -36,33 +38,43 @@ export const WorldMapView: React.FC<Props> = ({ state, onSelectLocation, onClose
     }
   });
 
+  const startIndex = Math.max(
+    0,
+    Math.min(selected - 2, Math.max(0, available.length - MAP_PAGE_SIZE))
+  );
+  const visible = available.slice(startIndex, startIndex + MAP_PAGE_SIZE);
+  const selectedLoc = available[selected];
+
   return (
     <Box
       flexDirection="column"
       borderStyle="single"
       borderColor={THEME.primary}
       paddingX={2}
-      paddingY={1}
+      paddingY={0}
     >
       <Text color={THEME.amber} bold>
-        MAPA SEKTORA PUSTKOWI — WYBIERZ CEL PODRÓŻY:
+        MAPA SEKTORA PUSTKOWI — WYBIERZ CEL PODRÓŻY ({selected + 1}/{available.length}):
       </Text>
-      <Box flexDirection="column" marginY={1}>
-        {available.map((loc, idx) => {
+      <Box flexDirection="column" marginY={0}>
+        {visible.map((loc, offset) => {
+          const idx = startIndex + offset;
           const isCurrent = loc.id === state.currentLocationId;
           const isSel = idx === selected;
           return (
-            <Box key={loc.id} flexDirection="column" marginBottom={1}>
-              <Text color={isSel ? THEME.amber : THEME.primary} bold={isSel}>
-                {isSel ? '> ' : '  '}
-                {idx + 1}. {loc.name} {isCurrent ? '[TUTAJ JESTEŚ]' : ''}
-              </Text>
-              <Text color={THEME.muted}>    {loc.description}</Text>
-            </Box>
+            <Text key={loc.id} color={isSel ? THEME.amber : THEME.primary} bold={isSel}>
+              {isSel ? '> ' : '  '}
+              {idx + 1}. {loc.name} {isCurrent ? '[TUTAJ JESTEŚ]' : ''}
+            </Text>
           );
         })}
       </Box>
-      <Text color={THEME.muted}>[Enter / 1-8] Podróżuj | [ESC] Zamknij mapę</Text>
+      {selectedLoc && (
+        <Text color={THEME.cyan}>
+          CEL: {selectedLoc.name} — {selectedLoc.description}
+        </Text>
+      )}
+      <Text color={THEME.muted}>[↑/↓] Wybór | [Enter / 1-{available.length}] Podróż | [ESC / M] Zamknij</Text>
     </Box>
   );
 };

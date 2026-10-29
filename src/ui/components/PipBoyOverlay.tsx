@@ -18,6 +18,7 @@ interface Props {
 const ATTRS: AttributeKey[] = ['STR', 'PER', 'END', 'CHA', 'INT', 'AGI'];
 const PERKS_PAGE_SIZE = 3;
 const INV_PAGE_SIZE = 5;
+const QUESTS_PAGE_SIZE = 3;
 
 export const PipBoyOverlay: React.FC<Props> = ({
   state,
@@ -53,6 +54,17 @@ export const PipBoyOverlay: React.FC<Props> = ({
       } else if (key.return) {
         const itemId = invEntries[safeInvSelected]?.[0];
         if (itemId) onEquipOrUse(itemId);
+      }
+    }
+
+    if (tab === 'quests') {
+      const qEntries = Object.entries(state.quests);
+      if (qEntries.length > 0) {
+        if (key.upArrow) {
+          setSelected((prev) => (prev - 1 + qEntries.length) % qEntries.length);
+        } else if (key.downArrow) {
+          setSelected((prev) => (prev + 1) % qEntries.length);
+        }
       }
     }
 
@@ -237,31 +249,41 @@ export const PipBoyOverlay: React.FC<Props> = ({
         </Box>
       )}
 
-      {tab === 'quests' && (
-        <Box flexDirection="column">
-          <Text color={THEME.amber} bold>
-            DZIENNIK ZADAŃ PIP-BOY
-          </Text>
-          <Box marginY={0} flexDirection="column">
-            {Object.entries(state.quests).map(([questId, qState]) => {
-              const def = QUESTS[questId];
-              if (!def) return null;
-              const stageDesc = def.stages[qState.stage] ?? '';
-              return (
-                <Box key={questId} flexDirection="column" marginBottom={0}>
-                  <Text
-                    color={qState.status === 'completed' ? THEME.secondary : THEME.amber}
-                    bold
-                  >
-                    • {def.title} [{qState.status === 'completed' ? 'UKOŃCZONE' : 'AKTYWNE'}]
-                  </Text>
-                  <Text color={THEME.primary}>  Cel: {stageDesc}</Text>
-                </Box>
-              );
-            })}
+      {tab === 'quests' && (() => {
+        const questEntries = Object.entries(state.quests);
+        const qStartIndex = Math.max(
+          0,
+          Math.min(selected - 1, Math.max(0, questEntries.length - QUESTS_PAGE_SIZE))
+        );
+        const visibleQuests = questEntries.slice(qStartIndex, qStartIndex + QUESTS_PAGE_SIZE);
+        return (
+          <Box flexDirection="column">
+            <Text color={THEME.amber} bold>
+              DZIENNIK ZADAŃ PIP-BOY ({selected + 1}/{questEntries.length || 1})
+            </Text>
+            <Box marginY={0} flexDirection="column">
+              {visibleQuests.map(([questId, qState], offset) => {
+                const idx = qStartIndex + offset;
+                const def = QUESTS[questId];
+                if (!def) return null;
+                const stageDesc = def.stages[qState.stage] ?? '';
+                const isSel = idx === selected;
+                return (
+                  <Box key={questId} flexDirection="column" marginBottom={0}>
+                    <Text
+                      color={qState.status === 'completed' ? THEME.secondary : THEME.amber}
+                      bold={isSel}
+                    >
+                      {isSel ? '> ' : '  '}• {def.title} [{qState.status === 'completed' ? 'UKOŃCZONE' : 'AKTYWNE'}]
+                    </Text>
+                    <Text color={THEME.primary}>    Cel: {stageDesc}</Text>
+                  </Box>
+                );
+              })}
+            </Box>
           </Box>
-        </Box>
-      )}
+        );
+      })()}
 
       <Text color={THEME.muted}>[ESC] Zamknij zakładkę Pip-Boya</Text>
     </Box>
