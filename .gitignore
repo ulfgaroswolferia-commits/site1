@@ -31,3 +31,6 @@ node_modules/
 
 # Ustawienia lokalne Claude Code (CLAUDE.md ZOSTAJE w repo — to dokumentacja konwencji)
 .claude/settings.local.json
+
+# Odrębne lokalne projekty w www
+Bielice/

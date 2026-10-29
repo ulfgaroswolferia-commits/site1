@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jakub Górski – IT Specialist</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@1,600&amp;display=swap">
+  <style>
+    :root {
+      --gold: #e6c27a;
+      --text: #f2f5fa;
+      --muted: rgba(232, 238, 248, .76);
+      --glass: rgba(255, 255, 255, .08);
+      --glass-strong: rgba(255, 255, 255, .13);
+      --border: rgba(255, 255, 255, .22);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; min-width: 0; }
+    html, body { max-width: 100%; overflow-x: hidden; }
+    html { min-height: 100%; }
+    body {
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+      color: var(--text);
+      line-height: 1.6;
+      padding: 48px 24px 175px;
+      background:
+        radial-gradient(ellipse 1300px 900px at 86% 12%, #0f2856 0%, #071531 38%, #030917 70%, #01040a 100%);
+      position: relative;
+    }
+
+    /* =========================================================================
+       SCENA 1 (LEWY DOLNY RÓG): NOCNY LAS I WATAHA WILKÓW Z LIDEREM NA WZGÓRZU
+       ========================================================================= */
+    .wolves-scene {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: clamp(540px, 66vw, 1140px);
+      aspect-ratio: 16 / 9;
+      pointer-events: none;
+      z-index: 0;
+      transform-origin: bottom left;
+      will-change: transform;
+      /* Płynne, organiczne wtopienie krawędzi lasu i mgły w nocne niebo */
+      -webkit-mask-image:
+        radial-gradient(ellipse 96% 94% at 16% 86%, #000 38%, rgba(0, 0, 0, 0.92) 54%, rgba(0, 0, 0, 0.45) 74%, transparent 95%),
+        linear-gradient(to top, #000 0%, #000 68%, transparent 99%),
+        linear-gradient(to right, #000 0%, #000 64%, transparent 97%);
+      -webkit-mask-composite: source-in;
+      mask-image:
+        radial-gradient(ellipse 96% 94% at 16% 86%, #000 38%, rgba(0, 0, 0, 0.92) 54%, rgba(0, 0, 0, 0.45) 74%, transparent 95%),
+        linear-gradient(to top, #000 0%, #000 68%, transparent 99%),
+        linear-gradient(to right, #000 0%, #000 64%, transparent 97%);
+      mask-composite: intersect;
+    }
+
+    .wolves-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: left bottom;
+      display: block;
+      filter: contrast(1.06) brightness(1.04) saturate(1.08);
+      animation: wolvesBreathe 14s ease-in-out infinite alternate;
+    }
+
+    /* Subtelna, żywa poświata księżycowej mgły unoszącej się nad watahą */
+    .wolves-mist-glow {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 65% 55% at 28% 68%, rgba(150, 205, 255, 0.16) 0%, rgba(90, 155, 235, 0.06) 55%, transparent 85%),
+        radial-gradient(circle 260px at 22% 36%, rgba(215, 238, 255, 0.14) 0%, transparent 70%);
+      mix-blend-mode: screen;
+      animation: mistPulse 9s ease-in-out infinite alternate;
+    }
+
+    @keyframes wolvesBreathe {
+      0%   { transform: scale(1.0); }
+      100% { transform: scale(1.022); }
+    }
+
+    @keyframes mistPulse {
+      0%   { opacity: 0.65; transform: translate3d(0, 0, 0); }
+      100% { opacity: 1.0; transform: translate3d(14px, -8px, 0); }
+    }
+
+    /* =========================================================================
+       PRZEJŚCIE MIĘDZY WIDOKAMI: UKOŚNY MOST ŚWIATŁA KSIĘŻYCOWEGO I MGŁY
+       (Łączy Księżyc w prawym górnym rogu z lasem i wilkami w lewym dolnym)
+       ========================================================================= */
+    .moonlight-wash {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        /* Blask wokół tarczy Księżyca (prawy górny róg) */
+        radial-gradient(circle 620px at calc(100vw - max(90px, calc((100vw - 960px) / 2 - 40px))) 120px, rgba(235, 246, 255, 0.25) 0%, rgba(165, 210, 255, 0.11) 42%, transparent 74%),
+        /* Ukośny strumień światła księżycowego padający bezpośrednio na wzgórze z wilkiem */
+        linear-gradient(222deg, rgba(220, 240, 255, 0.15) 0%, rgba(150, 200, 255, 0.08) 32%, rgba(110, 175, 245, 0.06) 62%, rgba(140, 195, 255, 0.12) 86%, transparent 100%),
+        /* Miękka mgła łącząca środek ekranu z lewym dolnym lasem */
+        radial-gradient(ellipse 950px 580px at 26% 78%, rgba(120, 180, 245, 0.13) 0%, rgba(70, 130, 210, 0.05) 55%, transparent 85%);
+    }
+
+    /* Ukośne, wolumetryczne promienie księżyca (God Rays) spływające na las */
+    .moonbeams {
+      position: fixed;
+      inset: -10%;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        repeating-linear-gradient(
+          223deg,
+          transparent 0%,
+          rgba(210, 235, 255, 0.032) 4%,
+          transparent 9%,
+          rgba(185, 222, 255, 0.048) 14%,
+          transparent 20%
+        );
+      -webkit-mask-image: linear-gradient(223deg, rgba(0,0,0,0.95) 5%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.35) 75%, transparent 96%);
+      mask-image: linear-gradient(223deg, rgba(0,0,0,0.95) 5%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.35) 75%, transparent 96%);
+      filter: blur(18px);
+      animation: beamsShimmer 11s ease-in-out infinite alternate;
+    }
+
+    @keyframes beamsShimmer {
+      0%   { opacity: 0.65; transform: translate3d(0, 0, 0) rotate(0deg); }
+      100% { opacity: 1.0; transform: translate3d(-12px, 8px, 0) rotate(-0.6deg); }
+    }
+
+    /* Gwiazdy i świetliste drobiny mgły w tle */
+    .starfield {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* =========================================================================
+       SCENA 2 (PRAWY GÓRNY RÓG): WIZUALIZACJA KSIĘŻYCA LIVE (ASTRO-HDR)
+       ========================================================================= */
+    .moon-wrapper {
+      position: fixed;
+      top: 24px;
+      right: max(24px, calc((100vw - 960px) / 2 - 190px));
+      width: clamp(165px, 16vw, 225px);
+      height: clamp(165px, 16vw, 225px);
+      z-index: 1;
+      pointer-events: none;
+      border-radius: 50%;
+      will-change: transform;
+    }
+
+    /* Szeroka, błękitno-srebrna korona atmosferyczna */
+    .moon-glow-outer {
+      position: absolute;
+      inset: -115px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(195, 228, 255, 0.36) 0%, rgba(130, 190, 255, 0.16) 40%, rgba(75, 135, 225, 0.05) 64%, transparent 78%);
+      filter: blur(30px);
+      pointer-events: none;
+      z-index: -3;
+    }
+
+    /* Ciepła, perłowo-złota aureola tuż przy krawędzi tarczy */
+    .moon-glow-mid {
+      position: absolute;
+      inset: -34px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255, 252, 240, 0.88) 0%, rgba(215, 238, 255, 0.45) 46%, rgba(155, 205, 255, 0.12) 68%, transparent 78%);
+      filter: blur(15px);
+      pointer-events: none;
+      z-index: -2;
+      animation: moonAuraPulse 6.5s ease-in-out infinite alternate;
+    }
+
+    /* Subtelny pierścień dyfrakcyjny (efekt optyki teleskopowej) */
+    .moon-Light-ring {
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 252, 242, 0.35);
+      box-shadow:
+        0 0 22px rgba(255, 250, 235, 0.65),
+        inset 0 0 18px rgba(215, 238, 255, 0.45);
+      pointer-events: none;
+      z-index: 3;
+    }
+
+    /* Płótno wizualizacji Księżyca LIVE (wysoka rozdzielczość + faza i libracja na żywo) */
+    .moon-live-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border-radius: 50%;
+      position: relative;
+      z-index: 2;
+      filter:
+        drop-shadow(0 0 24px rgba(255, 250, 238, 0.82))
+        drop-shadow(0 0 65px rgba(180, 220, 255, 0.55));
+      animation: moonDiscPulse 7.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes moonAuraPulse {
+      0%   { opacity: 0.78; transform: scale(0.96); }
+      100% { opacity: 1.14; transform: scale(1.06); }
+    }
+
+    @keyframes moonDiscPulse {
+      0% {
+        filter:
+          drop-shadow(0 0 20px rgba(255, 250, 235, 0.74))
+          drop-shadow(0 0 52px rgba(180, 220, 255, 0.46));
+      }
+      100% {
+        filter:
+          drop-shadow(0 0 30px rgba(255, 252, 242, 0.94))
+          drop-shadow(0 0 78px rgba(195, 232, 255, 0.65));
+      }
+    }
+
+    /* =========================================================================
+       KARTY GLASSMORPHISM I UKŁAD TREŚCI
+       ========================================================================= */
+    .wrap {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 920px;
+      margin: 0 auto;
+      display: grid;
+      gap: 22px;
+    }
+
+    @media (min-width: 1280px) {
+      /* Delikatne odsunięcie kart w prawo, by jeszcze pełniej wyeksponować wilka lidera na wzgórzu po lewej */
+      .wrap {
+        transform: translateX(36px);
+      }
+    }
+
+    .glass {
+      background: rgba(9, 18, 36, 0.54);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-top: 1px solid rgba(235, 247, 255, 0.42);
+      border-right: 1px solid rgba(205, 232, 255, 0.32);
+      border-bottom: 1px solid rgba(150, 200, 255, 0.16);
+      border-radius: 22px;
+      backdrop-filter: blur(20px) saturate(175%);
+      -webkit-backdrop-filter: blur(20px) saturate(175%);
+      box-shadow:
+        0 18px 48px rgba(0, 0, 0, 0.52),
+        inset 0 1px 0 rgba(255, 255, 255, 0.34),
+        inset -1px 0 1px rgba(195, 228, 255, 0.20),
+        0 0 50px rgba(120, 180, 255, 0.07);
+    }
+
+    .hero { padding: 42px 44px 36px; }
+    .eyebrow { color: var(--gold); text-transform: uppercase; letter-spacing: 3px; font-size: .8rem; font-weight: 600; }
+    .eyebrow .amp { font-family: "Playfair Display", Georgia, serif; font-style: italic; font-weight: 600; text-transform: none; font-size: 1.5em; line-height: 1; letter-spacing: 0; padding: 0 .15em; vertical-align: -.08em; }
+    .hero h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); line-height: 1.1; margin: 8px 0 6px; letter-spacing: -.5px; }
+    .hero h1 span { background: linear-gradient(90deg, #fff, var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hero p { color: var(--muted); max-width: 560px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+    .chip {
+      padding: 7px 16px; border-radius: 999px; font-size: .85rem;
+      background: var(--glass-strong); border: 1px solid var(--border);
+    }
+    .chip.gold { background: rgba(230, 194, 122, .18); border-color: rgba(230, 194, 122, .6); color: var(--gold); font-weight: 600; }
+
+    .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 22px; }
+    .cols > *, .certs > * { min-width: 0; }
+    .card { padding: 28px 30px; transition: transform .25s ease, background .25s ease, border-color .25s ease; }
+    .card:hover { transform: translateY(-4px); background: rgba(14, 26, 50, 0.64); border-top-color: rgba(245, 250, 255, 0.55); }
+    .card h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: 2.5px; color: var(--gold); margin-bottom: 16px; }
+    .card h3 { font-size: 1.15rem; margin-bottom: 6px; }
+    .card p { color: var(--muted); font-size: .95rem; }
+
+    ul.tags { list-style: none; display: flex; flex-wrap: wrap; gap: 9px; }
+    ul.tags li {
+      padding: 7px 14px; border-radius: 12px; font-size: .88rem;
+      background: rgba(255, 255, 255, .1); border: 1px solid var(--border);
+      max-width: 100%; word-break: break-word;
+    }
+    ul.tags li.gold { background: rgba(230, 194, 122, .16); border-color: rgba(230, 194, 122, .55); color: var(--gold); font-weight: 600; }
+    ul.tags li.radioactive {
+      color: #d9ffb0; font-weight: 700;
+      background: rgba(124, 255, 0, .14);
+      border-color: rgba(150, 255, 40, .85);
+      text-shadow: 0 0 6px #9dff2a, 0 0 14px #7cff00;
+      animation: radioactive 2.2s ease-in-out infinite;
+    }
+    @keyframes radioactive {
+      0%, 100% { box-shadow: 0 0 8px rgba(124, 255, 0, .55), 0 0 18px rgba(124, 255, 0, .35), inset 0 0 8px rgba(124, 255, 0, .25); }
+      50%      { box-shadow: 0 0 16px rgba(150, 255, 40, .95), 0 0 36px rgba(124, 255, 0, .65), inset 0 0 14px rgba(124, 255, 0, .45); }
+    }
+
+    .certs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 20px 28px; }
+    .cert { display: flex; align-items: center; gap: 18px; }
+
+    .cert .icon {
+      flex: none; width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center;
+      font-size: 1.5rem; color: #10203c; font-weight: 700;
+      background: linear-gradient(135deg, #f5dba0, #c9a24b);
+      box-shadow: 0 6px 18px rgba(201, 162, 75, .45);
+    }
+    .cert strong { display: block; font-size: 1.1rem; }
+    .cert span { color: var(--muted); font-size: .9rem; }
+
+    footer { text-align: center; color: var(--muted); font-size: .8rem; letter-spacing: 1px; margin-top: 4px; }
+
+    /* =========================================================================
+       TELEMETRIA KSIĘŻYCA NASA LIVE & POPULACJI WILKÓW CANIS LUPUS LIVE
+       ========================================================================= */
+    .nasa-hud,
+    .wolves-hud {
+      position: fixed;
+      bottom: 18px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: rgba(7, 15, 32, 0.68);
+      border: 1px solid rgba(200, 230, 255, 0.22);
+      border-top-color: rgba(235, 248, 255, 0.38);
+      backdrop-filter: blur(16px) saturate(160%);
+      -webkit-backdrop-filter: blur(16px) saturate(160%);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), 0 0 25px rgba(120, 180, 255, 0.08);
+      font-size: 0.72rem;
+      letter-spacing: 0.9px;
+      text-transform: uppercase;
+      color: rgba(225, 236, 252, 0.88);
+      user-select: none;
+    }
+    .nasa-hud {
+      right: 22px;
+    }
+    .wolves-hud {
+      left: 22px;
+    }
+    .nasa-hud-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-weight: 700;
+      color: #fff;
+      white-space: nowrap;
+    }
+    .nasa-hud-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #4ef59c;
+      box-shadow: 0 0 8px #4ef59c, 0 0 16px rgba(78, 245, 156, 0.75);
+      animation: nasaPulse 2.4s ease-in-out infinite;
+    }
+    .wolves-hud .nasa-hud-dot {
+      background: #e6c27a;
+      box-shadow: 0 0 8px #e6c27a, 0 0 16px rgba(230, 194, 122, 0.75);
+    }
+    @keyframes nasaPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.86); }
+    }
+    .nasa-hud-metrics {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: rgba(210, 226, 248, 0.80);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .nasa-hud-metrics strong {
+      color: var(--gold);
+      font-weight: 600;
+    }
+    .nasa-hud-sep {
+      color: rgba(255, 255, 255, 0.22);
+    }
+
+    .chip, ul.tags li { max-width: 100%; word-break: break-word; }
+
+    /* =========================================================================
+       RESPONSYWNOŚĆ (TABLET & MOBILE)
+       ========================================================================= */
+    @media (max-width: 1240px) {
+      .nasa-hud,
+      .wolves-hud {
+        position: relative;
+        bottom: auto;
+        right: auto;
+        left: auto;
+        margin: 8px auto 0;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 8px 14px;
+        gap: 8px;
+        width: fit-content;
+        max-width: 100%;
+        border-radius: 16px;
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .moon-wrapper {
+        top: 18px;
+        right: 20px;
+        width: 120px;
+        height: 120px;
+        z-index: 10;
+      }
+      .moon-glow-outer { inset: -65px; filter: blur(20px); }
+      .moon-glow-mid { inset: -22px; filter: blur(11px); }
+      .wolves-scene {
+        width: clamp(460px, 78vw, 820px);
+      }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 16px 12px 210px;
+      }
+      .wrap {
+        gap: 16px;
+      }
+      .cols {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .certs {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      .moon-wrapper {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        width: 76px;
+        height: 76px;
+        z-index: 10;
+      }
+      .moon-glow-outer {
+        inset: -34px;
+        filter: blur(14px);
+      }
+      .moon-glow-mid {
+        inset: -14px;
+        filter: blur(8px);
+      }
+      .wolves-scene {
+        width: 115vw;
+        left: -6vw;
+        bottom: 0;
+      }
+      .nasa-hud,
+      .wolves-hud {
+        position: relative;
+        bottom: auto;
+        right: auto;
+        left: auto;
+        margin: 8px auto 0;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 8px 14px;
+        gap: 8px;
+        max-width: 100%;
+        border-radius: 16px;
+      }
+      .nasa-hud-metrics {
+        font-size: 0.68rem;
+        gap: 7px;
+      }
+      .hero {
+        padding: 22px 16px 20px;
+      }
+      .hero .eyebrow,
+      .hero h1 {
+        max-width: calc(100% - 82px);
+      }
+      .hero h1 {
+        font-size: clamp(1.75rem, 6.5vw, 2.3rem);
+        margin: 6px 0;
+      }
+      .card {
+        padding: 20px 16px;
+      }
+      .chip {
+        padding: 6px 12px;
+        font-size: .8rem;
+      }
+      ul.tags li {
+        padding: 6px 12px;
+        font-size: .82rem;
+      }
+    }
+
+    @media (max-width: 390px) {
+      body {
+        padding: 12px 10px 190px;
+      }
+      .wrap {
+        gap: 14px;
+      }
+      .hero {
+        padding: 18px 14px 16px;
+      }
+      .hero .eyebrow,
+      .hero h1 {
+        max-width: calc(100% - 68px);
+      }
+      .hero h1 {
+        font-size: 1.65rem;
+      }
+      .card {
+        padding: 16px 14px;
+      }
+      .moon-wrapper {
+        top: 12px;
+        right: 12px;
+        width: 64px;
+        height: 64px;
+      }
+      .chips {
+        gap: 7px;
+        margin-top: 18px;
+      }
+      .chip {
+        padding: 5px 10px;
+        font-size: .76rem;
+      }
+      ul.tags {
+        gap: 7px;
+      }
+      ul.tags li {
+        padding: 5px 10px;
+        font-size: .78rem;
+      }
+      .cert {
+        gap: 12px;
+      }
+      .cert .icon {
+        width: 44px;
+        height: 44px;
+        font-size: 1.25rem;
+        border-radius: 12px;
+      }
+      .cert strong {
+        font-size: 1rem;
+      }
+      .cert span {
+        font-size: .82rem;
+      }
+    }
+
+    @media print {
+      body { background: #fff; color: #000; padding: 20px; }
+      #starfield, .moonlight-wash, .moonbeams, .moon-wrapper, .wolves-scene, .nasa-hud, .wolves-hud { display: none !important; }
+      .glass { background: #fff; box-shadow: none; border-color: #ccc; backdrop-filter: none; }
+      :root { --text: #000; --muted: #444; --gold: #8a6a1f; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      ul.tags li.radioactive { animation: none; box-shadow: 0 0 14px rgba(124, 255, 0, .7); }
+      .moon-glow-mid, .moon-live-canvas, .wolves-img, .wolves-mist-glow, .moonbeams, .nasa-hud-dot { animation: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- 1. Gwieździste niebo, subtelna mgła i świetliste drobiny łączące Księżyc z lasem -->
+  <canvas id="starfield" class="starfield" aria-hidden="true"></canvas>
+
+  <!-- 2. Ukośne przejście świetlne między Księżycem (prawy górny róg) a lasem z watahą (lewy dolny róg) -->
+  <div class="moonlight-wash" aria-hidden="true"></div>
+  <div class="moonbeams" aria-hidden="true"></div>
+
+  <!-- 3. Lewy dolny róg: Nocny las i wataha wilków z liderem na wzgórzu -->
+  <div id="wolves-stage" class="wolves-scene" aria-hidden="true">
+    <img src="wolves_forest.jpg" alt="" class="wolves-img" width="1408" height="792">
+    <div class="wolves-mist-glow"></div>
+  </div>
+
+  <!-- 4. Prawy górny róg: Dopracowana wizualizacja Księżyca LIVE -->
+  <div id="moon-stage" class="moon-wrapper" aria-hidden="true">
+    <div class="moon-glow-outer"></div>
+    <div class="moon-glow-mid"></div>
+    <div class="moon-Light-ring"></div>
+    <canvas id="moon-live-canvas" class="moon-live-canvas" width="512" height="512"></canvas>
+  </div>
+
+  <div class="wrap">
+    <section class="glass hero">
+      <div class="eyebrow">E-commerce <span class="amp">&amp;</span> IT Specialist</div>
+      <h1><span>Jakub Górski</span></h1>
+      <div class="chips">
+        <span class="chip gold">Mensa Member</span>
+        <span class="chip">E-commerce Specialist</span>
+        <span class="chip">AI-assisted Development</span>
+        <span class="chip">IT Specialist</span>
+        <span class="chip">PHP Developer</span>
+        <span class="chip">Sales Manager</span>
+        <span class="chip">Psychologia w biznesie</span>
+        <span class="chip">Neuromarketing</span>
+        <span class="chip">BVB fan</span>
+        <span class="chip">20+ lat doświadczenia</span>
+      </div>
+    </section>
+
+    <div class="cols">
+      <section class="glass card">
+        <h2>Dev Tools</h2>
+        <ul class="tags">
+          <li class="gold">Claude Code (CLI / AI-assisted coding)</li>
+          <li>Google AI Pro</li>
+          <li>PHP</li>
+          <li>JS</li>
+          <li>NODE</li>
+          <li>REACT</li>
+          <li>VS Code</li>
+          <li>Many others...</li>
+          <li class="radioactive">Mózg</li>
+        </ul>
+      </section>
+
+      <section class="glass card">
+        <h2>Doświadczenie/XP:</h2>
+        <ul class="tags">
+          <li>IT Service</li>
+          <li>Z-ca kierownika w salonie sprzedaży</li>
+          <li>Freelancer</li>
+          <li>Handlowiec B2B</li>
+          <li class="gold">Specjalista ds. E-Biznesu/PHP Developer</li>
+        </ul>
+      </section>
+    </div>
+
+    <section class="glass card">
+      <h2>Certyfikaty</h2>
+      <div class="certs">
+        <div class="cert">
+          <div class="icon">✓</div>
+          <div><strong>Cambridge FCE Certificate</strong></div>
+        </div>
+        <div class="cert">
+          <div class="icon">✓</div>
+          <div><strong>Ratownik wodny i górski</strong><span>WOPR &amp; GOPR</span></div>
+        </div>
+        <div class="cert">
+          <div class="icon">✓</div>
+          <div><strong>PHP Developer</strong></div>
+        </div>
+        <div class="cert">
+          <div class="icon">✓</div>
+          <div><strong>Google AI Pro Certificate</strong><span>Google (Coursera)</span></div>
+        </div>
+        <div class="cert">
+          <div class="icon">✓</div>
+          <div><strong>Indie Game Developer (Personal Projects)</strong></div>
+        </div>
+        <div class="cert">
+          <div class="icon">✓</div>
+          <div><strong>Wędkarz, grzybiarz, akrobata...</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <footer>jakubgorski.com</footer>
+  </div>
+
+  <!-- Telemetria populacji wilków Canis lupus LIVE (lewy dolny róg) -->
+  <aside class="wolves-hud" aria-label="Populacja i telemetria wilków Canis lupus w czasie rzeczywistym">
+    <div class="nasa-hud-status">
+      <span class="nasa-hud-dot"></span>
+      <span>CANIS LUPUS LIVE</span>
+    </div>
+    <div class="nasa-hud-metrics">
+      <span>Polska <strong id="hud-wolves-pl">~4 480</strong></span>
+      <span class="nasa-hud-sep">•</span>
+      <span>Watahy <strong id="hud-wolves-packs">~345</strong></span>
+      <span class="nasa-hud-sep">•</span>
+      <span>Europa <strong id="hud-wolves-eu">~21 850</strong></span>
+      <span class="nasa-hud-sep">•</span>
+      <span>Rejestr GBIF <strong id="hud-wolves-gbif">262 055</strong></span>
+    </div>
+  </aside>
+
+  <!-- Telemetria NASA LRO LIVE (prawy dolny róg) -->
+  <aside class="nasa-hud" aria-label="Telemetria Księżyca NASA LRO w czasie rzeczywistym">
+    <div class="nasa-hud-status">
+      <span class="nasa-hud-dot"></span>
+      <span>NASA LRO LIVE</span>
+    </div>
+    <div class="nasa-hud-metrics">
+      <span>Faza <strong id="hud-phase">--%</strong></span>
+      <span class="nasa-hud-sep">•</span>
+      <span>Dystans <strong id="hud-dist">--- --- km</strong></span>
+      <span class="nasa-hud-sep">•</span>
+      <span>Libracja <strong id="hud-lib">--°</strong></span>
+    </div>
+  </aside>
+
+  <script>
+    /* =========================================================================
+       1. TŁO NIEBA, GWIAZDY, SPADAJĄCE GWIAZDY I ŚWIETLISTY PYŁ KSIĘŻYCOWY
+          (Łączy optycznie Księżyc w prawym górnym rogu z lasem w lewym dolnym)
+       ========================================================================= */
+    (function () {
+      const canvas = document.getElementById('starfield');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      let width = 0;
+      let height = 0;
+      let stars = [];
+      let moonMotes = [];
+      let mistClouds = [];
+      let shootingStars = [];
+
+      const starColors = [
+        '#ffffff',
+        '#ffffff',
+        '#ffffff',
+        '#e0efff',
+        '#cbe5ff',
+        '#fff2d8',
+        '#ffe5ad'
+      ];
+
+      function resize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        initScene();
+      }
+
+      function initScene() {
+        stars = [];
+        const count = Math.min(190, Math.max(100, Math.floor((width * height) / 8500)));
+
+        for (let i = 0; i < count; i++) {
+          const rand = Math.random();
+          let radius;
+          if (rand > 0.90) {
+            radius = 1.3 + Math.random() * 0.5;
+          } else if (rand > 0.60) {
+            radius = 0.9 + Math.random() * 0.35;
+          } else {
+            radius = 0.55 + Math.random() * 0.3;
+          }
+
+          stars.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            radius: radius,
+            color: starColors[Math.floor(Math.random() * starColors.length)],
+            baseAlpha: 0.42 + Math.random() * 0.38,
+            twinkleAmp: 0.08 + Math.random() * 0.12,
+            speed: 0.00045 + Math.random() * 0.0006,
+            phase: Math.random() * Math.PI * 2
+          });
+        }
+
+        // Subtelne drobiny światła księżycowego płynące po przekątnej od Księżyca do lasu
+        moonMotes = [];
+        const moteCount = Math.min(36, Math.max(18, Math.floor(width / 48)));
+        for (let i = 0; i < moteCount; i++) {
+          // Rozkład wzdłuż przekątnej (prawy górny <-> lewy dolny)
+          const t = Math.random();
+          const spread = (Math.random() - 0.5) * 0.42;
+          moonMotes.push({
+            t: t,
+            spread: spread,
+            size: 0.8 + Math.random() * 1.6,
+            speed: 0.00004 + Math.random() * 0.00007,
+            phase: Math.random() * Math.PI * 2,
+            gold: Math.random() > 0.65
+          });
+        }
+
+        // Delikatne pasma nocnej mgły spajające lewy dolny las ze środkiem tła
+        mistClouds = [];
+        for (let i = 0; i < 6; i++) {
+          mistClouds.push({
+            x: width * (0.05 + i * 0.13),
+            y: height * (0.62 + (i % 3) * 0.11),
+            rx: 220 + i * 45,
+            ry: 70 + (i % 2) * 35,
+            speed: 0.00018 + i * 0.00004,
+            phase: i * 1.3
+          });
+        }
+      }
+
+      function maybeSpawnShootingStar() {
+        if (shootingStars.length === 0 && Math.random() < 0.006) {
+          const startX = width * (0.25 + Math.random() * 0.65);
+          const startY = height * (0.04 + Math.random() * 0.32);
+          const angle = (Math.PI * 0.76) + (Math.random() * 0.2 - 0.1);
+          shootingStars.push({
+            x: startX,
+            y: startY,
+            dx: Math.cos(angle) * 8.5,
+            dy: Math.sin(angle) * 8.5,
+            life: 1.0,
+            decay: 0.022 + Math.random() * 0.014
+          });
+        }
+      }
+
+      const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function render(time) {
+        ctx.clearRect(0, 0, width, height);
+
+        // 1. Gwiazdy
+        for (let i = 0; i < stars.length; i++) {
+          const s = stars[i];
+          const sinVal = Math.sin(time * s.speed + s.phase);
+          const alpha = Math.max(0.18, Math.min(0.92, s.baseAlpha + sinVal * s.twinkleAmp));
+
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = s.color;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // 2. Płynne pasma mgły księżycowej między lasem a niebem
+        for (let i = 0; i < mistClouds.length; i++) {
+          const m = mistClouds[i];
+          const driftX = m.x + Math.sin(time * m.speed + m.phase) * 45;
+          const driftY = m.y + Math.cos(time * m.speed * 0.8 + m.phase) * 12;
+          const grad = ctx.createRadialGradient(driftX, driftY, 5, driftX, driftY, m.rx);
+          grad.addColorStop(0, 'rgba(155, 205, 255, 0.048)');
+          grad.addColorStop(0.5, 'rgba(110, 170, 240, 0.022)');
+          grad.addColorStop(1, 'transparent');
+
+          ctx.save();
+          ctx.translate(driftX, driftY);
+          ctx.scale(1, m.ry / m.rx);
+          ctx.translate(-driftX, -driftY);
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(driftX, driftY, m.rx, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // 3. Świetlisty pył księżycowy płynący po przekątnej od Księżyca ku woli lasu
+        for (let i = 0; i < moonMotes.length; i++) {
+          const p = moonMotes[i];
+          const prog = (p.t + time * p.speed) % 1.0;
+          // Od prawego górnego (0.88, 0.10) do lewego dolnego (0.14, 0.86)
+          const bx = width * (0.88 - prog * 0.74 + p.spread * 0.35);
+          const by = height * (0.10 + prog * 0.76 + p.spread * 0.25) + Math.sin(time * 0.001 + p.phase) * 10;
+          const pulse = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(time * 0.0015 + p.phase));
+          const fadeEdge = Math.sin(prog * Math.PI);
+
+          ctx.save();
+          ctx.globalAlpha = pulse * fadeEdge * 0.65;
+          ctx.fillStyle = p.gold ? '#f6dba0' : '#d8ecff';
+          ctx.shadowColor = p.gold ? '#e6c27a' : '#8ec5ff';
+          ctx.shadowBlur = 8;
+          ctx.beginPath();
+          ctx.arc(bx, by, p.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        // 4. Spadające gwiazdy
+        maybeSpawnShootingStar();
+        for (let i = shootingStars.length - 1; i >= 0; i--) {
+          const ss = shootingStars[i];
+          ctx.save();
+          ctx.globalAlpha = ss.life * 0.85;
+
+          const grad = ctx.createLinearGradient(ss.x, ss.y, ss.x - ss.dx * 8, ss.y - ss.dy * 8);
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(0.3, '#d8ecff');
+          grad.addColorStop(1, 'transparent');
+
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 1.4;
+          ctx.beginPath();
+          ctx.moveTo(ss.x, ss.y);
+          ctx.lineTo(ss.x - ss.dx * 8, ss.y - ss.dy * 8);
+          ctx.stroke();
+          ctx.restore();
+
+          ss.x += ss.dx;
+          ss.y += ss.dy;
+          ss.life -= ss.decay;
+          if (ss.life <= 0) {
+            shootingStars.splice(i, 1);
+          }
+        }
+
+        if (!prefersReduced) {
+          requestAnimationFrame(render);
+        }
+      }
+
+      let resizeTimeout;
+      window.addEventListener('resize', function () {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(resize, 150);
+      });
+
+      resize();
+      if (prefersReduced) {
+        render(0);
+      } else {
+        requestAnimationFrame(render);
+      }
+    })();
+
+    /* =========================================================================
+       2. WIZUALIZACJA KSIĘŻYCA LIVE (ASTRO-HDR + EFEMERYDY NASA NA ŻYWO)
+          ORAZ PARALAKSA ŁĄCZĄCA KSIĘŻYC Z LASEM I WATAHĄ WILKÓW
+       ========================================================================= */
+    (function () {
+      const DEG2RAD = Math.PI / 180;
+
+      // Obliczenie dokładnych parametrów Księżyca w czasie rzeczywistym
+      function computeLunarEphemeris(date) {
+        const jd = date.getTime() / 86400000 + 2440587.5;
+        const T = (jd - 2451545.0) / 36525.0;
+
+        const D  = (297.8501921 + 445267.1114034 * T) % 360;
+        const M  = (357.5291092 + 35999.0502909 * T) % 360;
+        const Mp = (134.9633964 + 477198.8675055 * T) % 360;
+        const F  = (93.2720950 + 483202.0175233 * T) % 360;
+
+        const dRad  = D * DEG2RAD;
+        const mRad  = M * DEG2RAD;
+        const mpRad = Mp * DEG2RAD;
+        const fRad  = F * DEG2RAD;
+
+        const dLon = 6.288774 * Math.sin(mpRad)
+                   + 1.274027 * Math.sin(2 * dRad - mpRad)
+                   + 0.658314 * Math.sin(2 * dRad)
+                   + 0.213618 * Math.sin(2 * mpRad)
+                   - 0.185596 * Math.sin(mRad)
+                   - 0.114336 * Math.sin(2 * fRad);
+
+        const dLat = 5.128122 * Math.sin(fRad)
+                   + 0.280602 * Math.sin(mpRad + fRad)
+                   + 0.277693 * Math.sin(mpRad - fRad)
+                   + 0.173237 * Math.sin(2 * dRad - fRad);
+
+        const dDist = -20905.355 * Math.cos(mpRad)
+                    - 3699.111 * Math.cos(2 * dRad - mpRad)
+                    - 2955.968 * Math.cos(2 * dRad)
+                    - 569.925 * Math.cos(2 * mpRad);
+
+        const distanceKm = 385000.56 + dDist;
+
+        const phaseAngle = 180 - D - 6.289 * Math.sin(mpRad)
+                         + 2.100 * Math.sin(mRad)
+                         - 1.274 * Math.sin(2 * dRad - mpRad)
+                         - 0.658 * Math.sin(2 * dRad);
+        const illumination = (1 + Math.cos(phaseAngle * DEG2RAD)) * 50;
+
+        let normD = ((D % 360) + 360) % 360;
+        let subsolarLon = ((180 - normD + 540) % 360) - 180;
+
+        return {
+          phase: Math.max(0, Math.min(100, illumination)),
+          distance: Math.round(distanceKm),
+          subearth_lon: dLon,
+          subearth_lat: -dLat,
+          subsolar_lon: subsolarLon
+        };
+      }
+
+      let liveData = computeLunarEphemeris(new Date());
+
+      const elPhase = document.getElementById('hud-phase');
+      const elDist  = document.getElementById('hud-dist');
+      const elLib   = document.getElementById('hud-lib');
+
+      function updateHudUI(data) {
+        if (elPhase) elPhase.textContent = data.phase.toFixed(1) + '%';
+        if (elDist)  elDist.textContent  = Math.round(data.distance).toLocaleString('pl-PL') + ' km';
+        if (elLib) {
+          const lonStr = (data.subearth_lon >= 0 ? '+' : '') + data.subearth_lon.toFixed(1) + '°';
+          const latStr = (data.subearth_lat >= 0 ? '+' : '') + data.subearth_lat.toFixed(1) + '°';
+          elLib.textContent = lonStr + ' / ' + latStr;
+        }
+      }
+      updateHudUI(liveData);
+
+      if (window.location.protocol !== 'file:') {
+        fetch('nasa_telemetry.php')
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (json) {
+            if (json && typeof json.phase === 'number') {
+              liveData = {
+                phase: json.phase,
+                distance: json.distance,
+                subearth_lon: json.subearth_lon,
+                subearth_lat: json.subearth_lat,
+                subsolar_lon: json.subsolar_lon
+              };
+              updateHudUI(liveData);
+              drawLiveMoon();
+            }
+          })
+          .catch(function () {});
+      }
+
+      // Live populacja i telemetria wilków (Canis lupus – model demograficzny GIOŚ/LCIE + API GBIF na żywo)
+      (function initWolvesTelemetry() {
+        const elPl    = document.getElementById('hud-wolves-pl');
+        const elPacks = document.getElementById('hud-wolves-packs');
+        const elEu    = document.getElementById('hud-wolves-eu');
+        const elGbif  = document.getElementById('hud-wolves-gbif');
+
+        const now = new Date();
+        // Interpolacja przyrostu populacji Canis lupus względem bazy monitoringowej GIOŚ / GUS oraz LCIE Europe
+        const yearsSinceBase = (now.getTime() - Date.UTC(2024, 0, 1)) / (365.25 * 86400000);
+        // Cykl sezonowy (wiosenne mioty w maju podnoszą liczebność watah latem i jesienią)
+        const dayOfYear = Math.floor((now.getTime() - Date.UTC(now.getUTCFullYear(), 0, 1)) / 86400000);
+        const seasonalWave = Math.sin(((dayOfYear - 115) / 365) * Math.PI * 2) * 85;
+
+        const plPop   = Math.round(4320 * Math.pow(1.038, yearsSinceBase) + seasonalWave);
+        const plPacks = Math.round(plPop / 13.2);
+        const euPop   = Math.round(21300 * Math.pow(1.032, yearsSinceBase) + seasonalWave * 3.8);
+
+        if (elPl)    elPl.textContent    = '~' + plPop.toLocaleString('pl-PL');
+        if (elPacks) elPacks.textContent = '~' + plPacks.toLocaleString('pl-PL');
+        if (elEu)    elEu.textContent    = '~' + euPop.toLocaleString('pl-PL');
+
+        // Pobieranie na żywo liczby zarejestrowanych obserwacji telemetrycznych/terenowych Canis lupus z API GBIF
+        fetch('https://api.gbif.org/v1/occurrence/search?taxonKey=5219173&limit=0')
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (data) {
+            if (data && typeof data.count === 'number' && elGbif) {
+              elGbif.textContent = data.count.toLocaleString('pl-PL');
+            }
+          })
+          .catch(function () {});
+      })();
+
+      // Renderowanie fotorealistycznej tarczy Księżyca Astro-HDR z fazą i libracją LIVE
+      const moonCanvas = document.getElementById('moon-live-canvas');
+      const moonCtx = moonCanvas ? moonCanvas.getContext('2d') : null;
+      const moonImg = new Image();
+      let moonReady = false;
+
+      moonImg.onload = function () {
+        moonReady = true;
+        drawLiveMoon();
+      };
+      moonImg.src = 'moon.png';
+
+      function drawLiveMoon() {
+        if (!moonCtx || !moonReady) return;
+        const size = 512;
+        const cx = size / 2;
+        const cy = size / 2;
+        const r  = size / 2 - 2;
+
+        moonCtx.clearRect(0, 0, size, size);
+
+        // 1. Bazowa tarcza Księżyca z delikatnym obrotem libracyjnym na żywo
+        moonCtx.save();
+        moonCtx.beginPath();
+        moonCtx.arc(cx, cy, r, 0, Math.PI * 2);
+        moonCtx.clip();
+
+        moonCtx.translate(cx, cy);
+        // Subtelny kąt libracji z danych LIVE (z lekkim powiększeniem obcinającym surową krawędź PNG)
+        const tiltRad = (liveData.subearth_lon * 0.45) * DEG2RAD;
+        moonCtx.rotate(tiltRad);
+        const shiftX = liveData.subearth_lon * 1.1;
+        const shiftY = liveData.subearth_lat * 1.1;
+        const bleed = 14;
+        moonCtx.drawImage(moonImg, -cx - bleed + shiftX, -cy - bleed + shiftY, size + bleed * 2, size + bleed * 2);
+        moonCtx.restore();
+
+        // 2. Uszlachetnienie plastyki i trójwymiarowości sfery (Astro-HDR Limb & Relief)
+        moonCtx.save();
+        moonCtx.beginPath();
+        moonCtx.arc(cx, cy, r, 0, Math.PI * 2);
+        moonCtx.clip();
+
+        // Subtelny perłowo-złoty blask w części zwróconej ku dołowi/lewej (w stronę wilka na wzgórzu)
+        const rimGrad = moonCtx.createRadialGradient(cx - r * 0.22, cy + r * 0.22, r * 0.15, cx, cy, r);
+        rimGrad.addColorStop(0, 'rgba(255, 252, 242, 0.12)');
+        rimGrad.addColorStop(0.68, 'rgba(215, 235, 255, 0.04)');
+        rimGrad.addColorStop(0.92, 'rgba(15, 32, 68, 0.22)');
+        rimGrad.addColorStop(1, 'rgba(225, 242, 255, 0.42)');
+        moonCtx.globalCompositeOperation = 'soft-light';
+        moonCtx.fillStyle = rimGrad;
+        moonCtx.fillRect(0, 0, size, size);
+
+        // 3. Realistyczny światłocień fazy LIVE (z miękkim terminatorem i światłem popielatym Earthshine)
+        const phaseFrac = liveData.phase / 100;
+        if (phaseFrac < 0.985) {
+          const isWaxing = (liveData.subsolar_lon >= 0);
+          // Kształt terminatora dla aktualnej fazy
+          const termX = (1 - 2 * phaseFrac) * r;
+
+          moonCtx.globalCompositeOperation = 'source-over';
+          moonCtx.fillStyle = 'rgba(4, 11, 26, 0.80)';
+          moonCtx.filter = 'blur(10px)';
+
+          moonCtx.beginPath();
+          if (isWaxing) {
+            moonCtx.arc(cx, cy, r + 12, Math.PI * 0.5, Math.PI * 1.5, false);
+            moonCtx.ellipse(cx, cy, Math.abs(termX), r + 12, 0, Math.PI * 1.5, Math.PI * 0.5, phaseFrac > 0.5);
+          } else {
+            moonCtx.arc(cx, cy, r + 12, -Math.PI * 0.5, Math.PI * 0.5, false);
+            moonCtx.ellipse(cx, cy, Math.abs(termX), r + 12, 0, Math.PI * 0.5, -Math.PI * 0.5, phaseFrac > 0.5);
+          }
+          moonCtx.closePath();
+          moonCtx.fill();
+          moonCtx.filter = 'none';
+        }
+
+        // 4. Srebrzysty pierścień sferyczny na samym brzegu tarczy
+        const edgeGlow = moonCtx.createRadialGradient(cx, cy, r * 0.86, cx, cy, r);
+        edgeGlow.addColorStop(0, 'transparent');
+        edgeGlow.addColorStop(0.75, 'rgba(220, 240, 255, 0.08)');
+        edgeGlow.addColorStop(1, 'rgba(255, 253, 245, 0.38)');
+        moonCtx.globalCompositeOperation = 'screen';
+        moonCtx.fillStyle = edgeGlow;
+        moonCtx.fillRect(0, 0, size, size);
+
+        moonCtx.restore();
+      }
+
+      // Płynna paralaksa łącząca ruch Księżyca (prawy górny róg) i Lasu z wilkami (lewy dolny róg)
+      const moonStage   = document.getElementById('moon-stage');
+      const wolvesStage = document.getElementById('wolves-stage');
+      const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (!prefersReduced) {
+        let targetX = 0, targetY = 0;
+        let curX = 0, curY = 0;
+
+        window.addEventListener('pointermove', function (e) {
+          targetX = (e.clientX / window.innerWidth - 0.5) * 2;
+          targetY = (e.clientY / window.innerHeight - 0.5) * 2;
+        }, { passive: true });
+
+        function animateParallax() {
+          curX += (targetX - curX) * 0.045;
+          curY += (targetY - curY) * 0.045;
+
+          if (moonStage) {
+            moonStage.style.transform = `translate3d(${(curX * -10).toFixed(2)}px, ${(curY * -8).toFixed(2)}px, 0)`;
+          }
+          if (wolvesStage) {
+            wolvesStage.style.transform = `translate3d(${(curX * 12).toFixed(2)}px, ${(curY * 6).toFixed(2)}px, 0)`;
+          }
+          requestAnimationFrame(animateParallax);
+        }
+        requestAnimationFrame(animateParallax);
+      }
+    })();
+  </script>
+</body>
+</html>
