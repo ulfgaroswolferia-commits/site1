@@ -29,6 +29,9 @@ export function loadGame(filePath: string = DEFAULT_SAVE_PATH): GameState | null
     if (!parsed || !parsed.character || !parsed.currentSceneId || !parsed.character.attributes) {
       return null;
     }
+    if (!parsed.difficulty) {
+      parsed.difficulty = 'normal';
+    }
     if (!parsed.counters) {
       parsed.counters = {
         vault_openness: 0,

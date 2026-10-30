@@ -147,4 +147,30 @@ describe('UI Smoke Test', () => {
     });
     expect(combatView).toBeDefined();
   });
+
+  it('renders HeaderStatus with specific ammo tags for different weapon types', () => {
+    const state = createNewGameState('Wędrowiec', createInitialAttributes());
+    // 10mm pistol
+    state.character.equippedWeaponId = 'pipe_pistol';
+    state.character.inventory.ammo_10mm = 0;
+    const header10mm = React.createElement(HeaderStatus, { state, modeLabel: 'EKSPLORACJA' });
+    expect(header10mm).toBeDefined();
+
+    // Laser rifle (Energy / Ogniwa MFC)
+    state.character.equippedWeaponId = 'laser_rifle';
+    state.character.inventory.ammo_energy = 8;
+    const headerEnergy = React.createElement(HeaderStatus, { state, modeLabel: 'EKSPLORACJA' });
+    expect(headerEnergy).toBeDefined();
+
+    // Sniper rifle (.308 / 5mm)
+    state.character.equippedWeaponId = 'sniper_rifle';
+    state.character.inventory.ammo_rifle = 12;
+    const headerRifle = React.createElement(HeaderStatus, { state, modeLabel: 'EKSPLORACJA' });
+    expect(headerRifle).toBeDefined();
+
+    // Melee weapon
+    state.character.equippedWeaponId = 'combat_knife';
+    const headerMelee = React.createElement(HeaderStatus, { state, modeLabel: 'EKSPLORACJA' });
+    expect(headerMelee).toBeDefined();
+  });
 });

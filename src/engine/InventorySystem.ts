@@ -10,7 +10,7 @@ const DEFAULT_AMMO_FOR_WEAPON: Record<string, { ammoId: string; qty: number }> =
   minigun: { ammoId: 'ammo_rifle', qty: 20 },
 };
 
-const AMMO_SHORT_NAMES: Record<string, string> = {
+export const AMMO_SHORT_NAMES: Record<string, string> = {
   ammo_10mm: '10mm',
   ammo_energy: 'Ogniwa MFC',
   ammo_rifle: '.308/5mm',

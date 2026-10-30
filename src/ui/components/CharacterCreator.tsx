@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { AttributeKey, Attributes } from '../../types/game.js';
+import { AttributeKey, Attributes, DifficultyLevel } from '../../types/game.js';
 import { createInitialAttributes } from '../../engine/CharacterSystem.js';
 import { THEME } from '../theme.js';
 
 interface Props {
+  difficulty?: DifficultyLevel;
   onConfirm: (name: string, attributes: Attributes) => void;
   onCancel: () => void;
 }
@@ -20,7 +21,11 @@ const ATTR_LIST: { key: AttributeKey; label: string; desc: string }[] = [
 
 const PRESET_NAMES = ['Wędrowiec', 'Kora', 'Reks', 'Azar', 'Nova'];
 
-export const CharacterCreator: React.FC<Props> = ({ onConfirm, onCancel }) => {
+export const CharacterCreator: React.FC<Props> = ({
+  difficulty = 'normal',
+  onConfirm,
+  onCancel,
+}) => {
   const [nameIdx, setNameIdx] = useState(0);
   const [attrs, setAttrs] = useState<Attributes>(createInitialAttributes());
   const [pool, setPool] = useState(5);
@@ -69,6 +74,15 @@ export const CharacterCreator: React.FC<Props> = ({ onConfirm, onCancel }) => {
       <Text color={THEME.amber} bold>
         REJESTRACJA MIESZKAŃCA KRYPTY 73 — SYSTEM S.P.E.C.I.A.L.
       </Text>
+      {difficulty === 'hard' ? (
+        <Text color={THEME.danger} bold>
+          [WYBRANY POZIOM TRUDNOŚCI: HARD — Wrogowie +65% HP, +60% DMG, trudniejsze testy dialogowe!]
+        </Text>
+      ) : (
+        <Text color={THEME.secondary}>
+          [POZIOM TRUDNOŚCI: NORMALNY]
+        </Text>
+      )}
       <Box marginY={1} justifyContent="space-between">
         <Text color={THEME.primary}>
           Imię postaci: <Text color={THEME.amber} bold>{PRESET_NAMES[nameIdx]}</Text> (naciśnij [N], aby zmienić)

@@ -2,6 +2,7 @@ import {
   AttributeKey,
   Attributes,
   CharacterState,
+  DifficultyLevel,
   GameState,
   SkillCheckSpec,
 } from '../types/game.js';
@@ -33,8 +34,9 @@ export function getMaxAp(attributes: Attributes): number {
 }
 
 export function calculateSkillCheckChance(state: GameState, check: SkillCheckSpec): number {
+  const isHard = state.difficulty === 'hard';
   const attrVal = state.character.attributes[check.attribute];
-  if (attrVal >= check.difficulty + 2) {
+  if (!isHard && attrVal >= check.difficulty + 2) {
     return 100;
   }
   let bonus = 0;
@@ -44,8 +46,10 @@ export function calculateSkillCheckChance(state: GameState, check: SkillCheckSpe
   if (check.attribute === 'CHA' && state.character.perks.includes('golden_tongue')) {
     bonus += 20;
   }
-  const raw = 50 + (attrVal - check.difficulty) * 15 + bonus;
-  return Math.max(10, Math.min(95, raw));
+  const penalty = isHard ? 20 : 0;
+  const raw = 50 + (attrVal - check.difficulty) * 15 + bonus - penalty;
+  const maxChance = isHard ? 80 : 95;
+  return Math.max(10, Math.min(maxChance, raw));
 }
 
 export function rollSkillCheck(
@@ -164,7 +168,11 @@ export function levelUpCharacter(
   };
 }
 
-export function createNewGameState(name: string, attributes: Attributes): GameState {
+export function createNewGameState(
+  name: string,
+  attributes: Attributes,
+  difficulty: DifficultyLevel = 'normal'
+): GameState {
   const maxHp = getBaseMaxHp(attributes, 1, []);
   const character: CharacterState = {
     name: name.trim() || 'Wędrowiec z Krypty',
@@ -190,6 +198,7 @@ export function createNewGameState(name: string, attributes: Attributes): GameSt
 
   return {
     character,
+    difficulty,
     currentLocationId: 'vault_73',
     currentSceneId: 'vault_intro',
     flags: {},

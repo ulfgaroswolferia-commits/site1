@@ -3,7 +3,7 @@ import { Box, Text, useInput } from 'ink';
 import { BodyPart, GameState } from '../../types/game.js';
 import { ITEMS } from '../../content/items.js';
 import { getVatsHitChance } from '../../engine/CombatEngine.js';
-import { formatItemStats } from '../../engine/InventorySystem.js';
+import { formatItemStats, AMMO_SHORT_NAMES } from '../../engine/InventorySystem.js';
 import { renderBar, THEME } from '../theme.js';
 
 interface Props {
@@ -141,6 +141,7 @@ export const CombatView: React.FC<Props> = ({
         <Box justifyContent="space-between">
           <Text color={THEME.danger} bold>
             WRÓG: {combat.enemyName}
+            {state.difficulty === 'hard' ? ' [POZIOM HARD]' : ''}
             {combat.enemyStunned ? ' [OGŁUSZONY]' : ''}
             {combat.enemyWeakenedTurns > 0 ? ' [OSŁABIONY]' : ''}
           </Text>
@@ -154,7 +155,7 @@ export const CombatView: React.FC<Props> = ({
         <Text color={THEME.cyan}>
           TWOJA BROŃ: {equippedWeapon ? `${equippedWeapon.name} ${formatItemStats(equippedWeapon)}` : 'Pięści [DMG: 8 | AP: 3]'}
           {ammoId
-            ? ` | Zapas amunicji: ${ammoCount} szt.${outOfAmmo ? ' [BRAK AMUNICJI!]' : ''}`
+            ? ` | Zapas amunicji (${AMMO_SHORT_NAMES[ammoId] ?? '10mm'}): ${ammoCount} szt.${outOfAmmo ? ' [BRAK AMUNICJI!]' : ''}`
             : ''}
         </Text>
         <Box flexDirection="column" marginTop={0}>

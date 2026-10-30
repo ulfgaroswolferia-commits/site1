@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Box, Text, useApp, useInput, useStdout } from 'ink';
-import { AttributeKey, BodyPart, GameState, LocationId, SceneChoice } from '../types/game.js';
+import { AttributeKey, BodyPart, DifficultyLevel, GameState, LocationId, SceneChoice } from '../types/game.js';
 import { createNewGameState, levelUpCharacter } from '../engine/CharacterSystem.js';
 import { selectChoice } from '../engine/DialogueEngine.js';
 import {
@@ -33,6 +33,7 @@ export const App: React.FC = () => {
   const [state, setState] = useState<GameState | null>(null);
   const [overlay, setOverlay] = useState<OverlayTab>(null);
   const [menuMessage, setMenuMessage] = useState<string | null>(null);
+  const [difficulty, setDifficulty] = useState<DifficultyLevel>('normal');
 
   const cols = stdout?.columns ?? 100;
   const rows = stdout?.rows ?? 30;
@@ -76,7 +77,10 @@ export const App: React.FC = () => {
       <MainMenu
         canLoad={hasSaveGame()}
         statusMessage={menuMessage}
-        onNewGame={() => setScreen('creator')}
+        onNewGame={(diff) => {
+          setDifficulty(diff);
+          setScreen('creator');
+        }}
         onLoadGame={() => {
           const loaded = loadGame();
           if (loaded) {
@@ -94,9 +98,10 @@ export const App: React.FC = () => {
   if (screen === 'creator') {
     return (
       <CharacterCreator
+        difficulty={difficulty}
         onCancel={() => setScreen('title')}
         onConfirm={(name, attrs) => {
-          const initial = createNewGameState(name, attrs);
+          const initial = createNewGameState(name, attrs, difficulty);
           setState(initial);
           setScreen('game');
         }}

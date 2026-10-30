@@ -102,9 +102,14 @@ export const PipBoyOverlay: React.FC<Props> = ({
     >
       {tab === 'stats' && (
         <Box flexDirection="column">
-          <Text color={THEME.amber} bold>
-            KARTA POSTACI S.P.E.C.I.A.L. & PROFITY (PERKI)
-          </Text>
+          <Box justifyContent="space-between">
+            <Text color={THEME.amber} bold>
+              KARTA POSTACI S.P.E.C.I.A.L. & PROFITY (PERKI)
+            </Text>
+            <Text color={state.difficulty === 'hard' ? THEME.danger : THEME.muted} bold>
+              [POZIOM: {state.difficulty === 'hard' ? 'HARD' : 'NORMAL'}]
+            </Text>
+          </Box>
           <Box marginY={0} justifyContent="space-between">
             {ATTRS.map((k) => (
               <Text key={k} color={THEME.primary} bold>

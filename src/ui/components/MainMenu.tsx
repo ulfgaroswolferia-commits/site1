@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
+import { DifficultyLevel } from '../../types/game.js';
 import { THEME } from '../theme.js';
 
 interface Props {
   canLoad: boolean;
-  onNewGame: () => void;
+  onNewGame: (difficulty: DifficultyLevel) => void;
   onLoadGame: () => void;
   onExit: () => void;
   statusMessage?: string | null;
@@ -18,7 +19,8 @@ export const MainMenu: React.FC<Props> = ({
   statusMessage,
 }) => {
   const options = [
-    { label: 'Nowa Gra (Krypta 73)', action: onNewGame },
+    { label: 'Rozpocznij grę (Poziom Normalny)', action: () => onNewGame('normal') },
+    { label: 'Rozpoczęcie gry na poziomie trudności HARD', action: () => onNewGame('hard') },
     ...(canLoad ? [{ label: 'Wczytaj Zapisaną Grę', action: onLoadGame }] : []),
     { label: 'Wyjdź do Terminala VS Code', action: onExit },
   ];

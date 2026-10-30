@@ -12,6 +12,8 @@ export function startCombat(
 ): GameState {
   const enemy = ENEMIES[enemyId];
   if (!enemy) return state;
+  const isHard = state.difficulty === 'hard';
+  const enemyMaxHp = isHard ? Math.round(enemy.maxHp * 1.65) : enemy.maxHp;
   const maxAp = getMaxAp(state.character.attributes);
 
   return {
@@ -19,15 +21,19 @@ export function startCombat(
     combat: {
       enemyId: enemy.id,
       enemyName: enemy.name,
-      enemyHp: enemy.maxHp,
-      enemyMaxHp: enemy.maxHp,
+      enemyHp: enemyMaxHp,
+      enemyMaxHp: enemyMaxHp,
       enemyStunned: false,
       enemyWeakenedTurns: 0,
       playerAp: maxAp,
       playerMaxAp: maxAp,
       playerDodgeBonus: 0,
       turn: 1,
-      log: [`Rozpoczęto starcie: ${enemy.name}!`],
+      log: [
+        isHard
+          ? `Rozpoczęto starcie: ${enemy.name}! [TRYB HARD: +65% HP wroga, +60% DMG]`
+          : `Rozpoczęto starcie: ${enemy.name}!`,
+      ],
       victorySceneId,
       fleeSceneId,
       isBoss: Boolean(enemy.isBoss),
@@ -40,7 +46,9 @@ export function getVatsHitChance(state: GameState, part: BodyPart): number {
     ? ITEMS[state.character.equippedWeaponId]
     : null;
   const weaponAcc = weapon?.accuracyBonus ?? 0;
-  const base = 65 + state.character.attributes.PER * 3 + weaponAcc;
+  const isHard = state.difficulty === 'hard';
+  const hardPenalty = isHard ? 10 : 0;
+  const base = 65 + state.character.attributes.PER * 3 + weaponAcc - hardPenalty;
 
   let modifier =
     (state.character.perks.includes('reno_gunslinger') ? 10 : 0) +
@@ -51,7 +59,8 @@ export function getVatsHitChance(state: GameState, part: BodyPart): number {
     modifier += -15;
   }
 
-  return Math.max(15, Math.min(95, base + modifier));
+  const maxHit = isHard ? 90 : 95;
+  return Math.max(15, Math.min(maxHit, base + modifier));
 }
 
 function resolveCombatVictory(state: GameState): GameState {
@@ -145,18 +154,21 @@ export function performPlayerAttack(
         ? workingState.character.attributes.STR
         : Math.floor(workingState.character.attributes.PER / 2));
 
+  const isHard = workingState.difficulty === 'hard';
+  const hardHitPenalty = isHard ? 10 : 0;
   const targetPart: BodyPart = mode === 'standard' ? 'torso' : part;
   const hitChance = outOfAmmo
-    ? Math.max(25, Math.min(90, 65 + workingState.character.attributes.STR * 3))
+    ? Math.max(20, Math.min(isHard ? 80 : 90, 65 + workingState.character.attributes.STR * 3 - hardHitPenalty))
     : mode === 'standard'
     ? Math.max(
-        25,
+        20,
         Math.min(
-          95,
+          isHard ? 85 : 95,
           70 +
             workingState.character.attributes.PER * 3 +
             (weapon?.accuracyBonus ?? 0) +
-            (workingState.character.perks.includes('plasma_master') ? 10 : 0)
+            (workingState.character.perks.includes('plasma_master') ? 10 : 0) -
+            hardHitPenalty
         )
       )
     : getVatsHitChance(workingState, targetPart);
@@ -188,7 +200,8 @@ export function performPlayerAttack(
   }
 
   const rawDamage = Math.round(baseDamage * mult);
-  const finalDamage = Math.max(2, rawDamage - (enemy?.defense ?? 0));
+  const hardEnemyDef = isHard ? 4 : 0;
+  const finalDamage = Math.max(1, rawDamage - ((enemy?.defense ?? 0) + hardEnemyDef));
   const nextEnemyHp = Math.max(0, combat.enemyHp - finalDamage);
 
   let enemyStunned = combat.enemyStunned;
@@ -301,9 +314,11 @@ export function endPlayerTurn(state: GameState, rng: () => number = Math.random)
     };
   }
 
+  const isHard = state.difficulty === 'hard';
   const legendDodgeBonus = state.character.perks.includes('wasteland_legend') ? 10 : 0;
   const playerDodge = state.character.attributes.AGI * 2 + dodgeBonus + legendDodgeBonus;
-  const enemyHitChance = Math.max(15, Math.min(90, (enemy?.accuracy ?? 65) - playerDodge));
+  const enemyAcc = (enemy?.accuracy ?? 65) + (isHard ? 15 : 0);
+  const enemyHitChance = Math.max(15, Math.min(isHard ? 95 : 90, enemyAcc - playerDodge));
   const roll = Math.floor(rng() * 100) + 1;
 
   let nextState = state;
@@ -316,7 +331,9 @@ export function endPlayerTurn(state: GameState, rng: () => number = Math.random)
     const playerDef =
       (armor?.defense ?? 0) + (state.character.perks.includes('wasteland_toughness') ? 3 : 0);
     const weakenMult = combat.enemyWeakenedTurns > 0 ? 0.75 : 1;
-    const rawDmg = Math.round((enemy?.damage ?? 10) * weakenMult);
+    const baseEnemyDmg = enemy?.damage ?? 10;
+    const hardDmgMult = isHard ? 1.6 : 1.0;
+    const rawDmg = Math.round(baseEnemyDmg * hardDmgMult * weakenMult);
     const dmg = Math.max(1, rawDmg - playerDef);
 
     const newHp = Math.max(0, nextState.character.hp - dmg);
@@ -330,7 +347,8 @@ export function endPlayerTurn(state: GameState, rng: () => number = Math.random)
     logs.push(`${combat.enemyName} zadaje Ci ${dmg} pkt obrażeń!`);
 
     if (enemy?.radDamage && enemy.radDamage > 0 && newHp > 0) {
-      nextState = applyRadiation(nextState, enemy.radDamage);
+      const radDmg = isHard ? Math.ceil(enemy.radDamage * 1.75) : enemy.radDamage;
+      nextState = applyRadiation(nextState, radDmg);
       logs.push(`Otrzymujesz skażenie promieniowaniem (+RAD)!`);
     }
   }
@@ -361,8 +379,10 @@ export function attemptFlee(state: GameState, rng: () => number = Math.random): 
   const combat = state.combat;
   if (!combat || combat.isBoss || combat.playerAp < 3) return state;
 
+  const isHard = state.difficulty === 'hard';
   const legendFleeBonus = state.character.perks.includes('wasteland_legend') ? 10 : 0;
-  const chance = Math.min(90, 40 + state.character.attributes.AGI * 5 + legendFleeBonus);
+  const fleePenalty = isHard ? 15 : 0;
+  const chance = Math.max(15, Math.min(isHard ? 80 : 90, 40 + state.character.attributes.AGI * 5 + legendFleeBonus - fleePenalty));
   const roll = Math.floor(rng() * 100) + 1;
 
   if (roll <= chance) {

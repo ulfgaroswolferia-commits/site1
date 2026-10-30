@@ -1,4 +1,5 @@
 export type AttributeKey = 'STR' | 'PER' | 'END' | 'CHA' | 'INT' | 'AGI';
+export type DifficultyLevel = 'normal' | 'hard';
 
 export type Attributes = Record<AttributeKey, number>;
 
@@ -176,6 +177,7 @@ export interface MerchantDefinition {
 
 export interface GameState {
   character: CharacterState;
+  difficulty?: DifficultyLevel;
   currentLocationId: LocationId;
   currentSceneId: string;
   flags: Record<string, boolean>;

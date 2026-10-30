@@ -5,6 +5,7 @@ import { getEffectiveMaxHp, XP_THRESHOLDS } from '../../engine/CharacterSystem.j
 import { ITEMS } from '../../content/items.js';
 import { LOCATIONS } from '../../content/scenes.js';
 import { renderBar, THEME } from '../theme.js';
+import { AMMO_SHORT_NAMES } from '../../engine/InventorySystem.js';
 
 interface Props {
   state: GameState;
@@ -23,6 +24,7 @@ export const HeaderStatus: React.FC<Props> = ({ state, modeLabel }) => {
   const equippedWeapon = character.equippedWeaponId ? ITEMS[character.equippedWeaponId] : null;
   const ammoId = equippedWeapon && !equippedWeapon.isMelee ? equippedWeapon.ammoType : undefined;
   const ammoQty = ammoId ? (character.inventory[ammoId] ?? 0) : null;
+  const ammoTag = ammoId ? (AMMO_SHORT_NAMES[ammoId] ?? '10mm') : '';
 
   return (
     <Box
@@ -33,7 +35,7 @@ export const HeaderStatus: React.FC<Props> = ({ state, modeLabel }) => {
     >
       <Box justifyContent="space-between">
         <Text color={THEME.primary} bold>
-          PIP-BOY 3000 MK IV — {character.name.toUpperCase()}
+          PIP-BOY 3000 MK IV — {character.name.toUpperCase()}{state.difficulty === 'hard' ? ' [HARD]' : ''}
         </Text>
         <Text color={THEME.amber} bold>
           TRYB: {modeLabel}
@@ -48,7 +50,7 @@ export const HeaderStatus: React.FC<Props> = ({ state, modeLabel }) => {
         </Text>
         <Text color={THEME.amber}>KAPSLE: {character.caps}</Text>
         <Text color={ammoQty !== null && ammoQty <= 4 ? THEME.danger : THEME.secondary}>
-          {ammoQty !== null ? `AMMO: ${ammoQty}` : 'BROŃ: WRĘCZ'}
+          {ammoQty !== null ? `AMMO (${ammoTag}): ${ammoQty}` : 'BROŃ: WRĘCZ'}
         </Text>
         <Text color={THEME.cyan}>
           POZ: {character.level} ({character.xp}/{nextXp})
@@ -57,6 +59,9 @@ export const HeaderStatus: React.FC<Props> = ({ state, modeLabel }) => {
       </Box>
       <Box justifyContent="space-between">
         <Text color={THEME.secondary}>LOKACJA: {locName}</Text>
+        <Text color={state.difficulty === 'hard' ? THEME.danger : THEME.muted} bold={state.difficulty === 'hard'}>
+          TRUDNOŚĆ: {state.difficulty === 'hard' ? 'HARD' : 'NORMAL'}
+        </Text>
         <Text color={THEME.muted}>K73: {factionLabel}</Text>
         {state.flags.arroyo_unlocked && (
           <Text color={waterDays <= 18 ? THEME.danger : THEME.amber} bold>
