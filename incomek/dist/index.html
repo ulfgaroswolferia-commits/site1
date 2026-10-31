@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>INCOM GROUP — Animacja Pat &amp; Mat (Openspace)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --incom-navy: #071930;
+      --incom-blue: #0056A4;
+      --incom-cyan: #00A0DF;
+      --surface: #0D223F;
+      --border: rgba(0, 160, 223, 0.24);
+      --text: #F8FAFC;
+      --muted: #94A3B8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(circle at 20% 0%, #0f2c54 0%, var(--incom-navy) 65%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 32px;
+      background: rgba(7, 25, 48, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .brand-logo-wrap {
+      background: #ffffff;
+      padding: 7px 14px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+
+    .brand-logo-wrap img {
+      height: 28px;
+      width: auto;
+      display: block;
+    }
+
+    .brand-title h1 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .mode-tabs {
+      display: flex;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 5px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .mode-tab {
+      background: transparent;
+      color: var(--muted);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .mode-tab.active {
+      background: linear-gradient(135deg, var(--incom-blue), var(--incom-cyan));
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(0, 160, 223, 0.35);
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 32px;
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+      gap: 18px;
+    }
+
+    .stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #040d1a;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+    }
+
+    .view-panel {
+      position: absolute;
+      inset: 0;
+      display: none;
+    }
+
+    .view-panel.active {
+      display: block;
+    }
+
+    /* 100% pixel-sharp stop-motion frames: no CSS scale/rotate blur and no cross-fade ghosting */
+    .keyframe-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      image-rendering: -webkit-optimize-contrast;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 10px;
+      height: 100%;
+      padding: 12px;
+      background: #061325;
+    }
+
+    .compare-card {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    .compare-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .transport-bar {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      background: var(--surface);
+      padding: 14px 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .transport-controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .btn {
+      background: var(--incom-blue);
+      color: #fff;
+      border: none;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover {
+      background: var(--incom-cyan);
+    }
+
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .btn-outline.active-step {
+      border-color: var(--incom-cyan);
+      background: rgba(0, 160, 223, 0.22);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-logo-wrap">
+        <img src="https://www.incomgroup.pl/wp-content/themes/incomgroup/images/header/logo.webp" alt="Incom Group Logo" onerror="this.style.display='none'; this.parentElement.innerHTML='<strong style=\'color:#0056A4;font-size:18px;letter-spacing:1px;\'>INCOM GROUP</strong>';" />
+      </div>
+      <div class="brand-title">
+        <h1>Animacja Pat &amp; Mat — Incom Openspace</h1>
+      </div>
+    </div>
+
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="switchView('stopmotion', this)">1. Animacja Poklatkowa (Live)</button>
+      <button class="mode-tab" onclick="switchView('gifpreview', this)">2. Plik GIF</button>
+      <button class="mode-tab" onclick="switchView('aipack', this)">3. Podgląd 4 Klatek</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="stage" id="presentationStage">
+
+      <!-- VIEW 1: CRISP 4-FRAME STOP-MOTION ANIMATION -->
+      <div class="view-panel active" id="view-stopmotion">
+        <img id="kf0" class="keyframe-layer" src="./incom-pat-mat-frame1.jpg?v=20261031_clean4" alt="Klatka 1" />
+        <img id="kf1" class="keyframe-layer" style="opacity:0" src="./incom-pat-mat-frame2.jpg?v=20261031_clean4" alt="Klatka 2" />
+        <img id="kf2" class="keyframe-layer" style="opacity:0" src="./incom-pat-mat-frame3.jpg?v=20261031_clean4" alt="Klatka 3" />
+        <img id="kf3" class="keyframe-layer" style="opacity:0" src="./incom-pat-mat-frame4.jpg?v=20261031_clean4" alt="Klatka 4" />
+      </div>
+
+      <!-- VIEW 2: EXPORTED CLEAN ANIMATED GIF -->
+      <div class="view-panel" id="view-gifpreview">
+        <img src="./incom-pat-mat-animacja.gif?v=20261031_clean4" style="width:100%;height:100%;object-fit:cover;" alt="Gotowa animacja GIF" />
+      </div>
+
+      <!-- VIEW 3: 4 KEYFRAMES GRID -->
+      <div class="view-panel" id="view-aipack">
+        <div class="compare-grid">
+          <div class="compare-card">
+            <img src="./incom-pat-mat-frame1.jpg?v=20261031_clean4" alt="Klatka 1" />
+          </div>
+          <div class="compare-card">
+            <img src="./incom-pat-mat-frame2.jpg?v=20261031_clean4" alt="Klatka 2" />
+          </div>
+          <div class="compare-card">
+            <img src="./incom-pat-mat-frame3.jpg?v=20261031_clean4" alt="Klatka 3" />
+          </div>
+          <div class="compare-card">
+            <img src="./incom-pat-mat-frame4.jpg?v=20261031_clean4" alt="Klatka 4" />
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Transport & Quick Actions -->
+    <div class="transport-bar">
+      <div class="transport-controls">
+        <button class="btn" id="btnTogglePlay" onclick="toggleAutoCycle()">⏸ Pauza</button>
+        <button class="btn btn-outline active-step" id="stepBtn0" onclick="setPose(0, true)">Klatka 1</button>
+        <button class="btn btn-outline" id="stepBtn1" onclick="setPose(1, true)">Klatka 2</button>
+        <button class="btn btn-outline" id="stepBtn2" onclick="setPose(2, true)">Klatka 3</button>
+        <button class="btn btn-outline" id="stepBtn3" onclick="setPose(3, true)">Klatka 4</button>
+      </div>
+      <div class="transport-controls">
+        <a class="btn" href="./incom-pat-mat-animacja.gif?v=20261031_clean4" download="incom-pat-mat-animacja.gif">⬇ Pobierz Animację (.gif)</a>
+        <button class="btn btn-outline" id="btnRecordVideo" onclick="exportWebMVideo()">🎬 Eksportuj Wideo (.webm)</button>
+        <button class="btn btn-outline" onclick="toggleFullscreen()">⛶ Pełny ekran</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    let autoCycle = true;
+    let currentPose = 0;
+    let seqIndex = 0;
+    let cycleTimeout = null;
+
+    // 4-step Pat & Mat stop-motion sequence:
+    // Klatka 1 (majsterkowanie przy laptopie) -> Klatka 2 (kciuk w górę) -> Klatka 3 ("A je to!" zgięte łokcie) -> Klatka 4 (prezentacja gotowego ekranu ✓ + podwójne kciuki)
+    const playbackSequence = [
+      { pose: 0, duration: 950  },
+      { pose: 1, duration: 950  },
+      { pose: 2, duration: 950  },
+      { pose: 3, duration: 1250 }
+    ];
+
+    const kfElements = [
+      document.getElementById('kf0'),
+      document.getElementById('kf1'),
+      document.getElementById('kf2'),
+      document.getElementById('kf3')
+    ];
+
+    const kfImages = [new Image(), new Image(), new Image(), new Image()];
+    kfImages[0].src = './incom-pat-mat-frame1.jpg?v=20261031_clean4';
+    kfImages[1].src = './incom-pat-mat-frame2.jpg?v=20261031_clean4';
+    kfImages[2].src = './incom-pat-mat-frame3.jpg?v=20261031_clean4';
+    kfImages[3].src = './incom-pat-mat-frame4.jpg?v=20261031_clean4';
+
+    function setPose(poseIndex, manual = false) {
+      if (manual) {
+        autoCycle = false;
+        if (cycleTimeout) clearTimeout(cycleTimeout);
+        document.getElementById('btnTogglePlay').textContent = '▶ Wznów';
+      }
+      currentPose = poseIndex;
+      kfElements.forEach((el, idx) => {
+        el.style.opacity = (idx === poseIndex) ? '1' : '0';
+      });
+      for (let i = 0; i < 4; i++) {
+        const b = document.getElementById('stepBtn' + i);
+        if (b) b.classList.toggle('active-step', i === poseIndex);
+      }
+    }
+
+    function scheduleNextBeat() {
+      if (cycleTimeout) clearTimeout(cycleTimeout);
+      if (!autoCycle) return;
+      const step = playbackSequence[seqIndex];
+      setPose(step.pose, false);
+      cycleTimeout = setTimeout(() => {
+        seqIndex = (seqIndex + 1) % playbackSequence.length;
+        scheduleNextBeat();
+      }, step.duration);
+    }
+    scheduleNextBeat();
+
+    function toggleAutoCycle() {
+      autoCycle = !autoCycle;
+      document.getElementById('btnTogglePlay').textContent = autoCycle ? '⏸ Pauza' : '▶ Wznów';
+      if (autoCycle) {
+        scheduleNextBeat();
+      } else if (cycleTimeout) {
+        clearTimeout(cycleTimeout);
+      }
+    }
+
+    function toggleFullscreen() {
+      const stage = document.getElementById('presentationStage');
+      if (!document.fullscreenElement) {
+        stage.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    // --- CLEAN 1-CLICK WEBM VIDEO RECORDER (SHARP, NO BLUR) ---
+    function exportWebMVideo() {
+      const btn = document.getElementById('btnRecordVideo');
+      btn.textContent = '⏺ Nagrywanie (4s)...';
+      btn.disabled = true;
+
+      const recCanvas = document.createElement('canvas');
+      recCanvas.width = 1280;
+      recCanvas.height = 720;
+      const rctx = recCanvas.getContext('2d');
+
+      const stream = recCanvas.captureStream(24);
+      const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+      const chunks = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'incom-pat-mat-animacja.webm';
+        a.click();
+        btn.textContent = '🎬 Eksportuj Wideo (.webm)';
+        btn.disabled = false;
+      };
+
+      recorder.start();
+      let f = 0;
+      // 24 fps timeline matching 4-step playbackSequence (total 98 frames = 4.1s)
+      const recTimer = setInterval(() => {
+        let poseIdx = 0;
+        if (f < 23) poseIdx = 0;
+        else if (f < 46) poseIdx = 1;
+        else if (f < 69) poseIdx = 2;
+        else poseIdx = 3;
+
+        const img = kfImages[poseIdx];
+        if (img && img.complete && img.naturalWidth > 0) {
+          rctx.drawImage(img, 0, 0, 1280, 720);
+        }
+
+        f++;
+        if (f >= 98) {
+          clearInterval(recTimer);
+          recorder.stop();
+        }
+      }, 1000 / 24);
+    }
+
+    function switchView(viewId, btn) {
+      document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
+      document.getElementById('view-' + viewId).classList.add('active');
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>
